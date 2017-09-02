@@ -6,7 +6,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE})
 
-add_definitions(-DGLM_FORCE_RADIANS -DZLIB_CONST)
+add_definitions(-DGLM_FORCE_RADIANS -DZLIB_CONST -DVK_NO_PROTOTYPES)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DMCR_DEBUG")
 
 file(GLOB_RECURSE SOURCE_FILES
 		${CMAKE_SOURCE_DIR}/src/*.cpp
@@ -23,6 +25,7 @@ find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
 find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h PATHS ${HEADER_SEARCH_PATH} "$ENV{VK_SDK_PATH}/Include")
+find_library(VULKAN_LIBRARY NAMES vulkan-1 vulkan)
 
 #Compiler specific flags
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -42,6 +45,7 @@ endif()
 
 #Sets link libraries
 link_libraries(
+	${VULKAN_LIBRARY}
 	${SDL2_LIBRARY}
 	${SDL2_IMAGE_LIBRARY}
 	${FREETYPE_LIBRARIES}
@@ -57,6 +61,7 @@ include_directories(SYSTEM
 	${GLM_INCLUDE_DIRS}
 	${FREETYPE_INCLUDE_DIRS}
 	${ZLIB_INCLUDE_DIRS}
+	${CMAKE_SOURCE_DIR}/inc
 )
 
 add_executable(mcrenderer ${SOURCE_FILES})
