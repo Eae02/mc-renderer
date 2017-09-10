@@ -28,7 +28,7 @@ namespace MCR
 		{
 			VkHandle<VkImage> m_image;
 			VkHandle<VkImageView> m_imageView;
-			VmaAllocationHandle m_allocation;
+			VkHandle<VmaAllocation> m_allocation;
 		};
 		
 		Attachment m_colorAttachment;

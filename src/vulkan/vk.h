@@ -7,3 +7,5 @@
 #include "queue.h"
 #include "commandbuffer.h"
 #include "func.h"
+#include "setlayoutsmanager.h"
+#include "descriptorset.h"

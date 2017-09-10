@@ -5,6 +5,14 @@
 
 namespace MCR
 {
+	const VkComponentMapping IdentityComponentMapping = 
+	{
+		VK_COMPONENT_SWIZZLE_IDENTITY,
+		VK_COMPONENT_SWIZZLE_IDENTITY,
+		VK_COMPONENT_SWIZZLE_IDENTITY,
+		VK_COMPONENT_SWIZZLE_IDENTITY
+	};
+	
 	uint64_t frameIndex = 0;
 	uint64_t frameQueueIndex = 0;
 	

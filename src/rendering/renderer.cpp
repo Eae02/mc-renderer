@@ -1,17 +1,17 @@
 #include "renderer.h"
+#include "frustum.h"
 #include "rendererframebuffer.h"
+#include "../world/worldmanager.h"
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
 
 namespace MCR
 {
 	constexpr VkFormat Renderer::ColorAttachmentFormat;
 	
-	Renderer::Renderer()
+	VkRenderPass Renderer::CreateRenderPass()
 	{
-		for (CommandBuffer& cb : m_commandBuffers)
-		{
-			cb = CommandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
-		}
-		
 		std::array<VkAttachmentDescription, 2> attachments = { };
 		attachments[0].format = ColorAttachmentFormat;
 		attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -45,14 +45,45 @@ namespace MCR
 		renderPassCreateInfo.subpassCount = subpassDescriptions.size();
 		renderPassCreateInfo.pSubpasses = subpassDescriptions.data();
 		
-		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, m_renderPass.GetCreateAddress()));
+		VkRenderPass renderPass;
+		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));
+		return renderPass;
+	}
+	
+	Renderer::Renderer()
+	    : m_renderPass(CreateRenderPass()), m_blockShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo())
+	{
+		for (CommandBuffer& cb : m_commandBuffers)
+		{
+			cb = CommandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
+		}
 	}
 	
 	void Renderer::Render(const RenderParams& params)
 	{
+		if (m_projWidth != params.m_framebuffer->GetWidth() || m_projHeight != params.m_framebuffer->GetHeight())
+		{
+			m_projWidth = params.m_framebuffer->GetWidth();
+			m_projHeight = params.m_framebuffer->GetHeight();
+			m_projectionMatrix = glm::perspectiveFov<float>(glm::half_pi<float>(), m_projWidth, m_projHeight, 0.1f, 1000.0f);
+			m_invProjectionMatrix = glm::inverse(m_projectionMatrix);
+		}
+		
 		CommandBuffer& cb = m_commandBuffers[frameQueueIndex];
 		
 		cb.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		
+		const Camera& camera = m_worldManager->GetCamera();
+		
+		const glm::mat4 viewProj = m_projectionMatrix * camera.GetViewMatrix();
+		const glm::mat4 invViewProj = camera.GetInverseViewMatrix() * m_invProjectionMatrix;
+		
+		m_renderSettingsBuffer.SetData(cb, viewProj, camera.GetPosition(), 0);
+		
+		if (!m_isFrustumFrozen)
+		{
+			m_frustum = Frustum(invViewProj);
+		}
 		
 		const VkRect2D renderArea = { { }, { params.m_framebuffer->GetWidth(), params.m_framebuffer->GetHeight() } };
 		
@@ -62,16 +93,29 @@ namespace MCR
 		
 		VkRenderPassBeginInfo renderPassBeginInfo = 
 		{
-		    /* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		    /* pNext           */ nullptr,
-		    /* renderPass      */ *m_renderPass,
-		    /* framebuffer     */ params.m_framebuffer->GetFramebuffer(),
-		    /* renderArea      */ renderArea,
-		    /* clearValueCount */ clearValues.size(),
-		    /* pClearValues    */ clearValues.data()
+			/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			/* pNext           */ nullptr,
+			/* renderPass      */ *m_renderPass,
+			/* framebuffer     */ params.m_framebuffer->GetFramebuffer(),
+			/* renderArea      */ renderArea,
+			/* clearValueCount */ clearValues.size(),
+			/* pClearValues    */ clearValues.data()
 		};
 		
+		m_regionRenderList.Begin();
+		m_worldManager->FillRenderList(m_regionRenderList, m_frustum);
+		m_regionRenderList.End(cb);
+		
 		cb.BeginRenderPass(&renderPassBeginInfo);
+		
+		m_blockShader.Bind(cb);
+		
+		const VkViewport viewport = { 0, 0, renderArea.extent.width, renderArea.extent.height, 0, 1 };
+		cb.SetViewport(0, SingleElementSpan(viewport));
+		
+		cb.SetScissor(0, SingleElementSpan(renderArea));
+		
+		m_regionRenderList.Render(cb);
 		
 		cb.EndRenderPass();
 		

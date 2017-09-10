@@ -1,0 +1,88 @@
+#pragma once
+
+#include <cstddef>
+#include <SDL2/SDL_scancode.h>
+
+namespace MCR
+{
+	enum class Keys
+	{
+		Unknown,
+		LeftShift,
+		RightShift,
+		LeftControl,
+		RightControl,
+		LeftAlt,
+		RightAlt,
+		Escape,
+		Space,
+		LeftArrow,
+		UpArrow,
+		RightArrow,
+		DownArrow,
+		D0,
+		D1,
+		D2,
+		D3,
+		D4,
+		D5,
+		D6,
+		D7,
+		D8,
+		D9,
+		A,
+		B,
+		C,
+		D,
+		E,
+		F,
+		G,
+		H,
+		I,
+		J,
+		K,
+		L,
+		M,
+		N,
+		O,
+		P,
+		Q,
+		R,
+		S,
+		T,
+		U,
+		V,
+		W,
+		X,
+		Y,
+		Z,
+		F1,
+		F2,
+		F3,
+		F4,
+		F5,
+		F6,
+		F7,
+		F8,
+		F9,
+		F10,
+		F11,
+		F12,
+		F13,
+		F14,
+		F15,
+		F16,
+		F17,
+		F18,
+		F19,
+		F20,
+		F21,
+		F22,
+		F23,
+		F24
+	};
+	
+	Keys TranslateKey(SDL_Scancode sdlScancode);
+	
+	constexpr size_t KeyCount = 73;
+}

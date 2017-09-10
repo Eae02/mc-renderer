@@ -10,8 +10,6 @@ namespace MCR
 		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT;
 		memoryRequirements.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		
-		VmaAllocation imageAllocation;
-		
 		// ** Creates the color attachment image **
 		VkImageCreateInfo colorImageCreateInfo;
 		InitImageCreateInfo(colorImageCreateInfo, VK_IMAGE_TYPE_2D, Renderer::ColorAttachmentFormat, width, height);
@@ -19,9 +17,8 @@ namespace MCR
 		                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		
 		CheckResult(vmaCreateImage(vulkan.allocator, &colorImageCreateInfo, &memoryRequirements,
-		                           m_colorAttachment.m_image.GetCreateAddress(), &imageAllocation, nullptr));
-		
-		m_colorAttachment.m_allocation.reset(imageAllocation);
+		                           m_colorAttachment.m_image.GetCreateAddress(),
+		                           m_colorAttachment.m_allocation.GetCreateAddress(), nullptr));
 		
 		// ** Creates the color attachment image view **
 		VkImageViewCreateInfo colorImageViewCreateInfo;
@@ -36,9 +33,8 @@ namespace MCR
 		depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		
 		CheckResult(vmaCreateImage(vulkan.allocator, &depthImageCreateInfo, &memoryRequirements,
-		                           m_depthAttachment.m_image.GetCreateAddress(), &imageAllocation, nullptr));
-		
-		m_depthAttachment.m_allocation.reset(imageAllocation);
+		                           m_depthAttachment.m_image.GetCreateAddress(),
+		                           m_depthAttachment.m_allocation.GetCreateAddress(), nullptr));
 		
 		// ** Creates the depth attachment image view **
 		VkImageViewCreateInfo depthImageViewCreateInfo;

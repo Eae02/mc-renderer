@@ -84,8 +84,7 @@ namespace SwapChain
 				return VK_PRESENT_MODE_IMMEDIATE_KHR;
 			}
 			
-			GetLogStream() << "Disabling V-Sync is not supported by this driver "
-			                  "(it does not support immediate present mode).\n";
+			Log("Disabling V-Sync is not supported by this driver (it does not support immediate present mode).");
 		}
 		
 		//Use mailbox if available, otherwise FIFO.
@@ -222,8 +221,7 @@ namespace SwapChain
 		chainCreateInfo.clipped = true;
 		chainCreateInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		
-		GetLogStream() << "Creating swap chain, present mode: " << GetPresentModeName(chainCreateInfo.presentMode)
-		               << ", images: " << imageCount << std::endl;
+		Log("Creating swap chain, present mode: ", GetPresentModeName(chainCreateInfo.presentMode), ", images: ", imageCount);
 		
 		CheckResult(vkCreateSwapchainKHR(vulkan.device, &chainCreateInfo, nullptr, swapChain.GetCreateAddress()));
 		

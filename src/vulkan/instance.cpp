@@ -30,7 +30,7 @@ namespace MCR
 	VulkanInstance vulkan;
 	
 	static std::unique_ptr<Queue> queueInstances[QUEUE_FAMILY_COUNT];
-	static VkCommandPool stdCommandPoolInstances[QUEUE_FAMILY_COUNT] = { };
+	static VkHandle<VkCommandPool> stdCommandPoolInstances[QUEUE_FAMILY_COUNT] = { };
 	
 #ifdef MCR_DEBUG
 	static VkDebugReportCallbackEXT messageCallback = VK_NULL_HANDLE;
@@ -46,11 +46,11 @@ namespace MCR
 		
 		if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT || msgCode == 1)
 		{
-			GetLogStream() << pLayerPrefix << "[" << msgCode << "]: " << pMsg << std::endl;
+			Log(pLayerPrefix, "[", msgCode, "]: ", pMsg);
 			return VK_TRUE;
 		}
 		
-		GetLogStream() << "VK " << pLayerPrefix << "[" << msgCode << "]" << pMsg << std::endl;
+		Log("VK ", pLayerPrefix, "[", msgCode, "]", pMsg);
 		
 		return VK_FALSE;
 	}
@@ -87,7 +87,7 @@ namespace MCR
 		vkGetPhysicalDeviceFeatures(device, &features);
 		
 		return features.fullDrawIndexUint32 == VK_TRUE && features.samplerAnisotropy == VK_TRUE &&
-		       features.drawIndirectFirstInstance == VK_TRUE;
+		       features.drawIndirectFirstInstance == VK_TRUE && features.depthClamp == VK_TRUE;
 	}
 	
 	inline bool GetQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface, uint32_t* queueFamiliesOut)
@@ -146,10 +146,14 @@ namespace MCR
 			}
 		}
 		
-		if (!familiesFound[QUEUE_FAMILY_GRAPHICS] || !familiesFound[QUEUE_FAMILY_COMPUTE] ||
-		    !familiesFound[QUEUE_FAMILY_TRANSFER])
+		if (!familiesFound[QUEUE_FAMILY_GRAPHICS] || !familiesFound[QUEUE_FAMILY_COMPUTE])
 		{
 			return false;
+		}
+		
+		if (!familiesFound[QUEUE_FAMILY_TRANSFER])
+		{
+			queueFamiliesOut[QUEUE_FAMILY_TRANSFER] = queueFamiliesOut[QUEUE_FAMILY_GRAPHICS];
 		}
 		
 		return true;
@@ -211,7 +215,7 @@ namespace MCR
 			
 			if (pos == layerProperties.end())
 			{
-				GetLogStream() << "Vulkan validation layer '" << layer << "' is not supported.\n";
+				Log("Vulkan validation layer '", layer, "' is not supported.");
 			}
 			else
 			{
@@ -313,7 +317,7 @@ namespace MCR
 		vulkan.limits.uniformBufferOffsetAlignment = physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
 		vulkan.limits.storageBufferOffsetAlignment = physicalDeviceProperties.limits.minStorageBufferOffsetAlignment;
 		
-		GetLogStream() << "Using vulkan device: " << physicalDeviceProperties.deviceName << std::endl;
+		Log("Using vulkan device: ", physicalDeviceProperties.deviceName);
 		
 		static const float queuePriorities[1] = { 1.0f };
 		
@@ -346,12 +350,14 @@ namespace MCR
 		VkPhysicalDeviceFeatures enabledFeatures = { };
 		enabledFeatures.fullDrawIndexUint32 = VK_TRUE;
 		enabledFeatures.samplerAnisotropy = VK_TRUE;
-		enabledFeatures.drawIndirectFirstInstance = VK_TRUE;
+		enabledFeatures.depthClamp = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
 		
 		vulkan.limits.hasMultiDrawIndirect = enabledFeatures.multiDrawIndirect == VK_TRUE;
 		
 		// ** Selects a depth format **
+		
+		//Contains valid depth formats, in order of decreasing preference.
 		const VkFormat depthFormats[] = 
 		{
 			VK_FORMAT_D32_SFLOAT,
@@ -361,13 +367,13 @@ namespace MCR
 			VK_FORMAT_D16_UNORM_S8_UINT
 		};
 		
-		const VkFormatFeatureFlags depthFormatFeatures =
+		const VkFormatFeatureFlags requiredDepthFormatFeatures =
 		        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
 		
 		vulkan.depthFormat = VK_FORMAT_UNDEFINED;
 		for (VkFormat format : depthFormats)
 		{
-			if (CanUseFormat(format, depthFormatFeatures, VK_IMAGE_TILING_OPTIMAL))
+			if (CanUseFormat(format, requiredDepthFormatFeatures, VK_IMAGE_TILING_OPTIMAL))
 			{
 				vulkan.depthFormat = format;
 				break;
@@ -389,12 +395,13 @@ namespace MCR
 		
 		if (vkCreateDevice(vulkan.physicalDevice, &deviceCI, nullptr, &vulkan.device) != VK_SUCCESS)
 		{
-			throw std::runtime_error("Error creating vulkan device.");
+			throw std::runtime_error("Could not create vulkan device.");
 		}
 		
 		LoadDeviceVulkanFunctions(vulkan.device);
 		
 		// ** Creates and assigns queue instances **
+		const VkCommandPoolCreateFlags commandPoolFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		uint32_t numCreatedQueues = 0;
 		for (int i = 0; i < QUEUE_FAMILY_COUNT; i++)
 		{
@@ -409,20 +416,15 @@ namespace MCR
 			{
 				size_t srcQueueIndex = it - queueInstances;
 				vulkan.queues[i] = queueInstances[srcQueueIndex].get();
-				vulkan.stdCommandPools[i] = stdCommandPoolInstances[srcQueueIndex];
+				vulkan.stdCommandPools[i] = *stdCommandPoolInstances[srcQueueIndex];
 			}
 			else
 			{
 				queueInstances[numCreatedQueues] = std::make_unique<Queue>(vulkan.queueFamilies[i], 0);
 				
-				VkCommandPoolCreateInfo commandPoolCreateInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-				commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-				commandPoolCreateInfo.queueFamilyIndex = vulkan.queueFamilies[i];
+				stdCommandPoolInstances[numCreatedQueues] = CreateCommandPool(i, commandPoolFlags);
 				
-				vkCreateCommandPool(vulkan.device, &commandPoolCreateInfo, nullptr,
-				                    &stdCommandPoolInstances[numCreatedQueues]);
-				
-				vulkan.stdCommandPools[i] = stdCommandPoolInstances[numCreatedQueues];
+				vulkan.stdCommandPools[i] = *stdCommandPoolInstances[numCreatedQueues];
 				vulkan.queues[i] = queueInstances[numCreatedQueues++].get();
 			}
 		}
@@ -447,11 +449,7 @@ namespace MCR
 		{
 			vulkan.queues[i] = nullptr;
 			queueInstances[i] = nullptr;
-			
-			if (stdCommandPoolInstances[i] != VK_NULL_HANDLE)
-			{
-				vkDestroyCommandPool(vulkan.device, stdCommandPoolInstances[i], nullptr);
-			}
+			stdCommandPoolInstances[i].Reset();
 		}
 		
 		vkDestroyDevice(vulkan.device, nullptr);

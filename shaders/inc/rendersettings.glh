@@ -1,0 +1,11 @@
+#ifndef RENDER_SETTINGS_GLH
+#define RENDER_SETTINGS_GLH
+
+struct RenderSettings
+{
+	mat4 viewProj;
+	vec3 cameraPos;
+	float time;
+};
+
+#endif

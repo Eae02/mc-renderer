@@ -19,9 +19,9 @@ namespace MCR
 	class VkHandle final
 	{
 	public:
-		inline VkHandle() : m_resource(nullptr) { }
+		inline VkHandle() noexcept : m_resource(nullptr) { }
 		
-		inline VkHandle(VkType resource)
+		inline VkHandle(VkType resource) noexcept
 			: m_resource(resource) { }
 		
 		inline ~VkHandle()
@@ -37,14 +37,14 @@ namespace MCR
 		}
 		
 		template <VkHandleDestroyTime OtherDestroyTime>
-		inline VkHandle& operator=(VkHandle<VkType, OtherDestroyTime>&& other)
+		inline VkHandle& operator=(VkHandle<VkType, OtherDestroyTime>&& other) noexcept
 		{
 			this->operator=(other.m_resource);
 			other.m_resource = nullptr;
 			return *this;
 		}
 		
-		inline VkHandle& operator=(VkType resource)
+		inline VkHandle& operator=(VkType resource) noexcept
 		{
 			Reset();
 			m_resource = resource;
@@ -77,17 +77,17 @@ namespace MCR
 			return &m_resource;
 		}
 		
-		inline bool IsNull() const
+		inline bool IsNull() const noexcept
 		{
 			return m_resource == VK_NULL_HANDLE;
 		}
 		
-		inline void Swap(VkHandle<VkType, DestroyTime>& other)
+		inline void Swap(VkHandle<VkType, DestroyTime>& other) noexcept
 		{
 			std::swap(m_resource, other.m_resource);
 		}
 		
-		inline const VkType& operator*() const
+		inline const VkType& operator*() const noexcept
 		{
 			return m_resource;
 		}
@@ -95,21 +95,4 @@ namespace MCR
 	private:
 		VkType m_resource;
 	};
-	
-	class VmaAllocationDeleter
-	{
-	public:
-		inline explicit VmaAllocationDeleter(VmaAllocator allocator = vulkan.allocator)
-		    : m_allocator(allocator) { }
-		
-		inline void operator()(VmaAllocation allocation) const
-		{
-			vmaFreeMemory(m_allocator, allocation);
-		}
-		
-	private:
-		VmaAllocator m_allocator;
-	};
-	
-	using VmaAllocationHandle = std::unique_ptr<std::remove_pointer_t<VmaAllocation>, VmaAllocationDeleter>;
 }

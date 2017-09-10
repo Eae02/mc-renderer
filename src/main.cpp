@@ -1,11 +1,12 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <memory>
 #include <iostream>
-#include <gsl/gsl_util>
 
 #include "game.h"
+#include "utils.h"
 #include "vulkan/instance.h"
+#include "rendering/shaders/shadermodules.h"
+#include "rendering/setlayouts.h"
+#include "vulkan/setlayoutsmanager.h"
 
 #undef main
 
@@ -20,28 +21,37 @@ int main()
 		return 1;
 	}
 	
-	auto _0 = gsl::finally(&SDL_Quit);
-	
-	if (IMG_Init(IMG_INIT_PNG) == 0)
-	{
-		std::cerr << IMG_GetError() << "\n";
-		return 1;
-	}
-	auto _2 = gsl::finally(&IMG_Quit);
-	
 	SDL_Window* window = SDL_CreateWindow("Minecraft Renderer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 	                                      WindowWidth, WindowHeight, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 	if (window == nullptr)
 	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Creating window", SDL_GetError(), nullptr);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Creating Window", SDL_GetError(), nullptr);
 		return 1;
 	}
 	
-	MCR::InitializeVulkan(window);
+	MCR::SetThreadDesc(std::this_thread::get_id(), "Main");
+	
+	try
+	{
+		MCR::InitializeVulkan(window);
+	}
+	catch (const std::exception& ex)
+	{
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Initializing Vulkan", ex.what(), nullptr);
+		return 1;
+	}
+	
+	MCR::LoadShaderModules();
+	MCR::RegisterSetLayouts();
 	
 	MCR::RunGameLoop(window);
+	
+	MCR::DestroyShaderModules();
+	MCR::DestroyDescriptorSetLayouts();
 	
 	MCR::DestroyVulkan();
 	
 	SDL_DestroyWindow(window);
+	
+	SDL_Quit();
 }

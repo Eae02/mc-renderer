@@ -16,6 +16,11 @@ namespace MCR
 		vkDestroy ## type(vulkan.device, object, nullptr); \
 	}
 	
+	template <> inline void DestroyVulkanObject(VmaAllocation allocation)
+	{
+		vmaFreeMemory(vulkan.allocator, allocation);
+	}
+	
 	DEF_DESTROY_VULKAN_OBJECT(Image)
 	DEF_DESTROY_VULKAN_OBJECT(ImageView)
 	DEF_DESTROY_VULKAN_OBJECT(Framebuffer)
