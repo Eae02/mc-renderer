@@ -2,3 +2,8 @@ dirt.png
 grass_side.png
 grass_top.png
 stone.png
+flower_blue.png
+flower_red.png
+flower_white.png
+flower_orange.png
+flower_yellow.png

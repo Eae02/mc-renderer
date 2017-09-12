@@ -17,5 +17,6 @@ namespace MCR
 		
 	private:
 		noise::module::Perlin m_heightPerlin;
+		noise::module::Perlin m_flowerPerlin;
 	};
 }

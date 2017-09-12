@@ -29,10 +29,17 @@ namespace MCR
 				{
 					const int64_t worldX = x + params.m_region->GetX() * Region::Size;
 					
-					const BlockType& blockType = BlockType::GetByID(params.m_region->At(x, y, z).m_id);
+					Region::BlockEntry block = params.m_region->At(x, y, z);
+					const BlockType& blockType = BlockType::GetByID(block.m_id);
 					
 					if (!blockType.IsInitialized())
 						continue;
+					
+					if (const ICustomMeshProvider* meshProvider = blockType.GetCustomMeshProvider())
+					{
+						meshProvider->BuildBlockMesh(*params.m_meshBuilder, worldX, y, worldZ, block.m_data);
+						continue;
+					}
 					
 					const glm::vec3 blockWorldCenter(worldX + 0.5f, y + 0.5f, worldZ + 0.5f);
 					

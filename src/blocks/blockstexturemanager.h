@@ -31,7 +31,7 @@ namespace MCR
 			return { *m_sampler, *m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 		}
 		
-		int FindTextureIndex(const std::string& name) const;
+		int FindTextureIndex(std::string_view name) const;
 		
 	private:
 		static std::unique_ptr<BlocksTextureManager> s_instance;

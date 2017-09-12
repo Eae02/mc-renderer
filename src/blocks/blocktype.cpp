@@ -15,58 +15,39 @@ namespace MCR
 		std::fill(MAKE_RANGE(m_textureIndices), -1);
 	}
 	
-	void BlockType::LoadBlockTypesFromDirectory(const fs::path& dirPath, const BlocksTextureManager& textureManager)
+	void BlockType::ThrowIfInitialized(uint8_t id)
 	{
-		for (const fs::directory_entry& entry : fs::recursive_directory_iterator(dirPath))
-		{
-			if (entry.status().type() != fs::file_type::regular || entry.path().extension() != ".json")
-				continue;
-			
-			std::ifstream stream(entry.path());
-			nlohmann::json json = nlohmann::json::parse(stream);
-			LoadBlockType(json, textureManager);
-		}
-	}
-	
-	void BlockType::LoadBlockType(const nlohmann::json& json, const BlocksTextureManager& textureManager)
-	{
-		BlockType blockType;
-		
-		uint32_t id = json.at("id");
 		if (s_blockTypes[id].m_initialized)
 		{
 			throw std::runtime_error("Block id " + std::to_string(id) + " is already used.");
 		}
+	}
+	
+	void BlockType::Register(uint8_t id, std::string name, const BlockTexConfig& texConfig)
+	{
+		ThrowIfInitialized(id);
 		
-		blockType.m_name = json.at("name").get<std::string>();
+		BlockType& blockType = s_blockTypes[id];
+		
 		blockType.m_initialized = true;
 		
-		auto textureIt = json.find("texture");
-		if (textureIt->is_string())
-		{
-			const int textureIndex = textureManager.FindTextureIndex(textureIt->get<std::string>());
-			std::fill(MAKE_RANGE(blockType.m_textureIndices), textureIndex);
-		}
-		else if (textureIt->is_object())
-		{
-			auto GetTextureIndex = [&] (const std::string& elementName, int def = -1)
-			{
-				auto it = textureIt->find(elementName);
-				if (it != textureIt->end() && it->is_string())
-				{
-					return textureManager.FindTextureIndex(it->get<std::string>());
-				}
-				return def;
-			};
-			
-			int sideTextureIndex = GetTextureIndex("side");
-			
-			std::fill(MAKE_RANGE(blockType.m_textureIndices), sideTextureIndex);
-			
-			blockType.m_textureIndices[BLOCK_SIDE_POSY] = GetTextureIndex("top", sideTextureIndex);
-			blockType.m_textureIndices[BLOCK_SIDE_NEGY] = GetTextureIndex("bottom", sideTextureIndex);
-		}
+		blockType.m_name = std::move(name);
 		
-		s_blockTypes[id] = std::move(blockType);
+		std::transform(MAKE_RANGE(texConfig.m_textures), blockType.m_textureIndices, [] (std::string_view name)
+		{
+			return BlocksTextureManager::GetInstance().FindTextureIndex(name);
+		});
+	}
+	
+	void BlockType::RegisterCustomMesh(uint8_t id, std::string name, std::unique_ptr<ICustomMeshProvider> meshProvider)
+	{
+		ThrowIfInitialized(id);
+		
+		BlockType& blockType = s_blockTypes[id];
+		
+		blockType.m_name = std::move(name);
+		blockType.m_customMeshProvider = std::move(meshProvider);
+		blockType.m_initialized = true;
+		blockType.m_opaque = false;
 	}
 }

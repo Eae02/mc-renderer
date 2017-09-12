@@ -17,4 +17,6 @@ layout(location=0) out vec4 color_out;
 void main()
 {
 	color_out = texture(blocksTexture, textureCoord_in);
+	if (color_out.a < 0.5)
+		discard;
 }

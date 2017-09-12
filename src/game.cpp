@@ -1,6 +1,6 @@
 #include "game.h"
 #include "blocks/blockstexturemanager.h"
-#include "blocks/blocktype.h"
+#include "blocks/registerblocktypes.h"
 #include "vulkan/vkutils.h"
 #include "inputstate.h"
 #include "world/worldmanager.h"
@@ -26,8 +26,8 @@ namespace MCR
 		
 		loadContext.End();
 		
-		//Loads block types
-		BlockType::LoadBlockTypesFromDirectory(MCR::GetResourcePath() / "blocks", BlocksTextureManager::GetInstance());
+		RegisterBlockTypes();
+		//BlockType::LoadBlockTypesFromDirectory(MCR::GetResourcePath() / "blocks", BlocksTextureManager::GetInstance());
 	}
 	
 	void UpdateGame(float dt, const InputState& inputState)

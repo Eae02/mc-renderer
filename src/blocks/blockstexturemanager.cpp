@@ -205,10 +205,10 @@ namespace MCR
 			/* magFilter               */ VK_FILTER_NEAREST,
 			/* minFilter               */ VK_FILTER_LINEAR,
 			/* mipmapMode              */ VK_SAMPLER_MIPMAP_MODE_LINEAR,
-			/* addressModeU            */ VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			/* addressModeV            */ VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			/* addressModeW            */ VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			/* mipLodBias              */ -1.0f,
+			/* addressModeU            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			/* addressModeV            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			/* addressModeW            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			/* mipLodBias              */ 0.0f,
 			/* anisotropyEnable        */ VK_TRUE,
 			/* maxAnisotropy           */ 16,
 			/* compareEnable           */ VK_FALSE,
@@ -226,7 +226,7 @@ namespace MCR
 		return texturesManager;
 	}
 	
-	int BlocksTextureManager::FindTextureIndex(const std::string& name) const
+	int BlocksTextureManager::FindTextureIndex(std::string_view name) const
 	{
 		for (int i = 0; i < static_cast<int>(m_textureNames.size()); i++)
 		{

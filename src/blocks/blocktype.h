@@ -3,7 +3,10 @@
 #include <string>
 #include <json.hpp>
 
+#include "sides.h"
+#include "blocktexconfig.h"
 #include "../filesystem.h"
+#include "../rendering/meshes/icustommeshprovider.h"
 
 namespace MCR
 {
@@ -12,10 +15,9 @@ namespace MCR
 	public:
 		BlockType();
 		
-		static void LoadBlockTypesFromDirectory(const fs::path& dirPath,
-		                                        const class BlocksTextureManager& textureManager);
+		static void Register(uint8_t id, std::string name, const BlockTexConfig& texturesConfig);
 		
-		static void LoadBlockType(const nlohmann::json& json, const class BlocksTextureManager& textureManager);
+		static void RegisterCustomMesh(uint8_t id, std::string name, std::unique_ptr<ICustomMeshProvider> meshProvider);
 		
 		inline static BlockType& GetByID(uint8_t id)
 		{
@@ -42,8 +44,22 @@ namespace MCR
 			return m_textureIndices[side];
 		}
 		
+		inline const ICustomMeshProvider* GetCustomMeshProvider() const
+		{
+			return m_customMeshProvider.get();
+		}
+		
+		inline void SetCustomMeshProvider(std::unique_ptr<ICustomMeshProvider> meshProvider)
+		{
+			m_customMeshProvider = std::move(meshProvider);
+		}
+		
 	private:
+		static void ThrowIfInitialized(uint8_t id);
+		
 		static BlockType s_blockTypes[256];
+		
+		std::unique_ptr<ICustomMeshProvider> m_customMeshProvider;
 		
 		bool m_initialized;
 		std::string m_name;
