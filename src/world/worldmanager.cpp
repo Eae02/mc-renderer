@@ -10,7 +10,7 @@ namespace MCR
 	WorldManager::WorldManager()
 	    : m_generateThread(1)
 	{
-		SetRenderDistance(5);
+		SetRenderDistance(10);
 	}
 	
 	void WorldManager::SaveAll(bool wait)
@@ -69,8 +69,8 @@ namespace MCR
 		
 		m_camera.Update(dt, inputState);
 		
-		const int64_t currentRegionX = 0;//std::floor(m_camera.GetPosition().x / Region::Size);
-		const int64_t currentRegionZ = 0;//std::floor(m_camera.GetPosition().z / Region::Size);
+		const int64_t currentRegionX = std::floor(m_camera.GetPosition().x / Region::Size);
+		const int64_t currentRegionZ = std::floor(m_camera.GetPosition().z / Region::Size);
 		
 		const int shiftX = gsl::narrow<int>(m_centerRegionX - currentRegionX);
 		const int shiftZ = gsl::narrow<int>(m_centerRegionZ - currentRegionZ);

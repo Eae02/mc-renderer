@@ -42,7 +42,10 @@ namespace MCR
 		//Average number of surface blocks with flowers as a percentage.
 		const double flowerFrequency = 0.4;
 		
-		const uint8_t flowerIDs[] = { BlockIDs::BlueFlower, BlockIDs::RedFlower, BlockIDs::YellowFlower, BlockIDs::OrangeFlower, BlockIDs::WhiteFlower };
+		const uint8_t flowerIDs[] =
+		{
+			BlockIDs::BlueFlower, BlockIDs::RedFlower, BlockIDs::YellowFlower, BlockIDs::OrangeFlower, BlockIDs::WhiteFlower
+		};
 		
 		for (int lz = 0; lz < Region::Size; lz++)
 		{

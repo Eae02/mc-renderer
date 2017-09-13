@@ -37,33 +37,8 @@ namespace MCR
 		meshBuilder.FillUploadBuffer(hostBuffer.m_memory);
 		
 		CommandBuffer commandBuffer(*m_commandPool);
-		commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		
-		//Copies data from the host buffer to the device buffer.
-		commandBuffer.CopyBuffer(*hostBuffer.m_buffer, deviceBuffer.GetBuffer(), { 0, 0, size });
-		
-		//Releases the device buffer from the transfer queue.
-		VkBufferMemoryBarrier barrier = 
-		{
-			/* sType               */ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			/* pNext               */ nullptr,
-			/* srcAccessMask       */ VK_ACCESS_TRANSFER_WRITE_BIT,
-			/* dstAccessMask       */ 0,
-			/* srcQueueFamilyIndex */ vulkan.queueFamilies[QUEUE_FAMILY_TRANSFER],
-			/* dstQueueFamilyIndex */ vulkan.queueFamilies[QUEUE_FAMILY_GRAPHICS],
-			/* buffer              */ deviceBuffer.GetBuffer(),
-			/* offset              */ 0,
-			/* size                */ size
-		};
-		commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
-		                              { }, SingleElementSpan(barrier), { });
-		
-		commandBuffer.End();
-		
-		VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer.GetVkCB();
-		vulkan.queues[QUEUE_FAMILY_TRANSFER]->Submit(1, &submitInfo, *hostBuffer.m_fence);
+		deviceBuffer.Upload(commandBuffer, *hostBuffer.m_buffer, size, *hostBuffer.m_fence);
 		
 		m_tasks.push_back({ x, z, std::move(deviceBuffer), std::move(hostBuffer), std::move(commandBuffer) });
 	}
