@@ -71,6 +71,10 @@ namespace MCR
 			/* lineWidth               */ 1.0f
 		};
 		
+		VkPipelineRasterizationStateCreateInfo rasterizationStateWireframe = rasterizationState;
+		rasterizationStateWireframe.polygonMode = VK_POLYGON_MODE_LINE;
+		rasterizationStateWireframe.cullMode = VK_CULL_MODE_NONE;
+		
 		const VkPipelineMultisampleStateCreateInfo multisampleState = 
 		{
 			/* sType                 */ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
@@ -121,7 +125,10 @@ namespace MCR
 			/* pDynamicStates    */ createInfo.dynamicState.data()
 		};
 		
-		const VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+		std::array<VkGraphicsPipelineCreateInfo, 2> pipelineCreateInfos;
+		uint32_t numPipelines = 1;
+		
+		pipelineCreateInfos[0] =
 		{
 			/* sType               */ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			/* pNext               */ nullptr,
@@ -144,7 +151,36 @@ namespace MCR
 			/* basePipelineIndex   */ -1
 		};
 		
-		CheckResult(vkCreateGraphicsPipelines(vulkan.device, VK_NULL_HANDLE, 1, &pipelineCreateInfo,
-		                                      nullptr, m_pipeline.GetCreateAddress()));
+		if (createInfo.hasWireframeVariant)
+		{
+			pipelineCreateInfos[0].flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+			
+			pipelineCreateInfos[numPipelines] = pipelineCreateInfos[0];
+			pipelineCreateInfos[numPipelines].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+			pipelineCreateInfos[numPipelines].basePipelineIndex = 0;
+			pipelineCreateInfos[numPipelines].pRasterizationState = &rasterizationStateWireframe;
+			
+			numPipelines++;
+		}
+		
+		std::array<VkPipeline, 2> pipelinesOut;
+		
+		CheckResult(vkCreateGraphicsPipelines(vulkan.device, VK_NULL_HANDLE, numPipelines, pipelineCreateInfos.data(),
+		                                      nullptr, pipelinesOut.data()));
+		
+		m_pipeline = pipelinesOut[0];
+		m_wireframePipeline = pipelinesOut[1];
+	}
+	
+	void Shader::Bind(CommandBuffer& cb, Shader::BindModes mode) const
+	{
+		if (mode == BindModes::Wireframe && !m_wireframePipeline.IsNull())
+		{
+			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_wireframePipeline);
+		}
+		else
+		{
+			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pipeline);
+		}
 	}
 }

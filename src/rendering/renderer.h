@@ -35,6 +35,16 @@ namespace MCR
 			return m_isFrustumFrozen;
 		}
 		
+		inline void SetWireframe(bool wireframe)
+		{
+			m_wireframe = wireframe;
+		}
+		
+		inline bool Wireframe() const
+		{
+			return m_wireframe;
+		}
+		
 		inline VkRenderPass GetRenderPass() const
 		{
 			return *m_renderPass;
@@ -62,6 +72,8 @@ namespace MCR
 		
 		bool m_isFrustumFrozen = false;
 		Frustum m_frustum;
+		
+		bool m_wireframe = false;
 		
 		uint32_t m_projWidth = 0;
 		uint32_t m_projHeight = 0;

@@ -47,6 +47,9 @@ namespace MCR
 					{
 						glm::ivec3 frontBlockPos = glm::ivec3(x, y, z) + BlockNormals[s];
 						
+						if (frontBlockPos.y < 0)
+							continue;
+						
 						const Region* frontRegion = params.m_region;
 						
 						//Modulates the front block position along the X-axis.
@@ -74,7 +77,7 @@ namespace MCR
 						}
 						
 						//Checks if the front block is opaque.
-						if (frontBlockPos.y >= 0 && frontBlockPos.y < Region::Height)
+						if (frontBlockPos.y < Region::Height)
 						{
 							uint8_t frontBlockID = frontRegion->At(frontBlockPos.x, frontBlockPos.y, frontBlockPos.z).m_id;
 							const BlockType& frontBlockType = BlockType::GetByID(frontBlockID);

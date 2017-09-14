@@ -93,6 +93,11 @@ namespace MCR
 					if (event.key.repeat)
 						break;
 					
+					if (event.key.keysym.scancode == SDL_SCANCODE_F7 && event.key.state == SDL_PRESSED)
+					{
+						renderer.SetWireframe(!renderer.Wireframe());
+					}
+					
 					if (event.key.keysym.scancode == SDL_SCANCODE_F8 && event.key.state == SDL_PRESSED)
 					{
 						renderer.SetFrustumFrozen(!renderer.IsFrustumFrozen());

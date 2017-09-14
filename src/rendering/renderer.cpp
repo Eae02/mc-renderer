@@ -108,7 +108,7 @@ namespace MCR
 		
 		cb.BeginRenderPass(&renderPassBeginInfo);
 		
-		m_blockShader.Bind(cb);
+		m_blockShader.Bind(cb, m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
 		
 		const VkViewport viewport = { 0, 0, renderArea.extent.width, renderArea.extent.height, 0, 1 };
 		cb.SetViewport(0, SingleElementSpan(viewport));

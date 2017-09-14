@@ -25,6 +25,7 @@ namespace MCR
 		/* frontFace             */ VK_FRONT_FACE_CLOCKWISE,
 		/* enableDepthTest       */ true,
 		/* enableDepthWrite      */ true,
+		/* hasWireframeVariant   */ true,
 		/* depthCompareOp        */ VK_COMPARE_OP_LESS,
 		/* attachmentBlendStates */ SingleElementSpan(BlendStates::noBlending),
 		/* dynamicState          */ dynamicState
@@ -45,9 +46,9 @@ namespace MCR
 		UpdateDescriptorSets(globalDescriptorWrites);
 	}
 	
-	void BlockShader::Bind(CommandBuffer& cb) const
+	void BlockShader::Bind(CommandBuffer& cb, BindModes mode) const
 	{
-		Shader::Bind(cb);
+		Shader::Bind(cb, mode);
 		
 		const VkDescriptorSet descriptorSets[] = { *m_globalDescriptorSet };
 		

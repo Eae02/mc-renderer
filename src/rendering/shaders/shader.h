@@ -22,15 +22,19 @@ namespace MCR
 			VkFrontFace                                          frontFace;
 			bool                                                 enableDepthTest;
 			bool                                                 enableDepthWrite;
+			bool                                                 hasWireframeVariant;
 			VkCompareOp                                          depthCompareOp;
 			gsl::span<const VkPipelineColorBlendAttachmentState> attachmentBlendStates;
 			gsl::span<const VkDynamicState>                      dynamicState;
 		};
 		
-		inline void Bind(CommandBuffer& cb) const
+		enum class BindModes
 		{
-			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pipeline);
-		}
+			Default,
+			Wireframe
+		};
+		
+		void Bind(CommandBuffer& cb, BindModes mode) const;
 		
 		inline VkPipelineLayout GetLayout() const
 		{
@@ -43,5 +47,6 @@ namespace MCR
 	private:
 		VkHandle<VkPipelineLayout> m_pipelineLayout;
 		VkHandle<VkPipeline> m_pipeline;
+		VkHandle<VkPipeline> m_wireframePipeline;
 	};
 }
