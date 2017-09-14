@@ -102,11 +102,11 @@ namespace MCR
 						{
 							renderer.SetWireframe(!renderer.Wireframe());
 						}
-						if (event.key.keysym.scancode == SDL_SCANCODE_F8)
+						else if (event.key.keysym.scancode == SDL_SCANCODE_F8)
 						{
 							renderer.SetFrustumFrozen(!renderer.IsFrustumFrozen());
 						}
-						if (event.key.keysym.scancode == SDL_SCANCODE_F10)
+						else if (event.key.keysym.scancode == SDL_SCANCODE_F10)
 						{
 							relativeMouseMode = !relativeMouseMode;
 							SDL_SetRelativeMouseMode(relativeMouseMode ? SDL_TRUE : SDL_FALSE);

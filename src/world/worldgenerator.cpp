@@ -105,12 +105,17 @@ namespace MCR
 	std::uniform_real_distribution<double> caveWormWorldPosXZDist(0, Region::Size);
 	std::uniform_real_distribution<double> caveWormWorldPosYDist(0, averageSurfaceLevel);
 	
-	//Minimum and maximum radius (in blocks) for caves.
+	std::uniform_int_distribution<int> numCaveWormsDist(0, 2);
+	
+	//Minimum and maximum radius for caves (in blocks).
 	const double caveMinRadius = 2.0;
 	const double caveMaxRadius = 3.0;
 	
 	//Distribution for the length of caves (in blocks)
-	std::uniform_int_distribution<int> caveWormLengthDist(100, 200);
+	std::uniform_int_distribution<int> caveWormLengthDist(150, 250);
+	
+	//The chance for a region to spawn a cave.
+	const double caveGenerateProbability = 0.3;
 	
 	//Determines how quickly caves change direction.
 	const double caveDirectionProgressRate = 0.01;
@@ -279,8 +284,8 @@ namespace MCR
 			}
 		}
 		
-		//for (int i = numCaveWormsDist(randEngine); i > 0; i--)
-		if (std::uniform_real_distribution<double>()(randEngine) < 0.2)
+		// ** Spawns a new cave in this region if 
+		if (std::uniform_real_distribution<double>()(randEngine) < caveGenerateProbability)
 		{
 			CaveWorm worm;
 			

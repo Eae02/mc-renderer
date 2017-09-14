@@ -16,18 +16,22 @@ namespace MCR
 		explicit RegionGenerateThread(size_t numThreads);
 		~RegionGenerateThread();
 		
-		void BeginRegistering();
+		inline void BeginRegistering()
+		{
+			m_inputMutex.lock();
+			m_anyEnqueued = false;
+		}
 		
 		void EndRegistering();
 		
-		//Only call between BeginPolling and EndPolling.
+		//Only call between BeginRegistering and EndRegistering.
 		inline void Register(RegionCoordinate coordinate)
 		{
 			m_regionsToGenerate.push_back(coordinate);
 			m_anyEnqueued = true;
 		}
 		
-		//Only call between BeginPolling and EndPolling.
+		//Only call between BeginRegistering and EndRegistering.
 		inline void SetCameraRegion(RegionCoordinate coordinate)
 		{
 			m_cameraRegion = coordinate;

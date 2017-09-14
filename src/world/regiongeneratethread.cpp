@@ -26,12 +26,6 @@ namespace MCR
 		}
 	}
 	
-	void RegionGenerateThread::BeginRegistering()
-	{
-		m_inputMutex.lock();
-		m_anyEnqueued = false;
-	}
-	
 	void RegionGenerateThread::EndRegistering()
 	{
 		m_inputMutex.unlock();

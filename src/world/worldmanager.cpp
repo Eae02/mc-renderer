@@ -8,7 +8,7 @@
 namespace MCR
 {
 	WorldManager::WorldManager()
-	    : m_generateThread(1)
+	    : m_generateThread(4)
 	{
 		SetRenderDistance(10);
 	}
