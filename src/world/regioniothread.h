@@ -36,6 +36,12 @@ namespace MCR
 			m_anyEnqueued = true;
 		}
 		
+		//Only call between BeginPolling and EndPolling.
+		inline size_t GetNumEnqueuedForLoad() const
+		{
+			return m_regionsToLoad.size();
+		}
+		
 		template <typename CallbackTp>
 		void IterateLoadedRegions(CallbackTp callback)
 		{

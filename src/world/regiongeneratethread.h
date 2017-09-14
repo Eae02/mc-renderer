@@ -23,8 +23,14 @@ namespace MCR
 		//Only call between BeginPolling and EndPolling.
 		inline void Register(RegionCoordinate coordinate)
 		{
-			m_regionsToGenerate.push(coordinate);
+			m_regionsToGenerate.push_back(coordinate);
 			m_anyEnqueued = true;
+		}
+		
+		//Only call between BeginPolling and EndPolling.
+		inline void SetCameraRegion(RegionCoordinate coordinate)
+		{
+			m_cameraRegion = coordinate;
 		}
 		
 		template <typename CallbackTp>
@@ -50,7 +56,9 @@ namespace MCR
 		bool m_anyEnqueued = false;
 		bool m_exit = false;
 		
-		std::queue<RegionCoordinate> m_regionsToGenerate;
+		RegionCoordinate m_cameraRegion;
+		
+		std::vector<RegionCoordinate> m_regionsToGenerate;
 		
 		std::condition_variable m_signal;
 		

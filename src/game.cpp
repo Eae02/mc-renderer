@@ -27,7 +27,6 @@ namespace MCR
 		loadContext.End();
 		
 		RegisterBlockTypes();
-		//BlockType::LoadBlockTypesFromDirectory(MCR::GetResourcePath() / "blocks", BlocksTextureManager::GetInstance());
 	}
 	
 	void UpdateGame(float dt, const InputState& inputState)

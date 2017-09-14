@@ -10,6 +10,13 @@ namespace MCR
 	{
 		int64_t x;
 		int64_t z;
+		
+		inline static uint64_t DistanceSq(const RegionCoordinate& a, const RegionCoordinate& b)
+		{
+			int64_t dx = a.x - b.x;
+			int64_t dz = a.z - b.z;
+			return static_cast<uint64_t>(dx * dx) + static_cast<uint64_t>(dz * dz);
+		}
 	};
 	
 	class Region
@@ -58,7 +65,7 @@ namespace MCR
 		void Serialize(char* data) const;
 		
 		static constexpr int Size = 16;
-		static constexpr int Height = 128;
+		static constexpr int Height = 256;
 		static constexpr int BlockCount = Size * Size * Height;
 		static constexpr size_t DataBufferBytes = BlockCount * (sizeof(uint8_t) + sizeof(uint8_t));
 		

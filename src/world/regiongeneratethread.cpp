@@ -53,8 +53,22 @@ namespace MCR
 			if (m_exit)
 				break;
 			
-			RegionCoordinate regionCoord = m_regionsToGenerate.front();
-			m_regionsToGenerate.pop();
+			//Selects the closest region to the camera for generation.
+			ssize_t selectedIndex = -1;
+			uint64_t selectedRegionDistFromCamera = 0;
+			for (size_t i = 0; i < m_regionsToGenerate.size(); i++)
+			{
+				uint64_t distFromCamera = RegionCoordinate::DistanceSq(m_regionsToGenerate[i], m_cameraRegion);
+				if (selectedRegionDistFromCamera > distFromCamera || selectedIndex == -1)
+				{
+					selectedIndex = i;
+					selectedRegionDistFromCamera = distFromCamera;
+				}
+			}
+			
+			RegionCoordinate regionCoord = m_regionsToGenerate[selectedIndex];
+			m_regionsToGenerate[selectedIndex] = m_regionsToGenerate.back();
+			m_regionsToGenerate.pop_back();
 			
 			inputLock.unlock();
 			

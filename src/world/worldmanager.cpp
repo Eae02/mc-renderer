@@ -10,11 +10,16 @@ namespace MCR
 	WorldManager::WorldManager()
 	    : m_generateThread(1)
 	{
-		SetRenderDistance(10);
+		SetRenderDistance(20);
 	}
+	
+	constexpr bool enableIO = false;
 	
 	void WorldManager::SaveAll(bool wait)
 	{
+		if (!enableIO)
+			return;
+		
 		m_ioThread->BeginRegistering();
 		
 		for (int i = m_regionTableSize * m_regionTableSize - 1; i >= 0; i--)
@@ -78,12 +83,9 @@ namespace MCR
 		const int64_t toGlobalX = currentRegionX - m_loadDistance;
 		const int64_t toGlobalZ = currentRegionZ - m_loadDistance;
 		
-		constexpr bool enableIO = false;
-		
 		if (shiftX != 0 || shiftZ != 0 || !m_hasUpdated)
 		{
-			m_ioThread->BeginRegistering();
-			m_generateThread.BeginRegistering();
+			std::vector<RegionCoordinate> regionsToLoad;
 			
 			//Saves and frees regions that have been shifted off the region table
 			//or moves the region to it's new location if hasn't been shifted off.
@@ -101,9 +103,6 @@ namespace MCR
 						
 						if (destIndex == -1)
 						{
-							if (region->m_state == RegionStates::Building)
-								throw std::runtime_error("Building");
-							
 							//This region has been pushed off the region table
 							if (region->m_region.HasData() && enableIO)
 							{
@@ -119,6 +118,11 @@ namespace MCR
 					}
 				}
 			}
+			
+			m_ioThread->BeginRegistering();
+			m_generateThread.BeginRegistering();
+			
+			m_generateThread.SetCameraRegion({ currentRegionX, currentRegionZ });
 			
 			//Loads/generates the region if it was previouly out of bounds or if this is the first update
 			//after changing world.
@@ -173,10 +177,6 @@ namespace MCR
 				regionEntry->m_state = RegionStates::LoadedNotBuilt;
 				regionEntry->m_region = std::move(region);
 			}
-			else
-			{
-				Log("Loaded region rejected (", region.GetX(), ", ", region.GetZ(), ").");
-			}
 		};
 		
 		m_ioThread->IterateLoadedRegions(ProcessNewRegion);
@@ -204,10 +204,6 @@ namespace MCR
 				regionEntry->m_state = RegionStates::UpToDate;
 				regionEntry->m_newMeshData.m_buffer = std::move(dataBuffer);
 				regionEntry->m_mesh.SetData(std::move(regionEntry->m_newMeshData));
-			}
-			else
-			{
-				Log("Built region rejected (", x, ", ", z, ").");
 			}
 		});
 		
