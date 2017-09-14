@@ -60,7 +60,7 @@ namespace MCR
 		
 		inline glm::vec2 GetCursorDelta() const
 		{
-			return m_currentFrame.m_cursorPos - m_prevFrame.m_cursorPos;
+			return m_cursorDelta;
 		}
 		
 	private:
@@ -73,5 +73,7 @@ namespace MCR
 		
 		FrameState m_currentFrame;
 		FrameState m_prevFrame;
+		
+		glm::vec2 m_cursorDelta;
 	};
 }

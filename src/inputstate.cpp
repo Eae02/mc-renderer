@@ -16,12 +16,16 @@ namespace MCR
 	void InputState::NewFrame()
 	{
 		m_prevFrame = m_currentFrame;
+		m_cursorDelta = glm::vec2();
 	}
 	
 	void InputState::MouseMotionEvent(const SDL_MouseMotionEvent& event)
 	{
 		m_currentFrame.m_cursorPos.x = event.x;
 		m_currentFrame.m_cursorPos.y = event.y;
+		
+		m_cursorDelta.x += event.xrel;
+		m_cursorDelta.y += event.yrel;
 	}
 	
 	void InputState::MouseButtonEvent(uint8_t button, bool newState)
