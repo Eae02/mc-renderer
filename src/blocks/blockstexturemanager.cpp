@@ -35,7 +35,7 @@ namespace MCR
 		std::string line;
 		while (std::getline(stream, line))
 		{
-			if (line.empty())
+			if (line.empty() || line[0] == '#')
 				continue;
 			
 			fs::path texturePath = parentPath / line;

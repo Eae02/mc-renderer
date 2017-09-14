@@ -23,6 +23,12 @@ namespace MCR
 		m_heightPerlin.SetOctaveCount(4);
 		m_heightPerlin.SetNoiseQuality(noise::QUALITY_STD);
 		
+		m_terracePerlin.SetFrequency(1.0 / 4.0);
+		m_terracePerlin.SetLacunarity(2.0);
+		m_terracePerlin.SetPersistence(0.5);
+		m_terracePerlin.SetOctaveCount(2);
+		m_terracePerlin.SetNoiseQuality(noise::QUALITY_STD);
+		
 		m_flowerPerlin.SetFrequency(16);
 		m_flowerPerlin.SetLacunarity(2.0);
 		m_flowerPerlin.SetPersistence(0.5);
@@ -53,6 +59,8 @@ namespace MCR
 		
 		m_heightPerlin.SetSeed(rand());
 		m_flowerPerlin.SetSeed(rand());
+		m_terracePerlin.SetSeed(rand());
+		
 		for (noise::module::Perlin& cavePerlin : m_caveDirectionPerlin)
 		{
 			cavePerlin.SetSeed(rand());
@@ -80,7 +88,7 @@ namespace MCR
 	const int averageSurfaceLevel = 150;
 	
 	//Surface level range (in blocks) at minimum roughness.
-	const double minSurfaceLevelRange = 5;
+	const double minSurfaceLevelRange = 10;
 	
 	//Surface level range (in blocks) at maximum roughness.
 	const double maxSurfaceLevelRange = 25;
@@ -109,6 +117,15 @@ namespace MCR
 	
 	//Determines how quickly caves change radius.
 	const double caveRadiusProgressRate = 0.05;
+	
+	//Number of terraces.
+	const int terraceCount = 2;
+	
+	//Height (in blocks) difference between each terrace.
+	const double terraceHeight = 8;
+	
+	//Slope for the transition between terraces.
+	const double terraceSlope = 10;
 	
 	//Progresses a single cave worm (and carves out blocks) until it escapes the region or reaches it's target length.
 	void WorldGenerator::ProcessCaveWorm(WorldGenerator::CaveWorm worm, Region& region)
@@ -209,6 +226,14 @@ namespace MCR
 				
 				int blocksSinceAir = 0;
 				
+				double surfaceLevelRange = glm::mix(minSurfaceLevelRange, maxSurfaceLevelRange,
+				                                    m_roughnessPerlin.GetValue(px, 0, pz) * 0.5 + 0.5);
+				
+				double terraceVal = (m_terracePerlin.GetValue(px, 0, pz) * 0.5 + 0.5) * terraceCount;
+				const double heightCurrentTerrace = glm::clamp(terraceSlope * (glm::fract(terraceVal) - 0.5) + 0.5, 0.0, 1.0);
+				
+				double terraceOffset = (glm::floor(terraceVal) + heightCurrentTerrace - (terraceCount / 2.0)) * terraceHeight;
+				
 				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y >= 0; y--)
 				{
 					Region::BlockEntry& block = region.At(lx, y, lz);
@@ -217,11 +242,8 @@ namespace MCR
 					
 					double py = y / PerlinDiv;
 					
-					double surfaceLevelRange = glm::mix(minSurfaceLevelRange, maxSurfaceLevelRange,
-					                                    m_roughnessPerlin.GetValue(px, py, pz) * 0.5 + 0.5);
-					
 					double heightVal = m_heightPerlin.GetValue(px, py, pz);
-					heightVal += (y - averageSurfaceLevel) / surfaceLevelRange;
+					heightVal += (y - (averageSurfaceLevel + terraceOffset)) / surfaceLevelRange;
 					
 					if (heightVal > 0)
 					{
