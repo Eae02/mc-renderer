@@ -34,15 +34,25 @@ namespace MCR
 		}
 		
 		template <typename CallbackTp>
-		void IterateGeneratedRegions(CallbackTp callback)
+		bool IterateGeneratedRegions(CallbackTp callback)
 		{
 			std::lock_guard<std::mutex> lock(m_outputMutex);
+			
+			if (m_generatedRegions.empty())
+				return false;
 			
 			for (Region& region : m_generatedRegions)
 			{
 				callback(region);
 			}
 			m_generatedRegions.clear();
+			
+			return true;
+		}
+		
+		inline void ProcessFutureRegions(class WorldManager& worldManager)
+		{
+			m_generator.ProcessFutureRegions(worldManager);
 		}
 		
 	private:

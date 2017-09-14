@@ -10,7 +10,7 @@ namespace MCR
 	WorldManager::WorldManager()
 	    : m_generateThread(1)
 	{
-		SetRenderDistance(20);
+		SetRenderDistance(10);
 	}
 	
 	constexpr bool enableIO = false;
@@ -180,7 +180,10 @@ namespace MCR
 		};
 		
 		m_ioThread->IterateLoadedRegions(ProcessNewRegion);
-		m_generateThread.IterateGeneratedRegions(ProcessNewRegion);
+		if (m_generateThread.IterateGeneratedRegions(ProcessNewRegion))
+		{
+			m_generateThread.ProcessFutureRegions(*this);
+		}
 		
 		const glm::vec2 regionNeighborDirs[] = 
 		{
@@ -363,6 +366,14 @@ namespace MCR
 		}
 	}
 	
+	WorldManager::RegionEntry* WorldManager::RegionEntryFromGlobalCoordinate(RegionCoordinate coordinate)
+	{
+		const int index = GetRegionIndex(coordinate.x - m_centerRegionX + m_loadDistance,
+		                                 coordinate.z - m_centerRegionZ + m_loadDistance);
+		
+		return index == -1 ? nullptr : m_regions[0][index];
+	}
+	
 	WorldManager::RegionEntry* WorldManager::AllocateRegionEntry()
 	{
 #ifndef MCR_DEBUG
@@ -394,6 +405,26 @@ namespace MCR
 		else
 		{
 			m_ioThread = std::make_unique<RegionIOThread>(*m_world);
+		}
+	}
+	
+	Region* WorldManager::GetRegion(RegionCoordinate coordinate)
+	{
+		RegionEntry* entry = RegionEntryFromGlobalCoordinate(coordinate);
+		
+		if (entry == nullptr || entry->m_state == RegionStates::Loading)
+			return nullptr;
+		
+		return &entry->m_region;
+	}
+	
+	void WorldManager::MarkOutOfDate(RegionCoordinate coordinate)
+	{
+		RegionEntry* entry = RegionEntryFromGlobalCoordinate(coordinate);
+		
+		if (entry != nullptr && entry->m_state == RegionStates::UpToDate)
+		{
+			entry->m_state = RegionStates::OutOfDate;
 		}
 	}
 }

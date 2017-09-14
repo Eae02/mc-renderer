@@ -7,7 +7,7 @@
 namespace MCR
 {
 	Camera::Camera()
-	    : m_position(0, 70, 0), m_rotation(0, 0), m_velocity(0)
+	    : m_position(0, 160, 0), m_rotation(0, 0), m_velocity(0)
 	{
 		
 	}

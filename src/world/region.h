@@ -11,6 +11,16 @@ namespace MCR
 		int64_t x;
 		int64_t z;
 		
+		inline bool operator==(RegionCoordinate other) const
+		{
+			return x == other.x && z == other.z;
+		}
+		
+		inline bool operator!=(RegionCoordinate other) const
+		{
+			return x != other.x || z != other.z;
+		}
+		
 		inline static uint64_t DistanceSq(const RegionCoordinate& a, const RegionCoordinate& b)
 		{
 			int64_t dx = a.x - b.x;

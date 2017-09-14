@@ -37,6 +37,10 @@ namespace MCR
 		
 		void SetWorld(std::unique_ptr<World> world);
 		
+		Region* GetRegion(RegionCoordinate coordinate);
+		
+		void MarkOutOfDate(RegionCoordinate coordinate);
+		
 		inline const Camera& GetCamera() const
 		{
 			return m_camera;
@@ -74,6 +78,8 @@ namespace MCR
 			RegionMesh m_mesh;
 			RegionMesh::Data m_newMeshData;
 		};
+		
+		RegionEntry* RegionEntryFromGlobalCoordinate(RegionCoordinate coordinate);
 		
 		RegionEntry* AllocateRegionEntry();
 		void FreeRegionEntry(RegionEntry* entry);
