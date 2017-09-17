@@ -11,24 +11,24 @@ layout(binding=0) uniform RenderSettingsUB
 	RenderSettings renderSettings;
 };
 
-const float rayleighBrightness = 3.0;
-const float rayleighStrength = 700;
-const float rayleighCollectionPower = 1.0002;
-const float rayleighCollectionScale = 0.003;
+const float rayleighBrightness = 1.5;
+const float rayleighStrength = 2000;
+const float rayleighCollectionPower = 1.0005;
+const float rayleighCollectionScale = 0.002;
 
-const float mieDistribution = 15;
-const float mieBrightness = 1.5;
-const float mieStrength = 500;
-const float mieCollectionScale = 0.02;
-const float mieCollectionPower = 1.0002;
+const float mieDistribution = 10;
+const float mieBrightness = 0.1;
+const float mieStrength = 1000;
+const float mieCollectionScale = 0.05;
+const float mieCollectionPower = 1.1;
 
-const float spotBrightness = 200;
-const float scatterStrength = 700;
+const float spotBrightness = 100;
+const float scatterStrength = 1000;
 
-const float atmosphereRadius = 10000;
-const float surfaceLevelPercentage = 0.97;
+const float atmosphereRadius = 100000;
+const float surfaceLevelPercentage = 0.995;
 const float occlusionSmoothness = 0.1;
-const float blockDepthScale = 0.5;
+const float blockDepthScale = 0.1;
 const float exposure = 1.0f;
 
 const vec3 absorbtionProfile = vec3(0.18867780436772762, 0.4978442963618773, 0.6616065586417131);
@@ -110,12 +110,14 @@ void main()
 	
 	float alpha = dot(eyeVector, lightDir);
 	
+	const bool sky = depth >= (1.0 - 1E-9);
+	
 	float rayleighFactor = phase(alpha, -0.01) * rayleighBrightness;
 	float mieFactor = phase(alpha, mieDistribution) * mieBrightness;
-	float spotFactor = depth > 0.999 ? smoothstep(0.0, 15.0, phase(alpha, 0.9995)) * spotBrightness : 0;
+	float spotFactor = sky ? smoothstep(0.0, 15.0, phase(alpha, 0.9995)) * spotBrightness : 0;
 	
 	float eyeDepth = min(linDepth * blockDepthScale * (atmosphereRadius / ZFar), getAtmosphericTravelDistance(cameraPosition, eyeVector));
-	float eyeRayOcc = depth > 0.999 ? getRayOcclusionAmount(cameraPosition, eyeVector, 0.85) : 1.0;
+	float eyeRayOcc = sky ? getRayOcclusionAmount(cameraPosition, eyeVector, 0.85) : 1.0;
 	
 	float sampleStep = eyeDepth / float(sampleCount);
 	
