@@ -110,6 +110,7 @@ namespace MCR
 				continue;
 			
 			bool supportsGraphics = queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+			bool supportsCompute = queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT;
 			
 			auto MaybeUseQueueFamily = [&] (int type)
 			{
@@ -121,8 +122,8 @@ namespace MCR
 				}
 			};
 			
-			//Checks for graphics & present queues
-			if (supportsGraphics)
+			//Checks for graphics queues (which must also be able to do compute and present)
+			if (supportsGraphics && supportsCompute)
 			{
 				VkBool32 supportsPresentation;
 				vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &supportsPresentation);
@@ -134,7 +135,7 @@ namespace MCR
 			}
 			
 			//Checks for compute queues
-			if (queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+			if (supportsCompute)
 			{
 				MaybeUseQueueFamily(QUEUE_FAMILY_COMPUTE);
 			}
@@ -351,6 +352,7 @@ namespace MCR
 		enabledFeatures.fullDrawIndexUint32 = VK_TRUE;
 		enabledFeatures.samplerAnisotropy = VK_TRUE;
 		enabledFeatures.depthClamp = VK_TRUE;
+		enabledFeatures.fillModeNonSolid = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
 		
 		vulkan.limits.hasMultiDrawIndirect = enabledFeatures.multiDrawIndirect == VK_TRUE;

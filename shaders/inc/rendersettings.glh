@@ -4,8 +4,12 @@
 struct RenderSettings
 {
 	mat4 viewProj;
+	mat4 invViewProj;
 	vec3 cameraPos;
 	float time;
 };
+
+const float ZNear = 0.1;
+const float ZFar = 1000.0;
 
 #endif

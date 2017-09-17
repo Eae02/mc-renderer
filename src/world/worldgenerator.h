@@ -28,10 +28,19 @@ namespace MCR
 			int m_distLeft;
 		};
 		
+		struct FutureBlockPlacement
+		{
+			uint8_t m_x;
+			uint8_t m_y;
+			uint8_t m_z;
+			Region::BlockEntry m_block;
+		};
+		
 		struct FutureRegion
 		{
 			RegionCoordinate m_coordinate;
 			std::vector<CaveWorm> m_worms;
+			std::vector<FutureBlockPlacement> m_blockPlacements;
 		};
 		
 		void ProcessCaveWorm(CaveWorm worm, Region& region);

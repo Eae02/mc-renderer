@@ -26,6 +26,8 @@ namespace MCR
 		return { &element, 1 };
 	}
 	
+	bool IsAttachedToDebugger();
+	
 	namespace Detail
 	{
 		extern std::mutex logStreamMutex;

@@ -109,6 +109,9 @@ namespace MCR
 								m_ioThread->RegisterForSaving(std::move(region->m_region));
 							}
 							
+							if (region->m_state == RegionStates::Building)
+								throw std::runtime_error("Building");
+							
 							FreeRegionEntry(region);
 						}
 						else

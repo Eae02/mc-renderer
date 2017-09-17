@@ -1,4 +1,4 @@
-#include "renderer.h"
+﻿#include "renderer.h"
 #include "frustum.h"
 #include "rendererframebuffer.h"
 #include "../world/worldmanager.h"
@@ -20,7 +20,7 @@ namespace MCR
 		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		attachments[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 		
 		attachments[1].format = vulkan.depthFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -29,7 +29,7 @@ namespace MCR
 		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		
 		VkAttachmentReference colorAttachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 		VkAttachmentReference depthStencilAttachmentRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
@@ -39,11 +39,22 @@ namespace MCR
 		subpassDescriptions[0].pColorAttachments = &colorAttachmentRef;
 		subpassDescriptions[0].pDepthStencilAttachment = &depthStencilAttachmentRef;
 		
+		std::array<VkSubpassDependency, 1> subpassDependencies = { };
+		subpassDependencies[0].srcSubpass = 0;
+		subpassDependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
+		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		subpassDependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+		subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		
 		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 		renderPassCreateInfo.attachmentCount = attachments.size();
 		renderPassCreateInfo.pAttachments = attachments.data();
 		renderPassCreateInfo.subpassCount = subpassDescriptions.size();
 		renderPassCreateInfo.pSubpasses = subpassDescriptions.data();
+		renderPassCreateInfo.dependencyCount = subpassDependencies.size();
+		renderPassCreateInfo.pDependencies = subpassDependencies.data();
 		
 		VkRenderPass renderPass;
 		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));
@@ -57,18 +68,12 @@ namespace MCR
 		{
 			cb = CommandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
 		}
+		
+		m_postProcessor.SetRenderSettings(m_renderSettingsBuffer.GetBufferInfo());
 	}
 	
 	void Renderer::Render(const RenderParams& params)
 	{
-		if (m_projWidth != params.m_framebuffer->GetWidth() || m_projHeight != params.m_framebuffer->GetHeight())
-		{
-			m_projWidth = params.m_framebuffer->GetWidth();
-			m_projHeight = params.m_framebuffer->GetHeight();
-			m_projectionMatrix = glm::perspectiveFov<float>(glm::half_pi<float>(), m_projWidth, m_projHeight, 0.1f, 1000.0f);
-			m_invProjectionMatrix = glm::inverse(m_projectionMatrix);
-		}
-		
 		CommandBuffer& cb = m_commandBuffers[frameQueueIndex];
 		
 		cb.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -78,14 +83,14 @@ namespace MCR
 		const glm::mat4 viewProj = m_projectionMatrix * camera.GetViewMatrix();
 		const glm::mat4 invViewProj = camera.GetInverseViewMatrix() * m_invProjectionMatrix;
 		
-		m_renderSettingsBuffer.SetData(cb, viewProj, camera.GetPosition(), 0);
+		m_renderSettingsBuffer.SetData(cb, viewProj, invViewProj, camera.GetPosition(), params.m_time);
 		
 		if (!m_isFrustumFrozen)
 		{
 			m_frustum = Frustum(invViewProj);
 		}
 		
-		const VkRect2D renderArea = { { }, { params.m_framebuffer->GetWidth(), params.m_framebuffer->GetHeight() } };
+		const VkRect2D renderArea = { { }, { m_framebuffer->GetWidth(), m_framebuffer->GetHeight() } };
 		
 		std::array<VkClearValue, 2> clearValues;
 		SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
@@ -96,7 +101,7 @@ namespace MCR
 			/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			/* pNext           */ nullptr,
 			/* renderPass      */ *m_renderPass,
-			/* framebuffer     */ params.m_framebuffer->GetFramebuffer(),
+			/* framebuffer     */ m_framebuffer->GetFramebuffer(),
 			/* renderArea      */ renderArea,
 			/* clearValueCount */ clearValues.size(),
 			/* pClearValues    */ clearValues.data()
@@ -121,6 +126,8 @@ namespace MCR
 		
 		cb.End();
 		
+		VkCommandBuffer commandBuffers[] = { cb.GetVkCB(), m_postProcessor.GetCommandBuffer() };
+		
 		const VkSubmitInfo submitInfo = 
 		{
 			/* sType                */ VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -128,12 +135,23 @@ namespace MCR
 			/* waitSemaphoreCount   */ 0,
 			/* pWaitSemaphores      */ nullptr,
 			/* pWaitDstStageMask    */ nullptr,
-			/* commandBufferCount   */ 1,
-			/* pCommandBuffers      */ &cb.GetVkCB(),
+			/* commandBufferCount   */ ArrayLength(commandBuffers),
+			/* pCommandBuffers      */ commandBuffers,
 			/* signalSemaphoreCount */ 1,
 			/* pSignalSemaphores    */ &params.m_signalSemaphore
 		};
 		
 		vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, params.m_signalFence);
+	}
+	
+	void Renderer::FramebufferChanged(const RendererFramebuffer& framebuffer)
+	{
+		m_postProcessor.FramebufferChanged(framebuffer);
+		m_framebuffer = &framebuffer;
+		
+		m_projectionMatrix = glm::perspectiveFov<float>(glm::half_pi<float>(), framebuffer.GetWidth(),
+		                                                framebuffer.GetHeight(), 0.1f, 1000.0f);
+		
+		m_invProjectionMatrix = glm::inverse(m_projectionMatrix);
 	}
 }

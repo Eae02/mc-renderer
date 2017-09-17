@@ -9,7 +9,7 @@ namespace MCR
 	class RendererFramebuffer
 	{
 	public:
-		RendererFramebuffer() = default;
+		RendererFramebuffer();
 		
 		void Create(const class Renderer& renderer, uint32_t width, uint32_t height);
 		
@@ -20,6 +20,26 @@ namespace MCR
 		{ return m_width; }
 		inline uint32_t GetHeight() const
 		{ return m_height; }
+		
+		inline VkImage GetColorImage() const
+		{
+			return *m_colorAttachment.m_image;
+		}
+		
+		inline VkImage GetDepthImage() const
+		{
+			return *m_depthAttachment.m_image;
+		}
+		
+		inline VkImageView GetColorImageView() const
+		{
+			return *m_colorAttachment.m_imageView;
+		}
+		
+		inline VkImageView GetDepthImageView() const
+		{
+			return *m_depthAttachment.m_imageView;
+		}
 		
 		void GetPresentImage(SwapChain::PresentImage& presentImageOut) const;
 		

@@ -16,13 +16,15 @@ namespace MCR
 			return m_descriptorBufferInfo;
 		}
 		
-		void SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::vec3& cameraPosition, float time);
+		void SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::mat4& invViewProj,
+		             const glm::vec3& cameraPosition, float time);
 		
 	private:
 #pragma pack(push, 1)
 		struct Data
 		{
 			glm::mat4 m_viewProj;
+			glm::mat4 m_invViewProj;
 			glm::vec3 m_cameraPos;
 			float m_time;
 		};

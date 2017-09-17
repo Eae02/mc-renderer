@@ -12,7 +12,6 @@ namespace SwapChain
 		VkImage m_image;
 		uint32_t m_width;
 		uint32_t m_height;
-		VkImageLayout m_finalLayout;
 	};
 	
 	void Initialize();

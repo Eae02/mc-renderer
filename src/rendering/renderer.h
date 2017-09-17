@@ -6,6 +6,7 @@
 #include "rendererframebuffer.h"
 #include "rendersettingsbuffer.h"
 #include "shaders/blockshader.h"
+#include "postprocessor.h"
 
 namespace MCR
 {
@@ -18,7 +19,7 @@ namespace MCR
 		
 		struct RenderParams
 		{
-			const RendererFramebuffer* m_framebuffer;
+			float m_time;
 			VkSemaphore m_signalSemaphore;
 			VkFence m_signalFence;
 		};
@@ -50,10 +51,17 @@ namespace MCR
 			return *m_renderPass;
 		}
 		
+		inline const VkDescriptorBufferInfo& GetRenderSettingsBufferInfo() const
+		{
+			return m_renderSettingsBuffer.GetBufferInfo();
+		}
+		
 		inline void SetWorldManager(const WorldManager* worldManager)
 		{
 			m_worldManager = worldManager;
 		}
+		
+		void FramebufferChanged(const RendererFramebuffer& framebuffer);
 		
 		static constexpr VkFormat ColorAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 		
@@ -64,9 +72,13 @@ namespace MCR
 		
 		RenderSettingsBuffer m_renderSettingsBuffer;
 		
+		PostProcessor m_postProcessor;
+		
 		BlockShader m_blockShader;
 		
 		RegionRenderList m_regionRenderList;
+		
+		const RendererFramebuffer* m_framebuffer;
 		
 		std::array<CommandBuffer, MaxQueuedFrames> m_commandBuffers;
 		
@@ -75,8 +87,6 @@ namespace MCR
 		
 		bool m_wireframe = false;
 		
-		uint32_t m_projWidth = 0;
-		uint32_t m_projHeight = 0;
 		glm::mat4 m_projectionMatrix;
 		glm::mat4 m_invProjectionMatrix;
 		

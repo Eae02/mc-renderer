@@ -19,7 +19,8 @@ namespace MCR
 	static std::string_view shaderModuleNames[] = 
 	{
 		"block.vs",
-		"block.fs"
+		"block.fs",
+		"post.cs"
 	};
 	
 	void LoadShaderModules()

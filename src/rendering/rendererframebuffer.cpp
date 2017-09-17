@@ -3,9 +3,15 @@
 
 namespace MCR
 {
+	RendererFramebuffer::RendererFramebuffer()
+	{
+		
+	}
 	
 	void RendererFramebuffer::Create(const Renderer& renderer, uint32_t width, uint32_t height)
 	{
+		m_framebuffer.Reset();
+		
 		VmaMemoryRequirements memoryRequirements = { };
 		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT;
 		memoryRequirements.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -14,7 +20,7 @@ namespace MCR
 		VkImageCreateInfo colorImageCreateInfo;
 		InitImageCreateInfo(colorImageCreateInfo, VK_IMAGE_TYPE_2D, Renderer::ColorAttachmentFormat, width, height);
 		colorImageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-		                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 		
 		CheckResult(vmaCreateImage(vulkan.allocator, &colorImageCreateInfo, &memoryRequirements,
 		                           m_colorAttachment.m_image.GetCreateAddress(),
@@ -52,7 +58,6 @@ namespace MCR
 	
 	void RendererFramebuffer::GetPresentImage(SwapChain::PresentImage& presentImageOut) const
 	{
-		presentImageOut.m_finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		presentImageOut.m_width = m_width;
 		presentImageOut.m_height = m_height;
 		presentImageOut.m_image = *m_colorAttachment.m_image;

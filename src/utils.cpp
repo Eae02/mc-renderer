@@ -10,8 +10,12 @@
 #include <libgen.h>
 #include <linux/limits.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <cstring>
+#include <cstdlib>
+#include <fcntl.h>
 
 #elif defined(_WIN32)
 
@@ -96,4 +100,43 @@ namespace MCR
 		return result;
 	}
 	
+	static bool checkAttachedToDebugger = true;
+	static bool isAttachedToDebugger = false;
+	
+	bool IsAttachedToDebugger()
+	{
+		if (checkAttachedToDebugger)
+		{
+#if defined(__linux__)
+			std::array<char, 1024> buffer;
+			
+			int statusFD = open("/proc/self/status", O_RDONLY);
+			if (statusFD == -1)
+				return false;
+			
+			ssize_t numRead = read(statusFD, buffer.data(), buffer.size() - 1);
+			
+			if (numRead > 0)
+			{
+				static const char tracerPid[] = "TracerPid:";
+				char* tracerPidPos;
+				
+				buffer[numRead] = '\0';
+				tracerPidPos = std::strstr(buffer.data(), tracerPid);
+				if (tracerPidPos)
+				{
+					isAttachedToDebugger = std::atoi(tracerPidPos + sizeof(tracerPid) - 1) != 0;
+				}
+			}
+#elif defined(_WIN32)
+			isAttachedToDebugger = IsDebuggerPresent();
+#else
+			isAttachedToDebugger = false;
+#endif
+			
+			checkAttachedToDebugger = false;
+		}
+		
+		return isAttachedToDebugger;
+	}
 }

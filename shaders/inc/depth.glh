@@ -1,0 +1,11 @@
+#ifndef DEPTH_H
+#define DEPTH_H
+
+#include "rendersettings.glh"
+
+float linearizeDepth(float hDepth)
+{
+	return 2.0 * ZNear * ZFar / (ZFar + ZNear - (hDepth * (ZFar - ZNear)));
+}
+
+#endif

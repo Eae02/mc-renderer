@@ -10,7 +10,7 @@ namespace MCR
 {
 	enum
 	{
-		QUEUE_FAMILY_GRAPHICS,
+		QUEUE_FAMILY_GRAPHICS, //Must also support compute, transfer and presentation
 		QUEUE_FAMILY_COMPUTE,
 		QUEUE_FAMILY_TRANSFER,
 		QUEUE_FAMILY_COUNT

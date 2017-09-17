@@ -204,6 +204,11 @@ namespace MCR
 		{
 			ProcessCaveWorm(worm, region);
 		}
+		
+		for (const FutureBlockPlacement& blockPlacement : futureRegion.m_blockPlacements)
+		{
+			region.At(blockPlacement.m_x, blockPlacement.m_y, blockPlacement.m_z) = blockPlacement.m_block;
+		}
 	}
 	
 	Region WorldGenerator::Generate(int64_t rx, int64_t rz)
@@ -284,7 +289,7 @@ namespace MCR
 			}
 		}
 		
-		// ** Spawns a new cave in this region if 
+		// ** Potentially spawns a new cave in this region **
 		if (std::uniform_real_distribution<double>()(randEngine) < caveGenerateProbability)
 		{
 			CaveWorm worm;

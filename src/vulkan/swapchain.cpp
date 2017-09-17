@@ -122,24 +122,17 @@ namespace SwapChain
 			
 			cb.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 			
-			std::array<VkImageMemoryBarrier, 2> barriers;
-			
-			//Barrier which sets the layout of the present image to TRANSFER_SRC_OPTIMAL.
-			InitImageMemoryBarrier(barriers[0], presentImage.m_image);
-			barriers[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-			barriers[0].oldLayout = presentImage.m_finalLayout;
-			barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-			barriers[0].subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			VkImageMemoryBarrier barrier;
 			
 			//Barrier which sets the layout of the swap chain image to TRANSFER_DST_OPTIMAL.
-			InitImageMemoryBarrier(barriers[1], swapChainImages[i]);
-			barriers[1].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			barriers[1].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			barriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			barriers[1].subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+			InitImageMemoryBarrier(barrier, swapChainImages[i]);
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 			
 			cb.PipelineBarrier(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-			                   { }, { }, barriers);
+			                   { }, { }, SingleElementSpan(barrier));
 			
 			const VkImageBlit blitRegion = 
 			{
@@ -148,20 +141,16 @@ namespace SwapChain
 				/* dstSubresource */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
 				/* dstOffsets[2]  */ { { 0, 0, 0 }, { dimensions.width, dimensions.height, 1 } }
 			};
-			cb.BlitImage(presentImage.m_image, swapChainImages[i], blitRegion, VK_FILTER_NEAREST);
+			cb.BlitImage(presentImage.m_image, VK_IMAGE_LAYOUT_GENERAL, swapChainImages[i],
+			             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blitRegion, VK_FILTER_NEAREST);
 			
-			barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-			barriers[0].dstAccessMask = 0;
-			barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-			barriers[0].newLayout = presentImage.m_finalLayout;
-			
-			barriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			barriers[1].dstAccessMask = 0;
-			barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			barriers[1].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = 0;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 			
 			cb.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
-			                   { }, { }, barriers);
+			                   { }, { }, SingleElementSpan(barrier));
 			
 			cb.End();
 		}

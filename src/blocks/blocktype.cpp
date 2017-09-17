@@ -33,9 +33,9 @@ namespace MCR
 		
 		blockType.m_name = std::move(name);
 		
-		std::transform(MAKE_RANGE(texConfig.m_textures), blockType.m_textureIndices, [] (std::string_view name)
+		std::transform(MAKE_RANGE(texConfig.m_textures), blockType.m_textureIndices, [] (std::string_view texName)
 		{
-			return BlocksTextureManager::GetInstance().FindTextureIndex(name);
+			return BlocksTextureManager::GetInstance().FindTextureIndex(texName);
 		});
 	}
 	

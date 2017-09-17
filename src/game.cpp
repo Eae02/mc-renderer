@@ -4,6 +4,7 @@
 #include "vulkan/vkutils.h"
 #include "inputstate.h"
 #include "world/worldmanager.h"
+#include "rendering/postprocessor.h"
 #include "rendering/renderer.h"
 #include "rendering/rendererframebuffer.h"
 
@@ -36,8 +37,16 @@ namespace MCR
 	
 	void RunGameLoop(SDL_Window* window)
 	{
-		bool relativeMouseMode = true;
-		SDL_SetRelativeMouseMode(SDL_TRUE);
+		bool relativeMouseMode = false;
+		
+#ifdef MCR_DEBUG
+		//Don't hide the mouse by default if attached to a debugger.
+		if (!IsAttachedToDebugger())
+#endif
+		{
+			relativeMouseMode = true;
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+		}
 		
 		VkHandle<VkFence> fences[MaxQueuedFrames];
 		VkHandle<VkSemaphore> signalSemaphores[MaxQueuedFrames];
@@ -47,6 +56,7 @@ namespace MCR
 			signalSemaphores[i] = CreateVkSemaphore();
 		}
 		
+		auto startTime = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds lastFrameTime = std::chrono::nanoseconds::zero();
 		
 		int cursorX, cursorY;
@@ -70,6 +80,7 @@ namespace MCR
 		while (true)
 		{
 			auto frameBeginTime = std::chrono::high_resolution_clock::now();
+			float timeF = std::chrono::duration_cast<std::chrono::nanoseconds>(frameBeginTime - startTime).count() * 1E-9f;
 			
 			inputState.NewFrame();
 			
@@ -143,6 +154,8 @@ namespace MCR
 				
 				framebuffer.Create(renderer, drawableWidth, drawableHeight);
 				
+				renderer.FramebufferChanged(framebuffer);
+				
 				SwapChain::PresentImage presentImage;
 				framebuffer.GetPresentImage(presentImage);
 				SwapChain::SetPresentImage(presentImage);
@@ -154,7 +167,7 @@ namespace MCR
 			ProcessVulkanDestroyList();
 			
 			VkSemaphore signalSemaphore = *signalSemaphores[frameQueueIndex];
-			renderer.Render({ &framebuffer, signalSemaphore, *fences[frameQueueIndex] });
+			renderer.Render({ timeF, signalSemaphore, *fences[frameQueueIndex] });
 			
 			SwapChain::Present(signalSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 			

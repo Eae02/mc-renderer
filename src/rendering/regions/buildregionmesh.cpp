@@ -10,7 +10,7 @@ namespace MCR
 #ifdef MCR_DEBUG
 		if (params.m_sliceOffsets.size() != RegionMesh::NumSlices)
 		{
-			throw std::runtime_error("Invalid number of slice offsets passed to BuildRegionMesh.");
+			throw std::invalid_argument("Invalid number of slice offsets passed to BuildRegionMesh.");
 		}
 #endif
 		

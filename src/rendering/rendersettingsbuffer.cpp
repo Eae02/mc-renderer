@@ -57,10 +57,11 @@ namespace MCR
 		};
 	}
 	
-	void RenderSettingsBuffer::SetData(CommandBuffer& cb, const glm::mat4& viewProj,
+	void RenderSettingsBuffer::SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::mat4& invViewProj,
 	                                   const glm::vec3& cameraPosition, float time)
 	{
 		m_data[frameQueueIndex].m_viewProj = viewProj;
+		m_data[frameQueueIndex].m_invViewProj = invViewProj;
 		m_data[frameQueueIndex].m_cameraPos = cameraPosition;
 		m_data[frameQueueIndex].m_time = time;
 		

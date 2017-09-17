@@ -36,10 +36,12 @@ namespace MCR
 			return m_commandBuffer;
 		}
 		
-		inline void Begin(VkCommandBufferUsageFlags usageFlags)
+		inline void Begin(VkCommandBufferUsageFlags usageFlags,
+		                  const VkCommandBufferInheritanceInfo* inheritanceInfo = nullptr)
 		{
 			VkCommandBufferBeginInfo beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 			beginInfo.flags = usageFlags;
+			beginInfo.pInheritanceInfo = inheritanceInfo;
 			CheckResult(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
 		}
 		
@@ -157,10 +159,23 @@ namespace MCR
 			               dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, filter);
 		}
 		
+		inline void BlitImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+		                      VkImageLayout dstImageLayout, const VkImageBlit& region, VkFilter filter)
+		{
+			vkCmdBlitImage(m_commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, 1, &region, filter);
+		}
+		
 		inline void BlitImage(VkImage srcImage, VkImage dstImage, gsl::span<const VkImageBlit> regions, VkFilter filter)
 		{
 			vkCmdBlitImage(m_commandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			               dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data(), filter);
+		}
+		
+		inline void BlitImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+		                      VkImageLayout dstImageLayout, gsl::span<const VkImageBlit> regions, VkFilter filter)
+		{
+			vkCmdBlitImage(m_commandBuffer, srcImage, srcImageLayout, dstImage,
+			               dstImageLayout, regions.size(), regions.data(), filter);
 		}
 		
 		inline void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, const VkBufferImageCopy& region)
@@ -292,6 +307,11 @@ namespace MCR
 		inline void ExecuteCommands(const CommandBuffer& commandBuffer)
 		{
 			vkCmdExecuteCommands(m_commandBuffer, 1, &commandBuffer.m_commandBuffer);
+		}
+		
+		inline void ExecuteCommands(gsl::span<const VkCommandBuffer> commandBuffers)
+		{
+			vkCmdExecuteCommands(m_commandBuffer, commandBuffers.size(), commandBuffers.data());
 		}
 		
 	private:
