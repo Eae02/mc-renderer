@@ -3,7 +3,7 @@ FLAGS=-V
 
 OUT_PATH=../res/spv
 
-SHADERS=block.vs block.fs post.cs
+SHADERS=block.vs block.fs post.cs ui.vs ui.fs
 HEADER_FILES=$(wildcard inc/*.glh)
 
 all: $(addsuffix .spv,$(addprefix $(OUT_PATH)/,$(SHADERS)))

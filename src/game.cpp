@@ -4,9 +4,12 @@
 #include "vulkan/vkutils.h"
 #include "inputstate.h"
 #include "world/worldmanager.h"
+#include "ui/font.h"
+#include "ui/uigraphicscontext.h"
+#include "ui/uidrawlist.h"
 #include "rendering/postprocessor.h"
 #include "rendering/renderer.h"
-#include "rendering/rendererframebuffer.h"
+#include "rendering/framebuffer.h"
 
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
@@ -16,10 +19,14 @@ namespace MCR
 {
 	std::unique_ptr<WorldManager> worldManager;
 	
+	std::unique_ptr<Font> standardFont;
+	
 	void Initialize()
 	{
 		LoadContext loadContext;
 		loadContext.Begin();
+		
+		standardFont = std::make_unique<Font>(Font::Render(GetResourcePath() / "font.ttf", 16, loadContext));
 		
 		//Loads block textures
 		const fs::path blocksTxtPath = GetResourcePath() / "textures" / "blocks" / "blocks.txt";
@@ -70,7 +77,13 @@ namespace MCR
 		Initialize();
 		
 		Renderer renderer;
-		RendererFramebuffer framebuffer;
+		PostProcessor postProcessor;
+		UIGraphicsContext uiGraphicsContext;
+		Framebuffer framebuffer;
+		
+		UIDrawList uiDrawList;
+		
+		postProcessor.SetRenderSettings(renderer.GetRenderSettingsBufferInfo());
 		
 		worldManager = std::make_unique<WorldManager>();
 		renderer.SetWorldManager(worldManager.get());
@@ -152,9 +165,10 @@ namespace MCR
 				
 				SwapChain::Create(true);
 				
-				framebuffer.Create(renderer, drawableWidth, drawableHeight);
+				framebuffer.Create(renderer, uiGraphicsContext, drawableWidth, drawableHeight);
 				
 				renderer.FramebufferChanged(framebuffer);
+				postProcessor.FramebufferChanged(framebuffer);
 				
 				SwapChain::PresentImage presentImage;
 				framebuffer.GetPresentImage(presentImage);
@@ -169,6 +183,33 @@ namespace MCR
 			VkSemaphore signalSemaphore = *signalSemaphores[frameQueueIndex];
 			renderer.Render({ timeF, signalSemaphore, *fences[frameQueueIndex] });
 			
+			uiDrawList.Reset();
+			uiDrawList.AddText(*standardFont, "Text Test", glm::vec2(10, 10), glm::vec4(1));
+			
+			uiGraphicsContext.Draw(uiDrawList, framebuffer);
+			
+			const VkCommandBuffer commandBuffers[] =
+			{
+				renderer.GetCommandBuffer(),
+				postProcessor.GetCommandBuffer(),
+				uiGraphicsContext.GetCommandBuffer()
+			};
+			
+			const VkSubmitInfo submitInfo = 
+			{
+				/* sType                */ VK_STRUCTURE_TYPE_SUBMIT_INFO,
+				/* pNext                */ nullptr,
+				/* waitSemaphoreCount   */ 0,
+				/* pWaitSemaphores      */ nullptr,
+				/* pWaitDstStageMask    */ nullptr,
+				/* commandBufferCount   */ ArrayLength(commandBuffers),
+				/* pCommandBuffers      */ commandBuffers,
+				/* signalSemaphoreCount */ 1,
+				/* pSignalSemaphores    */ &signalSemaphore
+			};
+			
+			vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, *fences[frameQueueIndex]);
+			
 			SwapChain::Present(signalSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 			
 			IncrementFrameIndex();
@@ -181,6 +222,7 @@ namespace MCR
 		vkDeviceWaitIdle(vulkan.device);
 		
 		worldManager = nullptr;
+		standardFont = nullptr;
 		BlocksTextureManager::SetInstance(nullptr);
 		
 		ClearVulkanDestroyList();

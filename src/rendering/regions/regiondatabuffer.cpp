@@ -223,7 +223,6 @@ namespace MCR
 		        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 		
 		VmaMemoryRequirements memoryRequirements = { };
-		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT;
 		memoryRequirements.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		
 		VkBufferCreateInfo bufferCreateInfo;

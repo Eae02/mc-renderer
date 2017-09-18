@@ -1,8 +1,9 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-
 #include <mutex>
+
+#include "func.h"
 
 namespace MCR
 {
@@ -19,6 +20,12 @@ namespace MCR
 		{ return m_familyIndex; }
 		inline uint32_t GetIndex() const
 		{ return m_index; }
+		
+		inline void WaitIdle()
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+			vkQueueWaitIdle(m_queue);
+		}
 		
 	private:
 		VkQueue m_queue;

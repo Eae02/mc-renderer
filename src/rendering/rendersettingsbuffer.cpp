@@ -7,7 +7,7 @@ namespace MCR
 		// ** Creates the device buffer **
 		const VmaMemoryRequirements deviceMemoryRequirements = 
 		{
-			VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT,
+			0,
 			VMA_MEMORY_USAGE_GPU_ONLY
 		};
 		
@@ -21,7 +21,7 @@ namespace MCR
 		// ** Creates the host buffer **
 		const VmaMemoryRequirements hostMemoryRequirements = 
 		{
-			VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT | VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		

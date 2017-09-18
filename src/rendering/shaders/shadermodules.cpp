@@ -20,7 +20,9 @@ namespace MCR
 	{
 		"block.vs",
 		"block.fs",
-		"post.cs"
+		"post.cs",
+		"ui.vs",
+		"ui.fs"
 	};
 	
 	void LoadShaderModules()
@@ -63,7 +65,7 @@ namespace MCR
 		
 		if (it == shaderModules.end())
 		{
-			Log("Shader module not found '", name, ".");
+			Log("Shader module not found '", name, "'.");
 			std::terminate();
 		}
 		

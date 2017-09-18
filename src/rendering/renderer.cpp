@@ -1,6 +1,6 @@
 ﻿#include "renderer.h"
 #include "frustum.h"
-#include "rendererframebuffer.h"
+#include "framebuffer.h"
 #include "../world/worldmanager.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -68,8 +68,6 @@ namespace MCR
 		{
 			cb = CommandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
 		}
-		
-		m_postProcessor.SetRenderSettings(m_renderSettingsBuffer.GetBufferInfo());
 	}
 	
 	void Renderer::Render(const RenderParams& params)
@@ -90,7 +88,9 @@ namespace MCR
 			m_frustum = Frustum(invViewProj);
 		}
 		
-		const VkRect2D renderArea = { { }, { m_framebuffer->GetWidth(), m_framebuffer->GetHeight() } };
+		VkRect2D renderArea;
+		VkViewport viewport;
+		m_framebuffer->GetViewportAndRenderArea(renderArea, viewport);
 		
 		std::array<VkClearValue, 2> clearValues;
 		SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
@@ -101,7 +101,7 @@ namespace MCR
 			/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			/* pNext           */ nullptr,
 			/* renderPass      */ *m_renderPass,
-			/* framebuffer     */ m_framebuffer->GetFramebuffer(),
+			/* framebuffer     */ m_framebuffer->GetRendererFramebuffer(),
 			/* renderArea      */ renderArea,
 			/* clearValueCount */ clearValues.size(),
 			/* pClearValues    */ clearValues.data()
@@ -115,9 +115,7 @@ namespace MCR
 		
 		m_blockShader.Bind(cb, m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
 		
-		const VkViewport viewport = { 0, 0, renderArea.extent.width, renderArea.extent.height, 0, 1 };
 		cb.SetViewport(0, SingleElementSpan(viewport));
-		
 		cb.SetScissor(0, SingleElementSpan(renderArea));
 		
 		m_regionRenderList.Render(cb);
@@ -125,28 +123,10 @@ namespace MCR
 		cb.EndRenderPass();
 		
 		cb.End();
-		
-		VkCommandBuffer commandBuffers[] = { cb.GetVkCB(), m_postProcessor.GetCommandBuffer() };
-		
-		const VkSubmitInfo submitInfo = 
-		{
-			/* sType                */ VK_STRUCTURE_TYPE_SUBMIT_INFO,
-			/* pNext                */ nullptr,
-			/* waitSemaphoreCount   */ 0,
-			/* pWaitSemaphores      */ nullptr,
-			/* pWaitDstStageMask    */ nullptr,
-			/* commandBufferCount   */ ArrayLength(commandBuffers),
-			/* pCommandBuffers      */ commandBuffers,
-			/* signalSemaphoreCount */ 1,
-			/* pSignalSemaphores    */ &params.m_signalSemaphore
-		};
-		
-		vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, params.m_signalFence);
 	}
 	
-	void Renderer::FramebufferChanged(const RendererFramebuffer& framebuffer)
+	void Renderer::FramebufferChanged(const Framebuffer& framebuffer)
 	{
-		m_postProcessor.FramebufferChanged(framebuffer);
 		m_framebuffer = &framebuffer;
 		
 		m_projectionMatrix = glm::perspectiveFov<float>(glm::half_pi<float>(), framebuffer.GetWidth(),

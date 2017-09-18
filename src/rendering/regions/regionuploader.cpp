@@ -5,7 +5,7 @@ namespace MCR
 	RegionUploader::HostBuffer::HostBuffer(uint64_t size) : m_size(size), m_fence(CreateVkFence())
 	{
 		VmaMemoryRequirements memoryRequirements = { };
-		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT | VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT;
+		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT;
 		memoryRequirements.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 		
 		VmaAllocationInfo allocationInfo;

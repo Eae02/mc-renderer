@@ -1,19 +1,15 @@
-#include "rendererframebuffer.h"
+#include "framebuffer.h"
 #include "renderer.h"
+#include "../ui/uigraphicscontext.h"
 
 namespace MCR
 {
-	RendererFramebuffer::RendererFramebuffer()
+	void Framebuffer::Create(const Renderer& renderer, const UIGraphicsContext& uiGraphicsContext,
+	                                 uint32_t width, uint32_t height)
 	{
-		
-	}
-	
-	void RendererFramebuffer::Create(const Renderer& renderer, uint32_t width, uint32_t height)
-	{
-		m_framebuffer.Reset();
+		m_rendererFramebuffer.Reset();
 		
 		VmaMemoryRequirements memoryRequirements = { };
-		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_OWN_MEMORY_BIT;
 		memoryRequirements.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		
 		// ** Creates the color attachment image **
@@ -49,14 +45,17 @@ namespace MCR
 		CheckResult(vkCreateImageView(vulkan.device, &depthImageViewCreateInfo, nullptr,
 		                              m_depthAttachment.m_imageView.GetCreateAddress()));
 		
-		std::array<VkImageView, 2> attachments = { *m_colorAttachment.m_imageView, *m_depthAttachment.m_imageView };
-		m_framebuffer = CreateFramebuffer(renderer.GetRenderPass(), attachments, width, height);
+		std::array<VkImageView, 2> rendererAttachments = { *m_colorAttachment.m_imageView, *m_depthAttachment.m_imageView };
+		m_rendererFramebuffer = CreateFramebuffer(renderer.GetRenderPass(), rendererAttachments, width, height);
+		
+		std::array<VkImageView, 1> uiAttachments = { *m_colorAttachment.m_imageView };
+		m_uiFramebuffer = CreateFramebuffer(uiGraphicsContext.GetRenderPass(), uiAttachments, width, height);
 		
 		m_width = width;
 		m_height = height;
 	}
 	
-	void RendererFramebuffer::GetPresentImage(SwapChain::PresentImage& presentImageOut) const
+	void Framebuffer::GetPresentImage(SwapChain::PresentImage& presentImageOut) const
 	{
 		presentImageOut.m_width = m_width;
 		presentImageOut.m_height = m_height;

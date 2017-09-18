@@ -1,6 +1,6 @@
 #include "postprocessor.h"
 #include "shaders/shadermodules.h"
-#include "rendererframebuffer.h"
+#include "framebuffer.h"
 
 namespace MCR
 {
@@ -79,7 +79,7 @@ namespace MCR
 		UpdateDescriptorSets(SingleElementSpan(dsWrite));
 	}
 	
-	void PostProcessor::FramebufferChanged(const RendererFramebuffer& framebuffer)
+	void PostProcessor::FramebufferChanged(const Framebuffer& framebuffer)
 	{
 		VkWriteDescriptorSet dsWrites[2];
 		
@@ -99,7 +99,7 @@ namespace MCR
 		m_commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *m_pipelineLayout, 0, descriptorSets);
 		
 		m_commandBuffer.Dispatch(DivRoundUp(framebuffer.GetWidth(), 32u), DivRoundUp(framebuffer.GetHeight(), 32u), 1);
-		
+		/*
 		VkImageMemoryBarrier barrier;
 		InitImageMemoryBarrier(barrier, framebuffer.GetColorImage());
 		barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
@@ -109,7 +109,7 @@ namespace MCR
 		
 		m_commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 		                                VK_DEPENDENCY_BY_REGION_BIT, { }, { }, SingleElementSpan(barrier));
-		
+		*/
 		m_commandBuffer.End();
 	}
 }

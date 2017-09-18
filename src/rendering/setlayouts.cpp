@@ -24,9 +24,23 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT },
 	};
 	
+	static DSLayoutBinding UI_Sampler[] = 
+	{
+		//Sampler
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
+	};
+	
+	static DSLayoutBinding UI_Image[] = 
+	{
+		//Image
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
+	};
+	
 	void RegisterSetLayouts()
 	{
 		RegisterDescriptorSetLayout("BlockShader_Global", BlockShader_Global);
 		RegisterDescriptorSetLayout("PostProcess", PostProcess);
+		RegisterDescriptorSetLayout("UI_Sampler", UI_Sampler);
+		RegisterDescriptorSetLayout("UI_Image", UI_Image);
 	}
 }

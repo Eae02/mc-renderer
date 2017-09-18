@@ -6,15 +6,33 @@
 
 namespace MCR
 {
-	class RendererFramebuffer
+	class Framebuffer
 	{
 	public:
-		RendererFramebuffer();
+		Framebuffer() = default;
 		
-		void Create(const class Renderer& renderer, uint32_t width, uint32_t height);
+		void Create(const class Renderer& renderer, const class UIGraphicsContext& uiGraphicsContext,
+		            uint32_t width, uint32_t height);
 		
-		inline VkFramebuffer GetFramebuffer() const
-		{ return *m_framebuffer; }
+		inline VkFramebuffer GetRendererFramebuffer() const
+		{ return *m_rendererFramebuffer; }
+		
+		inline VkFramebuffer GetUIFramebuffer() const
+		{ return *m_uiFramebuffer; }
+		
+		inline void GetViewportAndRenderArea(VkRect2D& renderArea, VkViewport& viewport) const
+		{
+			renderArea.offset.x = 0;
+			renderArea.offset.y = 0;
+			renderArea.extent.width = m_width;
+			renderArea.extent.height = m_height;
+			viewport.x = 0;
+			viewport.y = 0;
+			viewport.width = m_width;
+			viewport.height = m_height;
+			viewport.minDepth = 0;
+			viewport.maxDepth = 1;
+		}
 		
 		inline uint32_t GetWidth() const
 		{ return m_width; }
@@ -54,7 +72,8 @@ namespace MCR
 		Attachment m_colorAttachment;
 		Attachment m_depthAttachment;
 		
-		VkHandle<VkFramebuffer> m_framebuffer;
+		VkHandle<VkFramebuffer> m_rendererFramebuffer;
+		VkHandle<VkFramebuffer> m_uiFramebuffer;
 		
 		uint32_t m_width;
 		uint32_t m_height;

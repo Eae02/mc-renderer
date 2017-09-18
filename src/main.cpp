@@ -7,6 +7,7 @@
 #include "rendering/regions/regiondatabuffer.h"
 #include "rendering/shaders/shadermodules.h"
 #include "rendering/setlayouts.h"
+#include "ui/font.h"
 #include "vulkan/setlayoutsmanager.h"
 
 #undef main
@@ -21,6 +22,8 @@ int main()
 		std::cerr << SDL_GetError() << "\n";
 		return 1;
 	}
+	
+	MCR::Font::InitFreetype();
 	
 	SDL_Window* window = SDL_CreateWindow("Minecraft Renderer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 	                                      WindowWidth, WindowHeight, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
@@ -54,6 +57,8 @@ int main()
 	MCR::DestroyVulkan();
 	
 	SDL_DestroyWindow(window);
+	
+	MCR::Font::DestroyFreeType();
 	
 	SDL_Quit();
 }

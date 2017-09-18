@@ -141,8 +141,7 @@ namespace SwapChain
 				/* dstSubresource */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
 				/* dstOffsets[2]  */ { { 0, 0, 0 }, { dimensions.width, dimensions.height, 1 } }
 			};
-			cb.BlitImage(presentImage.m_image, VK_IMAGE_LAYOUT_GENERAL, swapChainImages[i],
-			             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, blitRegion, VK_FILTER_NEAREST);
+			cb.BlitImage(presentImage.m_image, swapChainImages[i], blitRegion, VK_FILTER_NEAREST);
 			
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = 0;

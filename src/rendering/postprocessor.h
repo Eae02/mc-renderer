@@ -11,7 +11,7 @@ namespace MCR
 		
 		void SetRenderSettings(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
-		void FramebufferChanged(const class RendererFramebuffer& framebuffer);
+		void FramebufferChanged(const class Framebuffer& framebuffer);
 		
 		inline VkCommandBuffer GetCommandBuffer() const
 		{

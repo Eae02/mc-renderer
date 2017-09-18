@@ -3,7 +3,7 @@
 #include "../vulkan/vk.h"
 #include "frustum.h"
 #include "regionrenderlist.h"
-#include "rendererframebuffer.h"
+#include "framebuffer.h"
 #include "rendersettingsbuffer.h"
 #include "shaders/blockshader.h"
 #include "postprocessor.h"
@@ -25,6 +25,11 @@ namespace MCR
 		};
 		
 		void Render(const RenderParams& params);
+		
+		inline VkCommandBuffer GetCommandBuffer() const
+		{
+			return m_commandBuffers[frameQueueIndex].GetVkCB();
+		}
 		
 		inline void SetFrustumFrozen(bool frozen)
 		{
@@ -61,7 +66,7 @@ namespace MCR
 			m_worldManager = worldManager;
 		}
 		
-		void FramebufferChanged(const RendererFramebuffer& framebuffer);
+		void FramebufferChanged(const Framebuffer& framebuffer);
 		
 		static constexpr VkFormat ColorAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 		
@@ -78,7 +83,7 @@ namespace MCR
 		
 		RegionRenderList m_regionRenderList;
 		
-		const RendererFramebuffer* m_framebuffer;
+		const Framebuffer* m_framebuffer;
 		
 		std::array<CommandBuffer, MaxQueuedFrames> m_commandBuffers;
 		
