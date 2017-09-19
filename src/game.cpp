@@ -3,6 +3,7 @@
 #include "blocks/registerblocktypes.h"
 #include "vulkan/vkutils.h"
 #include "inputstate.h"
+#include "timemanager.h"
 #include "world/worldmanager.h"
 #include "ui/font.h"
 #include "ui/uigraphicscontext.h"
@@ -20,6 +21,8 @@ namespace MCR
 	std::unique_ptr<WorldManager> worldManager;
 	
 	std::unique_ptr<Font> standardFont;
+	
+	TimeManager timeManager;
 	
 	void Initialize()
 	{
@@ -40,6 +43,8 @@ namespace MCR
 	void UpdateGame(float dt, const InputState& inputState)
 	{
 		worldManager->Update(dt, inputState);
+		
+		timeManager.Update(dt);
 	}
 	
 	void RunGameLoop(SDL_Window* window)
@@ -181,7 +186,7 @@ namespace MCR
 			ProcessVulkanDestroyList();
 			
 			VkSemaphore signalSemaphore = *signalSemaphores[frameQueueIndex];
-			renderer.Render({ timeF, signalSemaphore, *fences[frameQueueIndex] });
+			renderer.Render({ timeF, &timeManager });
 			
 			uiDrawList.Reset();
 			uiDrawList.AddText(*standardFont, "Text Test", glm::vec2(10, 10), glm::vec4(1));

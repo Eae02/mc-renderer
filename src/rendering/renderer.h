@@ -20,8 +20,7 @@ namespace MCR
 		struct RenderParams
 		{
 			float m_time;
-			VkSemaphore m_signalSemaphore;
-			VkFence m_signalFence;
+			const class TimeManager* m_timeManager;
 		};
 		
 		void Render(const RenderParams& params);

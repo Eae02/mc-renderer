@@ -105,8 +105,7 @@ void main()
 	
 	vec3 cameraPosition = vec3(0.0, atmosphereRadius * surfaceLevelPercentage, 0.0);
 	
-	const float timescale = 0.5;
-	vec3 lightDir = vec3(cos(renderSettings.time * timescale), sin(renderSettings.time * timescale), 0);
+	vec3 lightDir = -renderSettings.dlDirection;
 	
 	float alpha = dot(eyeVector, lightDir);
 	
@@ -125,14 +124,20 @@ void main()
 	vec3 mieLight = vec3(0.0);
 	float occSum = 0.0;
 	
+	const vec3 moonLightDir = normalize(vec3(1, 1, 1));
+	const vec3 moonLightRadiance = vec3(0.8, 0.8, 1.0) * 0.2 * renderSettings.moonIntensity;
+	
 	for(int i = 0; i < sampleCount; i++)
 	{
 		float sampleDistance = sampleStep * float(i);
 		vec3 position = cameraPosition + eyeVector * sampleDistance;
 		float occlusion = mix(0.1, 1.0, getRayOcclusionAmount(position, lightDir, 0.8));
-		float sampleDepth = getAtmosphericTravelDistance(position, lightDir);
+		float sunSampleDepth = getAtmosphericTravelDistance(position, lightDir);
+		float moonSampleDepth = getAtmosphericTravelDistance(position, moonLightDir);
 		
-		vec3 influx = calcAbsorbtion(sampleDepth, vec3(1.0), scatterStrength) * occlusion;
+		vec3 influx = calcAbsorbtion(sunSampleDepth, renderSettings.dlRadiance, scatterStrength) * occlusion;
+		
+		influx += calcAbsorbtion(moonSampleDepth, moonLightRadiance, scatterStrength) * renderSettings.moonIntensity;
 		
 		rayleighLight += calcAbsorbtion(sampleDistance, absorbtionProfile * influx, rayleighStrength);
 		mieLight += calcAbsorbtion(sampleDistance, influx, mieStrength);

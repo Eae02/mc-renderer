@@ -17,7 +17,7 @@ namespace MCR
 		}
 		
 		void SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::mat4& invViewProj,
-		             const glm::vec3& cameraPosition, float time);
+		             const glm::vec3& cameraPosition, float time, const class TimeManager& timeManager);
 		
 	private:
 #pragma pack(push, 1)
@@ -27,6 +27,10 @@ namespace MCR
 			glm::mat4 m_invViewProj;
 			glm::vec3 m_cameraPos;
 			float m_time;
+			glm::vec3 m_dlDirection;
+			float m_moonIntensity;
+			glm::vec3 m_dlRadiance;
+			float m_padding1;
 		};
 #pragma pack(pop)
 		

@@ -1,4 +1,5 @@
 #include "rendersettingsbuffer.h"
+#include "../timemanager.h"
 
 namespace MCR
 {
@@ -58,12 +59,15 @@ namespace MCR
 	}
 	
 	void RenderSettingsBuffer::SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::mat4& invViewProj,
-	                                   const glm::vec3& cameraPosition, float time)
+	                                   const glm::vec3& cameraPosition, float time, const TimeManager& timeManager)
 	{
 		m_data[frameQueueIndex].m_viewProj = viewProj;
 		m_data[frameQueueIndex].m_invViewProj = invViewProj;
 		m_data[frameQueueIndex].m_cameraPos = cameraPosition;
 		m_data[frameQueueIndex].m_time = time;
+		m_data[frameQueueIndex].m_dlDirection = timeManager.GetDLDirection();
+		m_data[frameQueueIndex].m_moonIntensity = timeManager.GetMoonIntensity();
+		m_data[frameQueueIndex].m_dlRadiance = timeManager.GetDLRadiance();
 		
 		cb.CopyBuffer(*m_hostBuffer, *m_deviceBuffer, { sizeof(Data) * frameQueueIndex, 0, sizeof(Data) });
 		

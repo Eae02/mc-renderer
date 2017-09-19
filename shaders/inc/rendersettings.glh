@@ -7,6 +7,9 @@ struct RenderSettings
 	mat4 invViewProj;
 	vec3 cameraPos;
 	float time;
+	vec3 dlDirection;
+	float moonIntensity;
+	vec3 dlRadiance;
 };
 
 const float ZNear = 0.1;
