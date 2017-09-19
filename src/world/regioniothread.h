@@ -23,7 +23,7 @@ namespace MCR
 		void EndRegistering();
 		
 		//Only call between BeginPolling and EndPolling.
-		inline void RegisterForSaving(Region region)
+		inline void RegisterForSaving(std::shared_ptr<const Region> region)
 		{
 			m_regionsToSave.push(std::move(region));
 			m_anyEnqueued = true;
@@ -47,7 +47,7 @@ namespace MCR
 		{
 			std::lock_guard<std::mutex> lock(m_outputMutex);
 			
-			for (Region& region : m_loadedRegions)
+			for (std::shared_ptr<Region>& region : m_loadedRegions)
 			{
 				callback(region);
 			}
@@ -69,12 +69,12 @@ namespace MCR
 		std::mutex m_inputMutex;
 		std::mutex m_outputMutex;
 		
-		std::queue<Region> m_regionsToSave;
+		std::queue<std::shared_ptr<const Region>> m_regionsToSave;
 		std::queue<RegionCoordinate> m_regionsToLoad;
 		
 		std::condition_variable m_taskAvailableSignal;
 		
-		std::vector<Region> m_loadedRegions;
+		std::vector<std::shared_ptr<Region>> m_loadedRegions;
 		
 		std::thread m_thread;
 	};

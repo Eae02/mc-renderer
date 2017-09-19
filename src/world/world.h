@@ -22,7 +22,7 @@ namespace MCR
 		
 		bool HasRegion(int64_t x, int64_t z);
 		
-		Region LoadRegion(int64_t x, int64_t z);
+		void LoadRegion(Region& region);
 		
 		void SaveRegion(const Region& region);
 		

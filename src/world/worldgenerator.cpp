@@ -211,27 +211,24 @@ namespace MCR
 		}
 	}
 	
-	Region WorldGenerator::Generate(int64_t rx, int64_t rz)
+	void WorldGenerator::Generate(Region& region)
 	{
-		std::subtract_with_carry_engine<uint64_t, 48, 5, 12> randEngine(rx ^ bswap_64(rz));
+		std::subtract_with_carry_engine<uint64_t, 48, 5, 12> randEngine(region.GetX() ^ bswap_64(region.GetZ()));
 		
 		double PerlinDiv = 25;
 		
-		Region region(rx, rz);
-		region.SetHasData(true);
-		
-		const int64_t regionMinX = rx * Region::Size;
-		const int64_t regionMinZ = rz * Region::Size;
+		const int64_t regionMinX = region.GetX() * Region::Size;
+		const int64_t regionMinZ = region.GetZ() * Region::Size;
 		
 		// ** Generates basic terrain **
 		for (int lz = 0; lz < Region::Size; lz++)
 		{
-			int64_t z = lz + rz * Region::Size;
+			int64_t z = lz + region.GetZ() * Region::Size;
 			double pz = z / PerlinDiv;
 			
 			for (int lx = 0; lx < Region::Size; lx++)
 			{
-				int64_t x = lx + rx * Region::Size;
+				int64_t x = lx + region.GetX() * Region::Size;
 				double px = x / PerlinDiv;
 				
 				int blocksSinceAir = 0;
@@ -315,7 +312,7 @@ namespace MCR
 		
 		auto futureRegionIt = std::find_if(MAKE_RANGE(m_futureRegions), [&] (const FutureRegion& futureRegion)
 		{
-			return futureRegion.m_coordinate.x == rx && futureRegion.m_coordinate.z == rz;
+			return futureRegion.m_coordinate.x == region.GetX() && futureRegion.m_coordinate.z == region.GetZ();
 		});
 		
 		if (futureRegionIt != m_futureRegions.end())
@@ -331,8 +328,6 @@ namespace MCR
 			
 			ProcessFutureRegion(futureRegion, region);
 		}
-		
-		return region;
 	}
 	
 	void WorldGenerator::ProcessFutureRegions(WorldManager& worldManager)

@@ -45,7 +45,7 @@ namespace MCR
 			if (m_generatedRegions.empty())
 				return false;
 			
-			for (Region& region : m_generatedRegions)
+			for (std::shared_ptr<Region>& region : m_generatedRegions)
 			{
 				callback(region);
 			}
@@ -76,7 +76,7 @@ namespace MCR
 		
 		std::condition_variable m_signal;
 		
-		std::vector<Region> m_generatedRegions;
+		std::vector<std::shared_ptr<Region>> m_generatedRegions;
 		
 		std::vector<std::thread> m_threads;
 	};

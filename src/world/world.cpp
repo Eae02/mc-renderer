@@ -119,11 +119,11 @@ namespace MCR
 		return regionIt != m_regions.end();
 	}
 	
-	Region World::LoadRegion(int64_t x, int64_t z)
+	void World::LoadRegion(Region& region)
 	{
-		auto regionIt = std::find_if(MAKE_RANGE(m_regions), [&] (const RegionEntry& region)
+		auto regionIt = std::find_if(MAKE_RANGE(m_regions), [&] (const RegionEntry& regionEntry)
 		{
-			return region.m_x == x && region.m_z == z;
+			return regionEntry.m_x == region.GetX() && regionEntry.m_z == region.GetZ();
 		});
 		
 		if (regionIt == m_regions.end())
@@ -200,9 +200,7 @@ namespace MCR
 			SeekToSection(contHeader.m_nextSection);
 		}
 		
-		Region region(x, z);
 		region.Deserialize(inflatedRegionData.data());
-		return region;
 	}
 	
 	void World::SaveRegion(const Region& region)

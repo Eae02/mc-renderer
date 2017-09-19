@@ -74,9 +74,8 @@ namespace MCR
 		struct RegionEntry
 		{
 			RegionStates m_state;
-			Region m_region;
+			std::shared_ptr<Region> m_region;
 			RegionMesh m_mesh;
-			RegionMesh::Data m_newMeshData;
 		};
 		
 		RegionEntry* RegionEntryFromGlobalCoordinate(RegionCoordinate coordinate);

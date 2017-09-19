@@ -24,13 +24,20 @@ namespace MCR
 		
 	}
 	
-	void RegionUploader::BeginUploading(int64_t x, int64_t z, const MeshBuilder& meshBuilder)
+	void RegionUploader::BeginUploading(int64_t x, int64_t z, const std::array<uint32_t, Region::SliceCount>& slices,
+	                                    const MeshBuilder& meshBuilder)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
 		uint64_t size = meshBuilder.GetRequiredBufferSize();
 		
-		RegionDataBuffer deviceBuffer = RegionDataBuffer::Allocate(size);
+		RegionMesh::Data meshData = 
+		{
+			RegionDataBuffer::Allocate(size),
+			meshBuilder.GetNumVertices(),
+			meshBuilder.GetNumIndices(),
+			slices
+		};
 		
 		HostBuffer hostBuffer = AllocateHostBuffer(size);
 		
@@ -38,9 +45,9 @@ namespace MCR
 		
 		CommandBuffer commandBuffer(*m_commandPool);
 		
-		deviceBuffer.Upload(commandBuffer, *hostBuffer.m_buffer, size, *hostBuffer.m_fence);
+		meshData.m_buffer.Upload(commandBuffer, *hostBuffer.m_buffer, size, *hostBuffer.m_fence);
 		
-		m_tasks.push_back({ x, z, std::move(deviceBuffer), std::move(hostBuffer), std::move(commandBuffer) });
+		m_tasks.push_back({ x, z, std::move(meshData), std::move(hostBuffer), std::move(commandBuffer) });
 	}
 	
 	RegionUploader::HostBuffer RegionUploader::AllocateHostBuffer(uint64_t size)

@@ -145,7 +145,7 @@ namespace MCR
 				/* sType               */ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 				/* pNext               */ nullptr,
 				/* srcAccessMask       */ 0,
-				/* dstAccessMask       */ VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+				/* dstAccessMask       */ VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT,
 				/* srcQueueFamilyIndex */ vulkan.queueFamilies[QUEUE_FAMILY_TRANSFER],
 				/* dstQueueFamilyIndex */ vulkan.queueFamilies[QUEUE_FAMILY_GRAPHICS],
 				/* buffer              */ m_desc.m_buffer,
@@ -169,7 +169,7 @@ namespace MCR
 		{
 			/* sType               */ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			/* pNext               */ nullptr,
-			/* srcAccessMask       */ VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+			/* srcAccessMask       */ VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT,
 			/* dstAccessMask       */ 0,
 			/* srcQueueFamilyIndex */ vulkan.queueFamilies[QUEUE_FAMILY_GRAPHICS],
 			/* dstQueueFamilyIndex */ vulkan.queueFamilies[QUEUE_FAMILY_TRANSFER],

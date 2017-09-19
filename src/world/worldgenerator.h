@@ -15,7 +15,7 @@ namespace MCR
 		
 		void SetSeed(int seed);
 		
-		Region Generate(int64_t rx, int64_t rz);
+		void Generate(Region& region);
 		
 		void ProcessFutureRegions(class WorldManager& worldManager);
 		

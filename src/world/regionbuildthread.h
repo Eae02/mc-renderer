@@ -16,19 +16,43 @@ namespace MCR
 	public:
 		struct BuildCommand
 		{
-			const Region* m_region;
-			const Region* m_neighbors[4];
-			uint32_t* m_numIndicesOut;
-			uint32_t* m_numVerticesOut;
-			gsl::span<uint32_t> m_sliceOffsetsOut;
+			RegionCoordinate m_coordinate;
+			std::weak_ptr<const Region> m_region;
+			std::weak_ptr<const Region> m_neighbors[4];
 		};
 		
 		RegionBuildThread();
 		~RegionBuildThread();
 		
-		void BuildASync(const BuildCommand& buildCommand);
+		inline void BeginUpdating()
+		{
+			m_mutex.lock();
+			m_anyCommandsEnqueued = false;
+		}
 		
-		void BuildSync(const BuildCommand& buildCommand, MeshBuilder& meshBuilder);
+		//Only call between BeginUpdating and EndUpdating.
+		inline void BuildASync(const BuildCommand& buildCommand)
+		{
+			m_buildCommands.push_back(buildCommand);
+			m_anyCommandsEnqueued = true;
+		}
+		
+		//Only call between BeginUpdating and EndUpdating.
+		inline void SetCameraRegion(RegionCoordinate coordinate)
+		{
+			m_cameraRegion = coordinate;
+		}
+		
+		inline void EndUpdating()
+		{
+			if (m_anyCommandsEnqueued)
+			{
+				m_signal.notify_one();
+			}
+			m_mutex.unlock();
+		}
+		
+		void BuildSync(const Region& region, gsl::span<const Region*> neighbors, MeshBuilder& meshBuilder);
 		
 		template <typename CallbackTp>
 		inline void IterateCompleted(CallbackTp callback)
@@ -44,7 +68,10 @@ namespace MCR
 		
 		bool m_exit = false;
 		
-		std::queue<BuildCommand> m_buildCommands;
+		RegionCoordinate m_cameraRegion;
+		
+		bool m_anyCommandsEnqueued = false;
+		std::vector<BuildCommand> m_buildCommands;
 		
 		MeshBuilder m_meshBuilder;
 		

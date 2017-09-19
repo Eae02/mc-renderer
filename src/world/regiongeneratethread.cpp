@@ -70,7 +70,9 @@ namespace MCR
 			Log("Generating (", regionCoord.x, ", ", regionCoord.z, ")");
 #endif
 			
-			Region region = m_generator.Generate(regionCoord.x, regionCoord.z);
+			std::shared_ptr<Region> region = std::make_shared<Region>(regionCoord.x, regionCoord.z);
+			
+			m_generator.Generate(*region);
 			
 #ifdef MCR_REGION_LOG
 			Log("Generated (", regionCoord.x, ", ", regionCoord.z, ")");

@@ -25,7 +25,7 @@ namespace MCR
 		for (int i = m_regionTableSize * m_regionTableSize - 1; i >= 0; i--)
 		{
 			const RegionEntry* entry = m_regions[0][i];
-			if (entry != nullptr && entry->m_region.HasData())
+			if (entry != nullptr && entry->m_region)
 			{
 				m_ioThread->RegisterForSaving(entry->m_region);
 			}
@@ -83,7 +83,9 @@ namespace MCR
 		const int64_t toGlobalX = currentRegionX - m_loadDistance;
 		const int64_t toGlobalZ = currentRegionZ - m_loadDistance;
 		
-		if (shiftX != 0 || shiftZ != 0 || !m_hasUpdated)
+		const bool shifted = shiftX != 0 || shiftZ != 0 || !m_hasUpdated;
+		
+		if (shifted)
 		{
 			std::vector<RegionCoordinate> regionsToLoad;
 			
@@ -104,13 +106,10 @@ namespace MCR
 						if (destIndex == -1)
 						{
 							//This region has been pushed off the region table
-							if (region->m_region.HasData() && enableIO)
+							if (region->m_region && enableIO)
 							{
 								m_ioThread->RegisterForSaving(std::move(region->m_region));
 							}
-							
-							if (region->m_state == RegionStates::Building)
-								throw std::runtime_error("Building");
 							
 							FreeRegionEntry(region);
 						}
@@ -167,10 +166,10 @@ namespace MCR
 		}
 		
 		//Processes loaded regions.
-		auto ProcessNewRegion = [&] (Region& region)
+		auto ProcessNewRegion = [&] (std::shared_ptr<Region>& region)
 		{
-			const int regTableX = gsl::narrow<int>(region.GetX() - m_centerRegionX) + m_loadDistance;
-			const int regTableZ = gsl::narrow<int>(region.GetZ() - m_centerRegionZ) + m_loadDistance;
+			const int regTableX = gsl::narrow<int>(region->GetX() - m_centerRegionX) + m_loadDistance;
+			const int regTableZ = gsl::narrow<int>(region->GetZ() - m_centerRegionZ) + m_loadDistance;
 			const int regTableIndex = GetRegionIndex(regTableX, regTableZ);
 			
 			RegionEntry* regionEntry = regTableIndex == -1 ? nullptr : m_regions[0][regTableIndex];
@@ -197,7 +196,7 @@ namespace MCR
 		};
 		
 		//Processes built regions
-		m_regionBuildThread.IterateCompleted([&] (int64_t x, int64_t z, RegionDataBuffer& dataBuffer)
+		m_regionBuildThread.IterateCompleted([&] (int64_t x, int64_t z, RegionMesh::Data& meshData)
 		{
 			int localX = gsl::narrow<int>(x - m_centerRegionX) + m_loadDistance;
 			int localZ = gsl::narrow<int>(z - m_centerRegionZ) + m_loadDistance;
@@ -208,18 +207,9 @@ namespace MCR
 			if (regionEntry != nullptr)
 			{
 				regionEntry->m_state = RegionStates::UpToDate;
-				regionEntry->m_newMeshData.m_buffer = std::move(dataBuffer);
-				regionEntry->m_mesh.SetData(std::move(regionEntry->m_newMeshData));
+				regionEntry->m_mesh.SetData(std::move(meshData));
 			}
 		});
-		
-		auto InitRegionBuildCommand = [] (RegionBuildThread::BuildCommand& buildCommand, RegionEntry& region)
-		{
-			buildCommand.m_region = &region.m_region;
-			buildCommand.m_numIndicesOut = &region.m_newMeshData.m_numIndices;
-			buildCommand.m_numVerticesOut = &region.m_newMeshData.m_numVertices;
-			buildCommand.m_sliceOffsetsOut = region.m_newMeshData.m_sliceOffsets;
-		};
 		
 		//Used to select a mesh to build synchronously this frame.
 		struct
@@ -229,6 +219,16 @@ namespace MCR
 			int distToCameraSq; //Distance to the current region squared.
 		} regionToBuild;
 		regionToBuild.distToCameraSq = std::numeric_limits<int>::max();
+		
+		bool buildThreadUpdating = false;
+		
+		//Updates the build thread's camera region
+		if (shifted)
+		{
+			m_regionBuildThread.BeginUpdating();
+			m_regionBuildThread.SetCameraRegion({ currentRegionX, currentRegionZ });
+			buildThreadUpdating = true;
+		}
 		
 		//Manages the building of meshes.
 		for (int x = 0; x < m_regionTableSize; x++)
@@ -253,26 +253,32 @@ namespace MCR
 						//to the build thread.
 						
 						RegionBuildThread::BuildCommand buildCommand;
-						std::fill_n(buildCommand.m_neighbors, 4, nullptr);
 						
 						bool allNeighborsLoaded = true;
 						for (int i = 0; i < 4; i++)
 						{
 							int neighborRegIndex = GetRegionIndex(x + regionNeighborDirs[i].x, z + regionNeighborDirs[i].y);
-							if (neighborRegIndex == -1 || !m_regions[0][neighborRegIndex]->m_region.HasData())
+							if (neighborRegIndex == -1 || !m_regions[0][neighborRegIndex]->m_region)
 							{
 								allNeighborsLoaded = false;
 								break;
 							}
 							else
 							{
-								buildCommand.m_neighbors[i] = &m_regions[0][neighborRegIndex]->m_region;
+								buildCommand.m_neighbors[i] = m_regions[0][neighborRegIndex]->m_region;
 							}
 						}
 						
 						if (allNeighborsLoaded)
 						{
-							InitRegionBuildCommand(buildCommand, *region);
+							buildCommand.m_coordinate = { region->m_region->GetX(), region->m_region->GetZ() };
+							buildCommand.m_region = region->m_region;
+							
+							if (!buildThreadUpdating)
+							{
+								m_regionBuildThread.BeginUpdating();
+								buildThreadUpdating = true;
+							}
 							
 							m_regionBuildThread.BuildASync(buildCommand);
 							region->m_state = RegionStates::Building;
@@ -299,6 +305,11 @@ namespace MCR
 			}
 		}
 		
+		if (buildThreadUpdating)
+		{
+			m_regionBuildThread.EndUpdating();
+		}
+		
 		//If any already built regions were out of date, builds the selected one and starts uploading it.
 		if (regionToBuild.distToCameraSq != std::numeric_limits<int>::max())
 		{
@@ -307,17 +318,15 @@ namespace MCR
 			
 			m_meshBuilder.Reset();
 			
-			RegionBuildThread::BuildCommand buildCommand;
-			InitRegionBuildCommand(buildCommand, *region);
-			
+			std::array<const Region*, 4> neighbors;
 			for (int n = 0; n < 4; n++)
 			{
 				const int nx = regionToBuild.x + regionNeighborDirs[n].x;
 				const int nz = regionToBuild.z + regionNeighborDirs[n].y;
-				buildCommand.m_neighbors[n] = &m_regions[0][GetRegionIndex(nx, nz)]->m_region;
+				neighbors[n] = m_regions[0][GetRegionIndex(nx, nz)]->m_region.get();
 			}
 			
-			m_regionBuildThread.BuildSync(buildCommand, m_meshBuilder);
+			m_regionBuildThread.BuildSync(*region->m_region, neighbors, m_meshBuilder);
 		}
 	}
 	
@@ -418,7 +427,7 @@ namespace MCR
 		if (entry == nullptr || entry->m_state == RegionStates::Loading)
 			return nullptr;
 		
-		return &entry->m_region;
+		return entry->m_region.get();
 	}
 	
 	void WorldManager::MarkOutOfDate(RegionCoordinate coordinate)

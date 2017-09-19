@@ -29,6 +29,7 @@ namespace MCR
 		}
 	};
 	
+	//Moving is very slow!
 	class Region
 	{
 	public:
@@ -64,18 +65,12 @@ namespace MCR
 		inline int64_t GetZ() const
 		{ return m_coordZ; }
 		
-		inline bool HasData() const
-		{
-			return !m_blocks.empty();
-		}
-		
-		void SetHasData(bool hasData);
-		
 		void Deserialize(const char* data);
 		void Serialize(char* data) const;
 		
 		static constexpr int Size = 16;
 		static constexpr int Height = 256;
+		static constexpr int SliceCount = Height / Size;
 		static constexpr int BlockCount = Size * Size * Height;
 		static constexpr size_t DataBufferBytes = BlockCount * (sizeof(uint8_t) + sizeof(uint8_t));
 		
@@ -92,7 +87,7 @@ namespace MCR
 			return locX + (locZ + locY * Size) * Size;
 		}
 		
-		std::vector<BlockEntry> m_blocks;
+		std::array<BlockEntry, BlockCount> m_blocks;
 		
 		int64_t m_coordX;
 		int64_t m_coordZ;

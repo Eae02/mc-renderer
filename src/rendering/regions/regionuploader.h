@@ -3,6 +3,7 @@
 #include "../../vulkan/vk.h"
 #include "regiondatabuffer.h"
 #include "meshbuilder.h"
+#include "regionmesh.h"
 
 #include <mutex>
 #include <vector>
@@ -15,7 +16,8 @@ namespace MCR
 	public:
 		RegionUploader();
 		
-		void BeginUploading(int64_t x, int64_t z, const MeshBuilder& meshBuilder);
+		void BeginUploading(int64_t x, int64_t z, const std::array<uint32_t, Region::SliceCount>& slices,
+		                    const MeshBuilder& meshBuilder);
 		
 		//Signature for CallbackTp: (int64_t x, int64_t z, RegionDataBuffer& dataBuffer)
 		template <typename CallbackTp>
@@ -27,7 +29,7 @@ namespace MCR
 			{
 				if (vkGetFenceStatus(vulkan.device, *m_tasks[i].m_hostBuffer.m_fence) == VK_SUCCESS)
 				{
-					callback(m_tasks[i].m_x, m_tasks[i].m_z, m_tasks[i].m_buffer);
+					callback(m_tasks[i].m_x, m_tasks[i].m_z, m_tasks[i].m_meshData);
 					
 					m_hostBuffers.push_back(std::move(m_tasks[i].m_hostBuffer));
 					
@@ -64,7 +66,7 @@ namespace MCR
 		{
 			int64_t m_x;
 			int64_t m_z;
-			RegionDataBuffer m_buffer;
+			RegionMesh::Data m_meshData;
 			HostBuffer m_hostBuffer;
 			CommandBuffer m_cb;
 		};

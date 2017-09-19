@@ -69,7 +69,7 @@ namespace MCR
 				break;
 			}
 			
-			std::optional<Region> regionToSave;
+			std::shared_ptr<const Region> regionToSave;
 			if (!m_regionsToSave.empty())
 			{
 				regionToSave = std::move(m_regionsToSave.front());
@@ -85,7 +85,7 @@ namespace MCR
 			
 			lock.unlock();
 			
-			if (regionToSave.has_value())
+			if (regionToSave)
 			{
 #ifdef MCR_REGION_LOG
 				Log("Saving (", regionToSave->GetX(), ", ", regionToSave->GetZ(), ")");
@@ -100,7 +100,8 @@ namespace MCR
 				Log("Loading region (", regionToLoad->x, ", ", regionToLoad->z, ")");
 #endif
 				
-				Region region = m_world.LoadRegion(regionToLoad->x, regionToLoad->z);
+				std::shared_ptr<Region> region = std::make_unique<Region>(regionToLoad->x, regionToLoad->z);
+				m_world.LoadRegion(*region);
 				
 #ifdef MCR_REGION_LOG
 				Log("Loaded region (", regionToLoad->x, ", ", regionToLoad->z, ")");

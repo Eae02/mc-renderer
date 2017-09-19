@@ -7,23 +7,8 @@ namespace MCR
 	constexpr int Region::BlockCount;
 	constexpr size_t Region::DataBufferBytes;
 	
-	void Region::SetHasData(bool hasData)
-	{
-		if (!this->HasData() && hasData)
-		{
-			m_blocks.resize(BlockCount);
-		}
-		else if (this->HasData() && !hasData)
-		{
-			m_blocks.clear();
-			m_blocks.shrink_to_fit();
-		}
-	}
-	
 	void Region::Deserialize(const char* data)
 	{
-		SetHasData(true);
-		
 		const uint8_t* blockIds = reinterpret_cast<const uint8_t*>(data);
 		const uint8_t* blockData = reinterpret_cast<const uint8_t*>(data) + BlockCount;
 		
