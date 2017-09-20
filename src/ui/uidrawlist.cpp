@@ -7,7 +7,7 @@
 namespace MCR
 {
 	glm::vec2 UIDrawList::AddText(const Font& font, std::string_view text, const glm::vec2 position,
-	                              const glm::vec4 color, const TextPosX posX, const TextPosY posY)
+	                              const glm::vec4& color, const TextPosX posX, const TextPosY posY)
 	{
 		BeginBatch(font.GetDescriptorSet());
 		
@@ -92,6 +92,58 @@ namespace MCR
 		return { maxLineWidth, offsetY };
 	}
 	
+	void UIDrawList::AddQuad(const glm::vec2 pos1, const glm::vec2 pos2, const glm::vec4& color)
+	{
+		BeginBatch(VK_NULL_HANDLE);
+		
+		std::array<Vertex, 4> vertices;
+		
+		glm::vec2 d = pos2 - pos1;
+		
+		for (int x = 0; x < 2; x++)
+		{
+			for (int y = 0; y < 2; y++)
+			{
+				Vertex& v = vertices[x * 2 + y];
+				v.m_position = pos1 + d * glm::vec2(x, y);
+				v.m_texCoord = glm::vec3();
+				v.m_color = color;
+			}
+		}
+		
+		AppendQuad(vertices.data());
+	}
+	
+	void UIDrawList::AddTriangle(const glm::vec2* positions, const glm::vec4& color)
+	{
+		BeginBatch(VK_NULL_HANDLE);
+		
+		std::array<Vertex, 3> vertices;
+		for (size_t i = 0; i < vertices.size(); i++)
+		{
+			vertices[i].m_position = positions[i];
+			vertices[i].m_texCoord = glm::vec3();
+			vertices[i].m_color = color;
+		}
+		
+		AppendTriangle(vertices.data());
+	}
+	
+	void UIDrawList::AddTriangleMultiColored(const glm::vec2* positions, const glm::vec4* colors)
+	{
+		BeginBatch(VK_NULL_HANDLE);
+		
+		std::array<Vertex, 3> vertices;
+		for (size_t i = 0; i < vertices.size(); i++)
+		{
+			vertices[i].m_position = positions[i];
+			vertices[i].m_texCoord = glm::vec3();
+			vertices[i].m_color = colors[i];
+		}
+		
+		AppendTriangle(vertices.data());
+	}
+	
 	void UIDrawList::CopyToBuffer(void* bufferData) const
 	{
 		Vertex* verticesOut = reinterpret_cast<Vertex*>(bufferData);
@@ -101,7 +153,8 @@ namespace MCR
 		std::copy(MAKE_RANGE(m_indices), indicesOut);
 	}
 	
-	void UIDrawList::Draw(CommandBuffer& commandBuffer, VkPipelineLayout pipelineLayout, VkBuffer buffer) const
+	void UIDrawList::Draw(CommandBuffer& commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet defaultDS,
+	                      VkBuffer buffer) const
 	{
 		const VkDeviceSize vertexBufferOffsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, &buffer, vertexBufferOffsets);
@@ -110,11 +163,27 @@ namespace MCR
 		
 		for (const UIDrawList::Batch& batch : m_batches)
 		{
-			commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1,
-			                                 SingleElementSpan(batch.m_descriptorSet));
+			const VkDescriptorSet ds = batch.m_descriptorSet ? batch.m_descriptorSet : defaultDS;
+			
+			commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, SingleElementSpan(ds));
 			
 			commandBuffer.DrawIndexed(batch.m_numIndices, 1, batch.m_firstIndex, 0, 0);
 		}
+	}
+	
+	void UIDrawList::AppendTriangle(const UIDrawList::Vertex* vertices)
+	{
+		const uint32_t baseIndex = gsl::narrow_cast<uint32_t>(m_vertices.size());
+		
+		for (uint32_t i = 0; i < 3; i++)
+		{
+			m_indices.push_back(baseIndex + i);
+		}
+		
+		m_vertices.resize(m_vertices.size() + 3);
+		std::copy_n(vertices, 3, m_vertices.end() - 3);
+		
+		m_batches.back().m_numIndices += 3;
 	}
 	
 	void UIDrawList::AppendQuad(const UIDrawList::Vertex* vertices)
@@ -140,6 +209,4 @@ namespace MCR
 			m_batches.push_back({ gsl::narrow_cast<uint32_t>(m_indices.size()), 0, descriptorSet });
 		}
 	}
-	
-	
 }

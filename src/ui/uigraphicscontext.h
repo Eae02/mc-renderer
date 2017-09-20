@@ -1,6 +1,7 @@
 #pragma once
 
 #include "uishader.h"
+#include "uiimage.h"
 
 namespace MCR
 {
@@ -26,6 +27,8 @@ namespace MCR
 		
 		VkHandle<VkSampler> m_sampler;
 		UniqueDescriptorSet m_samplerDescriptorSet;
+		
+		std::unique_ptr<UIImage> m_defaultImage;
 		
 		UIShader m_shader;
 		

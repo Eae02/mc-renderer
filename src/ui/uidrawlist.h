@@ -44,8 +44,13 @@ namespace MCR
 			m_indices.clear();
 		}
 		
-		glm::vec2 AddText(const class Font& font, std::string_view text, glm::vec2 position, glm::vec4 color,
+		glm::vec2 AddText(const class Font& font, std::string_view text, glm::vec2 position, const glm::vec4& color,
 		                  TextPosX posX = TextPosX::Right, TextPosY posY = TextPosY::Above);
+		
+		void AddQuad(glm::vec2 pos1, glm::vec2 pos2, const glm::vec4& color);
+		
+		void AddTriangle(const glm::vec2* positions, const glm::vec4& color);
+		void AddTriangleMultiColored(const glm::vec2* positions, const glm::vec4* colors);
 		
 		inline bool Empty() const
 		{
@@ -60,7 +65,7 @@ namespace MCR
 		
 		void CopyToBuffer(void* bufferData) const;
 		
-		void Draw(CommandBuffer& commandBuffer, VkPipelineLayout pipelineLayout, VkBuffer buffer) const;
+		void Draw(CommandBuffer& commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet defaultDS, VkBuffer buffer) const;
 		
 		struct Batch
 		{
@@ -69,6 +74,7 @@ namespace MCR
 			VkDescriptorSet m_descriptorSet;
 		};
 		
+		void AppendTriangle(const Vertex* vertices);
 		void AppendQuad(const Vertex* vertices);
 		
 		void BeginBatch(VkDescriptorSet descriptorSet);

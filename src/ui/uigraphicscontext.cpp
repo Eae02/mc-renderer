@@ -90,6 +90,10 @@ namespace MCR
 		const VkDescriptorImageInfo samplerDescriptorInfo = { *m_sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED };
 		m_samplerDescriptorSet.InitWriteDescriptorSet(samplerWrite, 0, VK_DESCRIPTOR_TYPE_SAMPLER, samplerDescriptorInfo);
 		UpdateDescriptorSets(SingleElementSpan(samplerWrite));
+		
+		VkImageCreateInfo defaultImageCreateInfo;
+		InitImageCreateInfo(defaultImageCreateInfo, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, 1, 1);
+		
 	}
 	
 	void UIGraphicsContext::Draw(const UIDrawList& drawList, const Framebuffer& framebuffer)
@@ -165,6 +169,11 @@ namespace MCR
 			                              { }, SingleElementSpan(bufferBarrier), { });
 		}
 		
+		if (!m_defaultImage)
+		{
+			m_defaultImage = std::make_unique<UIImage>(UIImage::CreateSingleColor(glm::vec4(1.0f), 1, 1, commandBuffer));
+		}
+		
 		VkRect2D renderArea;
 		VkViewport viewport;
 		framebuffer.GetViewportAndRenderArea(renderArea, viewport);
@@ -197,7 +206,7 @@ namespace MCR
 			commandBuffer.PushConstants(m_shader.GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
 			                            sizeof(positionScale), &positionScale);
 			
-			drawList.Draw(commandBuffer, m_shader.GetLayout(), *m_deviceBuffer);
+			drawList.Draw(commandBuffer, m_shader.GetLayout(), m_defaultImage->GetDescriptorSet(), *m_deviceBuffer);
 		}
 		
 		commandBuffer.EndRenderPass();
