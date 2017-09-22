@@ -16,7 +16,7 @@ namespace MCR
 	public:
 		RegionUploader();
 		
-		void BeginUploading(int64_t x, int64_t z, const std::array<uint32_t, Region::SliceCount>& slices,
+		void BeginUploading(int64_t x, int64_t z, const std::array<RegionMesh::SliceData, Region::SliceCount>& slices,
 		                    const MeshBuilder& meshBuilder);
 		
 		//Signature for CallbackTp: (int64_t x, int64_t z, RegionDataBuffer& dataBuffer)

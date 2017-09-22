@@ -24,7 +24,8 @@ namespace MCR
 		
 	}
 	
-	void RegionUploader::BeginUploading(int64_t x, int64_t z, const std::array<uint32_t, Region::SliceCount>& slices,
+	void RegionUploader::BeginUploading(int64_t x, int64_t z,
+	                                    const std::array<RegionMesh::SliceData, Region::SliceCount>& slices,
 	                                    const MeshBuilder& meshBuilder)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);

@@ -14,20 +14,28 @@ namespace MCR
 		
 		RegionMesh();
 		
+		struct SliceData
+		{
+			uint32_t m_indexOffset;
+			Region::SliceConnectivity m_connectivity;
+		};
+		
 		struct Data
 		{
 			RegionDataBuffer m_buffer;
 			uint32_t m_numVertices;
 			uint32_t m_numIndices;
-			std::array<uint32_t, NumSlices> m_sliceOffsets;
+			std::array<SliceData, NumSlices> m_sliceData;
 		};
 		
-		inline void SetData(Data data)
+		void SetData(Data data);
+		
+		inline bool IsSliceEdgeConnected(uint32_t slice, uint8_t s1, uint8_t s2) const
 		{
-			m_data = std::move(data);
-			m_indicesOffset = data.m_numVertices * sizeof(Vertex);
-			m_hasAquiredDataBuffer = false;
+			return m_data.m_sliceData[slice].m_connectivity.IsConnected(s1, s2);
 		}
+		
+		bool IsSliceEmpty(uint32_t slice) const;
 		
 		inline void Clear()
 		{
@@ -42,12 +50,10 @@ namespace MCR
 		
 		void PrepareForRendering(CommandBuffer& commandBuffer);
 		
-		void Render(CommandBuffer& commandBuffer) const;
+		void Render(CommandBuffer& commandBuffer, uint32_t firstSlice, uint32_t numSlices) const;
 		
 	private:
 		Data m_data;
 		VkDeviceSize m_indicesOffset;
-		
-		bool m_hasAquiredDataBuffer;
 	};
 }

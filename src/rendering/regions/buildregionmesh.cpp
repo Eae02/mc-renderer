@@ -8,7 +8,7 @@ namespace MCR
 	void BuildRegionMesh(const RegionMeshBuildParams& params)
 	{
 #ifdef MCR_DEBUG
-		if (params.m_sliceOffsets.size() != RegionMesh::NumSlices)
+		if (params.m_slicesOut.size() != RegionMesh::NumSlices)
 		{
 			throw std::invalid_argument("Invalid number of slice offsets passed to BuildRegionMesh.");
 		}
@@ -18,7 +18,7 @@ namespace MCR
 		{
 			if (y % Region::Size == 0)
 			{
-				params.m_sliceOffsets[y / Region::Size] = params.m_meshBuilder->GetNextVertexIndex();
+				params.m_slicesOut[y / Region::Size].m_indexOffset = params.m_meshBuilder->GetNumIndices();
 			}
 			
 			for (int z = 0; z < Region::Size; z++)

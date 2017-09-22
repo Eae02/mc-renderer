@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <bitset>
 #include "../vulkan/vk.h"
 
 namespace MCR
@@ -39,6 +40,19 @@ namespace MCR
 			uint8_t m_data = 0;
 		};
 		
+		class SliceConnectivity
+		{
+			friend class Region;
+			
+		public:
+			bool IsConnected(uint8_t side1, uint8_t side2) const;
+			
+		private:
+			void SetConnected(uint8_t side1, uint8_t side2);
+			
+			uint16_t m_data = 0x1;
+		};
+		
 		Region() = default;
 		
 		inline Region(int64_t coordX, int64_t coordZ)
@@ -64,6 +78,8 @@ namespace MCR
 		{ return m_coordX; }
 		inline int64_t GetZ() const
 		{ return m_coordZ; }
+		
+		SliceConnectivity CalculateConnectivity(uint32_t sliceIndex) const;
 		
 		void Deserialize(const char* data);
 		void Serialize(char* data) const;

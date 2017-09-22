@@ -2,6 +2,7 @@
 #include "../rendering/regions/buildregionmesh.h"
 #include "../rendering/regionrenderlist.h"
 #include "../rendering/frustum.h"
+#include "../blocks/sides.h"
 
 #include <gsl/gsl_util>
 
@@ -330,6 +331,72 @@ namespace MCR
 		}
 	}
 	
+	void WorldManager::FillCameraRenderList(RegionRenderList& renderList, const Frustum& frustum) const
+	{
+		const int cameraSliceY = static_cast<int>(m_camera.GetPosition().y) / Region::Size;
+		
+		for (uint8_t s = 0; s < 6; s++)
+		{
+			FillCameraRenderListR(renderList, frustum, s, m_loadDistance, cameraSliceY, m_loadDistance, cameraSliceY);
+		}
+	}
+	
+	void WorldManager::FillCameraRenderListR(RegionRenderList& renderList, const Frustum& frustum, uint8_t enterDir,
+	                                         int rx, int sy, int rz, int cameraSliceY) const
+	{
+		if (sy < 0 || sy >= static_cast<int>(RegionMesh::NumSlices))
+			return;
+		
+		int regionIndex = GetRegionIndex(rx, rz);
+		if (regionIndex == -1)
+			return;
+		
+		RegionEntry* region = m_regions[0][regionIndex];
+		
+		if (region == nullptr || !(region->m_state == RegionStates::UpToDate ||
+		                           region->m_state == RegionStates::OutOfDate ||
+		                           region->m_state == RegionStates::Uploading))
+		{
+			return;
+		}
+		
+		RegionCoordinate worldRegCoord = GetWorldRegionCoord(rx, rz);
+		
+		AABoundingBox sliceAABB(glm::vec3(worldRegCoord.x * Region::Size, sy * Region::Size,
+		                                  worldRegCoord.z * Region::Size), Region::Size, Region::Size, Region::Size);
+		
+		if (!frustum.Intersects(sliceAABB))
+			return;
+		
+		if (region->m_mesh.IsSliceEmpty(sy))
+		{
+			if (!renderList.Add(region->m_mesh, sy))
+			{
+				//If add returned false, this slice has already been added, so it's neighbors should also not be added.
+				return;
+			}
+		}
+		
+		const glm::ivec3 toCamera(m_loadDistance - rx, cameraSliceY - sy, m_loadDistance - rz);
+		
+		for (uint8_t dir = 0; dir < 6; dir++)
+		{
+			if (!region->m_mesh.IsSliceEdgeConnected(sy, enterDir, dir))
+				continue;
+			
+			const int cameraVecDot = BlockNormals[dir].x * toCamera.x + 
+			                         BlockNormals[dir].y * toCamera.y + 
+			                         BlockNormals[dir].z * toCamera.z;
+			
+			if (cameraVecDot <= 0)
+			{
+				const uint8_t nextEnterDir = (dir % 2 == 0) ? (dir + 1) : (dir - 1);
+				FillCameraRenderListR(renderList, frustum, nextEnterDir, rx + BlockNormals[dir].x,
+				                      sy + BlockNormals[dir].y, rz + BlockNormals[dir].z, cameraSliceY);
+			}
+		}
+	}
+	
 	void WorldManager::FillRenderListR(RegionRenderList& renderList, const Frustum& frustum,
 	                                   int minX, int minZ, int spanX, int spanZ) const
 	{
@@ -358,7 +425,10 @@ namespace MCR
 			                          region->m_state == RegionStates::OutOfDate ||
 			                          region->m_state == RegionStates::Uploading))
 			{
-				renderList.Add(region->m_mesh);
+				for (uint32_t i = 0; i < Region::SliceCount; i++)
+				{
+					renderList.Add(region->m_mesh, i);
+				}
 			}
 		}
 		else

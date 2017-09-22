@@ -11,13 +11,19 @@ namespace MCR
 		
 		void Begin();
 		
-		void Add(class RegionMesh& mesh);
+		bool Add(class RegionMesh& mesh, uint32_t slice);
 		
 		void End(CommandBuffer& cb);
 		
 		void Render(CommandBuffer& cb);
 		
 	private:
-		std::vector<class RegionMesh*> m_meshes;
+		struct RenderEntry
+		{
+			class RegionMesh* m_mesh;
+			uint32_t m_slice;
+		};
+		
+		std::vector<RenderEntry> m_entries;
 	};
 }

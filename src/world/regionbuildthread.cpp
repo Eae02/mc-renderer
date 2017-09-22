@@ -24,19 +24,24 @@ namespace MCR
 	void RegionBuildThread::BuildSync(const Region& region, gsl::span<const Region*> neighbors,
 	                                  MeshBuilder& meshBuilder)
 	{
-		std::array<uint32_t, Region::SliceCount> sliceOffsets;
+		std::array<RegionMesh::SliceData, Region::SliceCount> slices;
+		
+		for (uint32_t s = 0; s < RegionMesh::NumSlices; s++)
+		{
+			slices[s].m_connectivity = region.CalculateConnectivity(s);
+		}
 		
 		RegionMeshBuildParams buildParams;
 		buildParams.m_meshBuilder = &meshBuilder;
 		buildParams.m_region = &region;
-		buildParams.m_sliceOffsets = sliceOffsets;
+		buildParams.m_slicesOut = slices;
 		std::copy_n(neighbors.begin(), 4, buildParams.m_neighbors);
 		
 		meshBuilder.Reset();
 		
 		BuildRegionMesh(buildParams);
 		
-		m_uploader.BeginUploading(region.GetX(), region.GetZ(), sliceOffsets, meshBuilder);
+		m_uploader.BeginUploading(region.GetX(), region.GetZ(), slices, meshBuilder);
 	}
 	
 	void RegionBuildThread::ThreadTarget()

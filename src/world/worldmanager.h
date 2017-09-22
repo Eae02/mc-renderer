@@ -30,6 +30,8 @@ namespace MCR
 		
 		void Update(float dt, const class InputState& inputState);
 		
+		void FillCameraRenderList(class RegionRenderList& renderList, const class Frustum& frustum) const;
+		
 		inline void FillRenderList(class RegionRenderList& renderList, const class Frustum& frustum) const
 		{
 			FillRenderListR(renderList, frustum, 0, 0, m_regionTableSize, m_regionTableSize);
@@ -47,8 +49,19 @@ namespace MCR
 		}
 		
 	private:
+		void FillCameraRenderListR(class RegionRenderList& renderList, const class Frustum& frustum, uint8_t enterDir,
+		                           int rx, int sy, int rz, int cameraSliceY) const;
+		
 		void FillRenderListR(class RegionRenderList& renderList, const class Frustum& frustum,
 		                     int minX, int minZ, int spanX, int spanZ) const;
+		
+		inline RegionCoordinate GetWorldRegionCoord(int x, int z) const
+		{
+			return {
+				static_cast<int64_t>(x - m_loadDistance) + m_centerRegionX,
+				static_cast<int64_t>(z - m_loadDistance) + m_centerRegionZ
+			};
+		}
 		
 		inline int GetRegionIndex(int x, int z) const
 		{
