@@ -20,7 +20,7 @@ namespace MCR
 		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+		attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		
 		attachments[1].format = vulkan.depthFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -39,22 +39,11 @@ namespace MCR
 		subpassDescriptions[0].pColorAttachments = &colorAttachmentRef;
 		subpassDescriptions[0].pDepthStencilAttachment = &depthStencilAttachmentRef;
 		
-		std::array<VkSubpassDependency, 1> subpassDependencies = { };
-		subpassDependencies[0].srcSubpass = 0;
-		subpassDependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
-		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-		subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		subpassDependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-		subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-		
 		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 		renderPassCreateInfo.attachmentCount = attachments.size();
 		renderPassCreateInfo.pAttachments = attachments.data();
 		renderPassCreateInfo.subpassCount = subpassDescriptions.size();
 		renderPassCreateInfo.pSubpasses = subpassDescriptions.data();
-		renderPassCreateInfo.dependencyCount = subpassDependencies.size();
-		renderPassCreateInfo.pDependencies = subpassDependencies.data();
 		
 		VkRenderPass renderPass;
 		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));
@@ -94,7 +83,7 @@ namespace MCR
 		m_framebuffer->GetViewportAndRenderArea(renderArea, viewport);
 		
 		std::array<VkClearValue, 2> clearValues;
-		SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+		SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
 		SetDepthStencilClearValue(clearValues[1], 1.0f, 0);
 		
 		VkRenderPassBeginInfo renderPassBeginInfo = 

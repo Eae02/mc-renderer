@@ -93,23 +93,31 @@ namespace MCR
 		
 		m_commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 		
+		VkImageMemoryBarrier barrier;
+		InitImageMemoryBarrier(barrier, framebuffer.GetColorImage());
+		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		
+		m_commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+		                                0, { }, { }, SingleElementSpan(barrier));
+		
 		m_commandBuffer.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *m_pipeline);
 		
 		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet };
 		m_commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *m_pipelineLayout, 0, descriptorSets);
 		
 		m_commandBuffer.Dispatch(DivRoundUp(framebuffer.GetWidth(), 32u), DivRoundUp(framebuffer.GetHeight(), 32u), 1);
-		/*
-		VkImageMemoryBarrier barrier;
-		InitImageMemoryBarrier(barrier, framebuffer.GetColorImage());
-		barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 		
-		m_commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		                                VK_DEPENDENCY_BY_REGION_BIT, { }, { }, SingleElementSpan(barrier));
-		*/
+		barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		
+		m_commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		                                0, { }, { }, SingleElementSpan(barrier));
+		
 		m_commandBuffer.End();
 	}
 }

@@ -16,3 +16,4 @@ $(OUT_PATH)/%.fs.spv : %.fs.glsl $(HEADER_FILES)
 
 $(OUT_PATH)/%.cs.spv : %.cs.glsl $(HEADER_FILES)
 	$(SC) $(FLAGS) -S comp $< -o $@
+

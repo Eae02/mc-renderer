@@ -190,7 +190,7 @@ namespace MCR
 			
 			uiDrawList.Reset();
 			uiDrawList.AddText(*standardFont, "Text Test", glm::vec2(10, 10), glm::vec4(1));
-			uiDrawList.AddQuad(glm::vec2(100), glm::vec2(200, 300), glm::vec4(0, 0, 1, 1));
+			uiDrawList.AddQuad(glm::vec2(100), glm::vec2(200, 300), glm::vec4(0, 0, 0.5f, 0.5f));
 			
 			uiGraphicsContext.Draw(uiDrawList, framebuffer);
 			

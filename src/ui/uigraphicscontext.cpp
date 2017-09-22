@@ -13,9 +13,9 @@ namespace MCR
 			/* samples        */ VK_SAMPLE_COUNT_1_BIT,
 			/* loadOp         */ VK_ATTACHMENT_LOAD_OP_LOAD,
 			/* storeOp        */ VK_ATTACHMENT_STORE_OP_STORE,
-			/* stencilLoadOp  */ VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			/* stencilStoreOp */ VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			/* initialLayout  */ VK_IMAGE_LAYOUT_GENERAL,
+			/* stencilLoadOp  */ VK_ATTACHMENT_LOAD_OP_LOAD,
+			/* stencilStoreOp */ VK_ATTACHMENT_STORE_OP_STORE,
+			/* initialLayout  */ VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			/* finalLayout    */ VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 		};
 		
@@ -25,21 +25,14 @@ namespace MCR
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &attachmentRef;
 		
-		std::array<VkSubpassDependency, 2> subpassDependencies = { };
-		subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-		subpassDependencies[0].dstSubpass = 0;
-		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-		subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		std::array<VkSubpassDependency, 1> subpassDependencies = { };
 		
-		subpassDependencies[1].srcSubpass = 0;
-		subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-		subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		subpassDependencies[1].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		subpassDependencies[0].srcSubpass = 0;
+		subpassDependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
+		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		subpassDependencies[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		
 		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 		renderPassCreateInfo.attachmentCount = 1;
