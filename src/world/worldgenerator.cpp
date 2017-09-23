@@ -101,8 +101,34 @@ namespace MCR
 		BlockIDs::BlueFlower, BlockIDs::RedFlower, BlockIDs::YellowFlower, BlockIDs::OrangeFlower, BlockIDs::WhiteFlower
 	};
 	
+	//Ore block ids
+	const uint8_t oreIDs[] = 
+	{
+		BlockIDs::CoalOre, BlockIDs::IronOre, BlockIDs::GoldOre, BlockIDs::DiamondOre
+	};
+	
+	//Number of ore groups per region
+	std::uniform_int_distribution<int> oreGroupsPerRegion[] = 
+	{
+		/* Coal    */ std::uniform_int_distribution<int>(5, 15),
+		/* Iron    */ std::uniform_int_distribution<int>(3, 8),
+		/* Gold    */ std::uniform_int_distribution<int>(1, 4),
+		/* Diamond */ std::uniform_int_distribution<int>(0, 2)
+	};
+	
+	//Maximum y-coordinate for ore blocks as a percentage of averageSurfaceLevel
+	const double oreMaxY[] = 
+	{
+		/* Coal    */ 1.0,
+		/* Iron    */ 0.9,
+		/* Gold    */ 0.6,
+		/* Diamond */ 0.3
+	};
+	
+	std::uniform_int_distribution<int> orePosXZDist(0, Region::Size - 2);
+	
 	std::uniform_real_distribution<double> caveWormPerlinPosDist(-1E6, 1E6);
-	std::uniform_real_distribution<double> caveWormWorldPosXZDist(0, Region::Size);
+	std::uniform_real_distribution<double> caveWormWorldPosXZDist(0, Region::Size - 1);
 	std::uniform_real_distribution<double> caveWormWorldPosYDist(0, averageSurfaceLevel);
 	
 	std::uniform_int_distribution<int> numCaveWormsDist(0, 2);
@@ -178,7 +204,12 @@ namespace MCR
 						    blockRegPos.x < Region::Size && blockRegPos.y < Region::Height &&
 						    blockRegPos.z < Region::Size)
 						{
-							region.At(blockRegPos.x, blockRegPos.y, blockRegPos.z).m_id = BlockIDs::Air;
+							Region::BlockEntry& block = region.At(blockRegPos.x, blockRegPos.y, blockRegPos.z);
+							
+							if (block.m_id != BlockIDs::Bedrock)
+							{
+								block.m_id = BlockIDs::Air;
+							}
 						}
 					}
 				}
@@ -241,7 +272,7 @@ namespace MCR
 				
 				double terraceOffset = (glm::floor(terraceVal) + heightCurrentTerrace - (terraceCount / 2.0)) * terraceHeight;
 				
-				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y >= 0; y--)
+				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y > 0; y--)
 				{
 					Region::BlockEntry& block = region.At(lx, y, lz);
 					
@@ -281,6 +312,39 @@ namespace MCR
 							block.m_id = BlockIDs::Dirt;
 						
 						blocksSinceAir++;
+					}
+				}
+				
+				region.At(lx, 0, lz).m_id = BlockIDs::Bedrock;
+			}
+		}
+		
+		// ** Generates ores **
+		for (size_t i = 0; i < ArrayLength(oreIDs); i++)
+		{
+			int maxY = static_cast<int>(oreMaxY[i] * averageSurfaceLevel);
+			
+			std::uniform_int_distribution<int> yPositionDist(1, maxY - 2);
+			
+			for (int j = oreGroupsPerRegion[i](randEngine); j > 0; j--)
+			{
+				const int originX = orePosXZDist(randEngine);
+				const int originY = yPositionDist(randEngine);
+				const int originZ = orePosXZDist(randEngine);
+				
+				for (int y = 0; y < 2; y++)
+				{
+					for (int z = 0; z < 2; z++)
+					{
+						for (int x = 0; x < 2; x++)
+						{
+							Region::BlockEntry& block = region.At(originX + x, originY + y, originZ + z);
+							
+							if (block.m_id == BlockIDs::Stone)
+							{
+								block.m_id = oreIDs[i];
+							}
+						}
 					}
 				}
 			}
