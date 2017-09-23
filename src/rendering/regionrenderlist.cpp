@@ -11,6 +11,8 @@ namespace MCR
 	bool RegionRenderList::Add(RegionMesh& mesh, uint32_t slice)
 	{
 		const RenderEntry newEntry = { &mesh, slice };
+		m_entries.push_back(newEntry);
+		return true;
 		
 		auto it = std::lower_bound(MAKE_RANGE(m_entries), newEntry, [] (const RenderEntry& a, const RenderEntry& b)
 		{

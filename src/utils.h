@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <chrono>
 #include <string_view>
+#include <glm/glm.hpp>
 
 #include "filesystem.h"
 
@@ -62,6 +63,11 @@ namespace MCR
 		logStream << GetThreadDesc(std::this_thread::get_id()) << ": ";
 		Detail::LogImpl(logStream, args...);
 		logStream << std::endl;
+	}
+	
+	inline bool RectangleContains(glm::vec2 rectMin, glm::vec2 rectMax, glm::vec2 pos)
+	{
+		return pos.x < rectMax.x && pos.x > rectMin.x && pos.y < rectMax.y && pos.y > rectMin.y;
 	}
 	
 	std::vector<char> ReadFileContents(const fs::path& path);

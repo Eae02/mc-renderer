@@ -16,15 +16,15 @@ namespace MCR
 		
 		if (posY != TextPosY::Below)
 		{
-			const size_t lineCount = std::count(MAKE_RANGE(text), '\n');
+			const size_t lineCount = std::count(MAKE_RANGE(text), '\n') + 1;
 			
 			if (posY == TextPosY::Center)
 			{
-				offsetY -= lineCount / 2.0f;
+				offsetY -= (lineCount * font.GetSize()) / 2.0f;
 			}
 			else //posY == TextPosY::Above
 			{
-				offsetY -= lineCount;
+				offsetY -= (lineCount * font.GetSize());
 			}
 		}
 		
@@ -92,7 +92,7 @@ namespace MCR
 		return { maxLineWidth, offsetY };
 	}
 	
-	void UIDrawList::AddQuad(const glm::vec2 pos1, const glm::vec2 pos2, const glm::vec4& color)
+	void UIDrawList::AddRectangle(const glm::vec2 pos1, const glm::vec2 pos2, const glm::vec4& color)
 	{
 		BeginBatch(VK_NULL_HANDLE);
 		
@@ -109,6 +109,29 @@ namespace MCR
 				v.m_texCoord = glm::vec3();
 				v.m_color = color;
 			}
+		}
+		
+		AppendQuad(vertices.data());
+	}
+	
+	void UIDrawList::AddLine(glm::vec2 pos1, glm::vec2 pos2, const glm::vec4& color, float width)
+	{
+		BeginBatch(VK_NULL_HANDLE);
+		
+		std::array<Vertex, 4> vertices;
+		
+		glm::vec2 toEdgeF = glm::normalize(pos2 - pos1) * width * 0.5f;
+		glm::vec2 toEdgeL(-toEdgeF.y, toEdgeF.x);
+		
+		vertices[0].m_position = pos1 - toEdgeF - toEdgeL;
+		vertices[1].m_position = pos1 - toEdgeF + toEdgeL;
+		vertices[2].m_position = pos2 + toEdgeF - toEdgeL;
+		vertices[3].m_position = pos2 + toEdgeF + toEdgeL;
+		
+		for (int i = 0; i < 4; i++)
+		{
+			vertices[i].m_color = color;
+			vertices[i].m_texCoord = glm::vec3();
 		}
 		
 		AppendQuad(vertices.data());
@@ -144,6 +167,30 @@ namespace MCR
 		AppendTriangle(vertices.data());
 	}
 	
+	void UIDrawList::AddList(const UIDrawList& other)
+	{
+		if (other.m_batches.empty())
+			return;
+		
+		const uint32_t indexOffset = static_cast<uint32_t>(m_vertices.size());
+		m_vertices.insert(m_vertices.end(), MAKE_RANGE(other.m_vertices));
+		
+		for (const Batch& batch : other.m_batches)
+		{
+			BeginBatch(batch.m_descriptorSet);
+			
+			m_batches.back().m_numIndices = batch.m_numIndices;
+			
+			const uint32_t* srcIndices = other.m_indices.data() + batch.m_firstIndex;
+			
+			m_indices.resize(m_indices.size() + batch.m_numIndices);
+			for (uint32_t i = 1; i <= batch.m_numIndices; i++)
+			{
+				m_indices[m_indices.size() - i] = srcIndices[batch.m_numIndices - i] + indexOffset;
+			}
+		}
+	}
+	
 	void UIDrawList::CopyToBuffer(void* bufferData) const
 	{
 		Vertex* verticesOut = reinterpret_cast<Vertex*>(bufferData);
@@ -173,7 +220,7 @@ namespace MCR
 	
 	void UIDrawList::AppendTriangle(const UIDrawList::Vertex* vertices)
 	{
-		const uint32_t baseIndex = gsl::narrow_cast<uint32_t>(m_vertices.size());
+		const uint32_t baseIndex = static_cast<uint32_t>(m_vertices.size());
 		
 		for (uint32_t i = 0; i < 3; i++)
 		{

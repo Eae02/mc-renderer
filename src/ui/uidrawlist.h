@@ -45,12 +45,16 @@ namespace MCR
 		}
 		
 		glm::vec2 AddText(const class Font& font, std::string_view text, glm::vec2 position, const glm::vec4& color,
-		                  TextPosX posX = TextPosX::Right, TextPosY posY = TextPosY::Above);
+		                  TextPosX posX = TextPosX::Right, TextPosY posY = TextPosY::Below);
 		
-		void AddQuad(glm::vec2 pos1, glm::vec2 pos2, const glm::vec4& color);
+		void AddRectangle(glm::vec2 pos1, glm::vec2 pos2, const glm::vec4& color);
+		
+		void AddLine(glm::vec2 pos1, glm::vec2 pos2, const glm::vec4& color, float width = 1.0f);
 		
 		void AddTriangle(const glm::vec2* positions, const glm::vec4& color);
 		void AddTriangleMultiColored(const glm::vec2* positions, const glm::vec4* colors);
+		
+		void AddList(const UIDrawList& other);
 		
 		inline bool Empty() const
 		{

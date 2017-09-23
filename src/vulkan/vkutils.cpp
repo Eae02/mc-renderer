@@ -1,5 +1,6 @@
 #include "vkutils.h"
 #include "instance.h"
+#include "graphicsdevicelostexception.h"
 
 #include <sstream>
 
@@ -37,7 +38,7 @@ namespace MCR
 			if (result == VK_ERROR_OUT_OF_HOST_MEMORY)
 				throw std::bad_alloc();
 			if (result == VK_ERROR_DEVICE_LOST)
-				throw std::runtime_error("Graphics device lost.");
+				throw GraphicsDeviceLostException();
 			
 			std::ostringstream errorMsg;
 			

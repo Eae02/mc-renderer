@@ -48,6 +48,11 @@ namespace MCR
 			return *m_descriptorSet;
 		}
 		
+		static void LoadStandard(class LoadContext& loadContext);
+		static void DestroyStandard();
+		
+		static const Font& GetStandardDev();
+		
 	private:
 		inline Font()
 		    : m_descriptorSet("UI_Image") { }

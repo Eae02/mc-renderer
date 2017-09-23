@@ -96,6 +96,23 @@ namespace MCR
 		createInfo.pSpecializationInfo = nullptr;
 	}
 	
+	inline VkHandle<VkQueryPool> CreateQueryPool(VkQueryType type, uint32_t count)
+	{
+		const VkQueryPoolCreateInfo createInfo = 
+		{
+			/* sType              */ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+			/* pNext              */ nullptr,
+			/* flags              */ 0,
+			/* queryType          */ type,
+			/* queryCount         */ count,
+			/* pipelineStatistics */ 0
+		};
+		
+		VkQueryPool queryPool;
+		CheckResult(vkCreateQueryPool(vulkan.device, &createInfo, nullptr, &queryPool));
+		return queryPool;
+	}
+	
 	inline VkHandle<VkFramebuffer> CreateFramebuffer(VkRenderPass renderPass, gsl::span<const VkImageView> attachments,
 	                                                 uint32_t width, uint32_t height, uint32_t layers = 1)
 	{

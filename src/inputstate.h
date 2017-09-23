@@ -38,6 +38,11 @@ namespace MCR
 			return m_prevFrame.m_mouseButtonsPressed[static_cast<int>(button)];
 		}
 		
+		inline bool IsButtonClicked(MouseButtons button) const
+		{
+			return IsButtonPressed(button) && !WasButtonPressed(button);
+		}
+		
 		inline bool IsKeyPressed(Keys key) const
 		{
 			return m_currentFrame.m_keysPressed[static_cast<int>(key)];

@@ -317,6 +317,7 @@ namespace MCR
 		vkGetPhysicalDeviceProperties(vulkan.physicalDevice, &physicalDeviceProperties);
 		vulkan.limits.uniformBufferOffsetAlignment = physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
 		vulkan.limits.storageBufferOffsetAlignment = physicalDeviceProperties.limits.minStorageBufferOffsetAlignment;
+		vulkan.limits.timestampMillisecondPeriod = physicalDeviceProperties.limits.timestampPeriod * 1E-6f;
 		
 		Log("Using vulkan device: ", physicalDeviceProperties.deviceName);
 		

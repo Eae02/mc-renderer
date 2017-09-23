@@ -1,7 +1,9 @@
 ﻿#include "renderer.h"
 #include "frustum.h"
 #include "framebuffer.h"
+#include "../profiling/profiling.h"
 #include "../world/worldmanager.h"
+#include "../profiling/frameprofiler.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
@@ -70,6 +72,8 @@ namespace MCR
 		const glm::mat4 viewProj = m_projectionMatrix * camera.GetViewMatrix();
 		const glm::mat4 invViewProj = camera.GetInverseViewMatrix() * m_invProjectionMatrix;
 		
+		params.m_frameProfiler->Reset(cb);
+		
 		m_renderSettingsBuffer.SetData(cb, viewProj, invViewProj, camera.GetPosition(), params.m_time,
 		                               *params.m_timeManager);
 		
@@ -98,8 +102,16 @@ namespace MCR
 		};
 		
 		m_regionRenderList.Begin();
-		m_worldManager->FillRenderList(m_regionRenderList, m_frustum);
-		m_regionRenderList.End(cb);
+		
+		{
+			MCR_SCOPED_TIMER(0, "Render List Fill")
+			m_worldManager->FillRenderList(m_regionRenderList, m_frustum);
+		}
+		
+		{
+			MCR_SCOPED_TIMER(0, "Render List End")
+			m_regionRenderList.End(cb);
+		}
 		
 		cb.BeginRenderPass(&renderPassBeginInfo);
 		

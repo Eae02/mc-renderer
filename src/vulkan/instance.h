@@ -32,6 +32,7 @@ namespace MCR
 		{
 			uint64_t uniformBufferOffsetAlignment;
 			uint64_t storageBufferOffsetAlignment;
+			float timestampMillisecondPeriod;
 			bool hasMultiDrawIndirect;
 		} limits;
 	};

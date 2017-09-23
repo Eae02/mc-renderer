@@ -1,4 +1,4 @@
-#include "game.h"
+﻿#include "game.h"
 #include "blocks/blockstexturemanager.h"
 #include "blocks/registerblocktypes.h"
 #include "vulkan/vkutils.h"
@@ -11,6 +11,8 @@
 #include "rendering/postprocessor.h"
 #include "rendering/renderer.h"
 #include "rendering/framebuffer.h"
+#include "profiling/profiling.h"
+#include "ui/profilingpane.h"
 
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
@@ -20,20 +22,20 @@ namespace MCR
 {
 	std::unique_ptr<WorldManager> worldManager;
 	
-	std::unique_ptr<Font> standardFont;
-	
 	TimeManager timeManager;
+	
+	ProfilingPane profilingPane;
 	
 	void Initialize()
 	{
 		LoadContext loadContext;
 		loadContext.Begin();
 		
-		standardFont = std::make_unique<Font>(Font::Render(GetResourcePath() / "font.ttf", 16, loadContext));
-		
 		//Loads block textures
 		const fs::path blocksTxtPath = GetResourcePath() / "textures" / "blocks" / "blocks.txt";
 		BlocksTextureManager::SetInstance(std::make_unique<BlocksTextureManager>(BlocksTextureManager::LoadTextures(blocksTxtPath, loadContext)));
+		
+		Font::LoadStandard(loadContext);
 		
 		loadContext.End();
 		
@@ -42,10 +44,20 @@ namespace MCR
 	
 	void UpdateGame(float dt, const InputState& inputState)
 	{
-		worldManager->Update(dt, inputState);
+		{
+			MCR_SCOPED_TIMER(0, "World Update")
+			worldManager->Update(dt, inputState);
+		}
 		
 		timeManager.Update(dt);
 	}
+	
+	struct FrameQueueEntry
+	{
+		VkHandle<VkFence> m_fence;
+		VkHandle<VkSemaphore> m_signalSemaphore;
+		FrameProfiler m_profiler;
+	};
 	
 	void RunGameLoop(SDL_Window* window)
 	{
@@ -60,12 +72,12 @@ namespace MCR
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 		}
 		
-		VkHandle<VkFence> fences[MaxQueuedFrames];
-		VkHandle<VkSemaphore> signalSemaphores[MaxQueuedFrames];
+		std::array<FrameQueueEntry, MaxQueuedFrames> frames;
 		
-		for (size_t i = 0; i < MaxQueuedFrames; i++)
+		for (FrameQueueEntry& frame : frames)
 		{
-			signalSemaphores[i] = CreateVkSemaphore();
+			frame.m_fence = CreateVkFence();
+			frame.m_signalSemaphore = CreateVkSemaphore();
 		}
 		
 		auto startTime = std::chrono::high_resolution_clock::now();
@@ -150,15 +162,23 @@ namespace MCR
 			if (shouldQuit)
 				break;
 			
+			uiDrawList.Reset();
+			
+			FrameQueueEntry& frame = frames[frameQueueIndex];
+			currentFrameProfiler = &frame.m_profiler;
+			
 			UpdateGame(lastFrameTime.count() * 1E-9f, inputState);
 			
-			if (fences[frameQueueIndex].IsNull())
+			ProfilingData profilingData;
+			
+			if (frameIndex >= MaxQueuedFrames)
 			{
-				fences[frameQueueIndex] = CreateVkFence();
-			}
-			else
-			{
-				CheckResult(vkWaitForFences(vulkan.device, 1, &*fences[frameQueueIndex], true, UINT64_MAX));
+				{
+					MCR_SCOPED_TIMER(0, "GPU sync")
+					CheckResult(vkWaitForFences(vulkan.device, 1, &*frame.m_fence, true, UINT64_MAX));
+				}
+				
+				profilingData = frame.m_profiler.GetData();
 			}
 			
 			//Checks if the drawable size has changed.
@@ -185,12 +205,9 @@ namespace MCR
 			
 			ProcessVulkanDestroyList();
 			
-			VkSemaphore signalSemaphore = *signalSemaphores[frameQueueIndex];
-			renderer.Render({ timeF, &timeManager });
+			renderer.Render({ timeF, &frame.m_profiler, &timeManager });
 			
-			uiDrawList.Reset();
-			uiDrawList.AddText(*standardFont, "Text Test", glm::vec2(10, 10), glm::vec4(1));
-			uiDrawList.AddQuad(glm::vec2(100), glm::vec2(200, 300), glm::vec4(0, 0, 0.5f, 0.5f));
+			profilingPane.FrameEnd(profilingData, inputState, uiDrawList);
 			
 			uiGraphicsContext.Draw(uiDrawList, framebuffer);
 			
@@ -211,12 +228,18 @@ namespace MCR
 				/* commandBufferCount   */ ArrayLength(commandBuffers),
 				/* pCommandBuffers      */ commandBuffers,
 				/* signalSemaphoreCount */ 1,
-				/* pSignalSemaphores    */ &signalSemaphore
+				/* pSignalSemaphores    */ &*frame.m_signalSemaphore
 			};
 			
-			vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, *fences[frameQueueIndex]);
+			{
+				MCR_SCOPED_TIMER(0, "Submit")
+				vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, *frame.m_fence);
+			}
 			
-			SwapChain::Present(signalSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			{
+				MCR_SCOPED_TIMER(0, "Present");
+				SwapChain::Present(*frame.m_signalSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			}
 			
 			IncrementFrameIndex();
 			
@@ -227,8 +250,9 @@ namespace MCR
 		
 		vkDeviceWaitIdle(vulkan.device);
 		
+		Font::DestroyStandard();
+		
 		worldManager = nullptr;
-		standardFont = nullptr;
 		BlocksTextureManager::SetInstance(nullptr);
 		
 		ClearVulkanDestroyList();

@@ -261,4 +261,21 @@ namespace MCR
 		
 		return *glyphIt;
 	}
+	
+	static std::unique_ptr<Font> standardDev;
+	
+	void Font::LoadStandard(LoadContext& loadContext)
+	{
+		standardDev = std::make_unique<Font>(Font::Render(GetResourcePath() / "font.ttf", 14, loadContext));
+	}
+	
+	void Font::DestroyStandard()
+	{
+		standardDev = nullptr;
+	}
+	
+	const Font& Font::GetStandardDev()
+	{
+		return *standardDev;
+	}
 }

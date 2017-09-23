@@ -21,11 +21,11 @@ namespace MCR
 	{
 		if (frameIndex < MaxQueuedFrames)
 			return;
-		frameIndex -= MaxQueuedFrames;
+		uint32_t targetFrameIndex = frameIndex - MaxQueuedFrames;
 		
 		for (size_t i = 0; i < destroyList.size();)
 		{
-			if (destroyList[i].m_enqueuedFrameIndex > frameIndex)
+			if (destroyList[i].m_enqueuedFrameIndex > targetFrameIndex)
 			{
 				i++;
 				continue;

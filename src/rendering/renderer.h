@@ -20,6 +20,7 @@ namespace MCR
 		struct RenderParams
 		{
 			float m_time;
+			class FrameProfiler* m_frameProfiler;
 			const class TimeManager* m_timeManager;
 		};
 		
