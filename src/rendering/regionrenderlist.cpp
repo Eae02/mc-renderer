@@ -1,74 +1,158 @@
 #include "regionrenderlist.h"
-#include "regions/regionmesh.h"
 
 namespace MCR
 {
 	void RegionRenderList::Begin()
 	{
-		m_entries.clear();
+		for (MeshGroup& group : m_meshGroups)
+		{
+			group.m_meshes.clear();
+		}
+		
+		m_numMeshes = 0;
 	}
 	
-	bool RegionRenderList::Add(RegionMesh& mesh, uint32_t slice)
+	void RegionRenderList::Add(ChunkMesh& mesh)
 	{
-		const RenderEntry newEntry = { &mesh, slice };
-		m_entries.push_back(newEntry);
-		return true;
-		
-		auto it = std::lower_bound(MAKE_RANGE(m_entries), newEntry, [] (const RenderEntry& a, const RenderEntry& b)
+		auto groupIt = std::find_if(MAKE_RANGE(m_meshGroups), [&] (const MeshGroup& group)
 		{
-			return a.m_mesh < b.m_mesh || (a.m_mesh == b.m_mesh && a.m_slice < b.m_slice);
+			return group.m_vertexBuffer == mesh.GetVertexBuffer() && group.m_indexBuffer == mesh.GetIndexBuffer();
 		});
 		
-		if (it != m_entries.end() && it->m_mesh == &mesh && it->m_slice == slice)
-			return false;
+		if (groupIt != m_meshGroups.end())
+		{
+			groupIt->m_meshes.push_back(&mesh);
+		}
+		else
+		{
+			m_meshGroups.emplace_back(mesh);
+		}
 		
-		m_entries.insert(it, newEntry);
-		return true;
+		m_numMeshes++;
 	}
 	
 	void RegionRenderList::End(CommandBuffer& cb)
 	{
-		size_t i = 0;
-		while (i < m_entries.size())
-		{
-			RegionMesh* mesh = m_entries[i].m_mesh;
-			
-			mesh->PrepareForRendering(cb);
-			
-			while (i < m_entries.size() && m_entries[i].m_mesh == mesh)
-			{
-				i++;
-			}
-		}
-	}
-	
-	void RegionRenderList::Render(CommandBuffer& cb)
-	{
-		if (m_entries.empty())
+		if (m_numMeshes == 0)
 			return;
 		
-		const RegionMesh* mesh = m_entries[0].m_mesh;
-		uint32_t firstSlice = m_entries[0].m_slice;
-		uint32_t numSlices = 1;
-		
-		size_t i = 1;
-		while (true)
+		if (!vulkan.limits.hasMultiDrawIndirect)
 		{
-			bool end = i == m_entries.size();
-			if (end || mesh != m_entries[i].m_mesh || m_entries[i].m_slice != (firstSlice + numSlices))
+			for (MeshGroup& group : m_meshGroups)
 			{
-				mesh->Render(cb, firstSlice, numSlices);
-				
-				mesh = m_entries[i].m_mesh;
-				firstSlice = m_entries[i].m_slice;
-				numSlices = 0;
+				for (ChunkMesh* mesh : group.m_meshes)
+				{
+					mesh->PrepareForRendering(cb);
+				}
 			}
 			
-			if (end)
-				break;
+			return;
+		}
+		
+		if (m_numAllocatedCommands < m_numMeshes)
+		{
+			m_numAllocatedCommands = RoundToNextMultiple<uint32_t>(m_numMeshes, 1024);
 			
-			numSlices++;
-			i++;
+			const uint64_t bufferSize = m_numAllocatedCommands * sizeof(VkDrawIndexedIndirectCommand);
+			
+			// ** Allocates the host buffer **
+			const VmaMemoryRequirements hostBufferMemRequirements =
+			{
+				VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+				VMA_MEMORY_USAGE_CPU_ONLY
+			};
+			
+			VkBufferCreateInfo hostBufferCreateInfo;
+			InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, bufferSize * MaxQueuedFrames);
+			
+			VmaAllocationInfo hostAllocationInfo;
+			
+			CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostBufferMemRequirements,
+			                            m_hostCommandsBuffer.GetCreateAddress(),
+			                            m_hostCommandsAllocation.GetCreateAddress(), &hostAllocationInfo));
+			
+			m_hostCommandsMemory = reinterpret_cast<VkDrawIndexedIndirectCommand*>(hostAllocationInfo.pMappedData);
+			
+			// ** Allocates the device buffer **
+			const VmaMemoryRequirements deviceBufferMemRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+			
+			VkBufferCreateInfo deviceBufferCreateInfo;
+			InitBufferCreateInfo(deviceBufferCreateInfo, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
+			                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, bufferSize);
+			
+			CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceBufferMemRequirements,
+			                            m_deviceCommandsBuffer.GetCreateAddress(),
+			                            m_deviceCommandsAllocation.GetCreateAddress(), nullptr));
+		}
+		
+		uint32_t hostCommandsOffset = m_numAllocatedCommands * frameQueueIndex;
+		VkDrawIndexedIndirectCommand* nextHostCommand = m_hostCommandsMemory + hostCommandsOffset;
+		
+		for (MeshGroup& group : m_meshGroups)
+		{
+			for (ChunkMesh* mesh : group.m_meshes)
+			{
+				mesh->PrepareForRendering(cb);
+				mesh->WriteIndirectCommand(*(nextHostCommand++));
+			}
+		}
+		
+		// ** Uploads indirect commands. **
+		const VkBufferCopy commandsBufferCopy =
+		{
+			/* srcOffset */ hostCommandsOffset * sizeof(VkDrawIndexedIndirectCommand),
+			/* dstOffset */ 0,
+			/* size      */ m_numMeshes * sizeof(VkDrawIndexedIndirectCommand)
+		};
+		cb.CopyBuffer(*m_hostCommandsBuffer, *m_deviceCommandsBuffer, commandsBufferCopy);
+		
+		// ** Inserts a barrier for indirect commands. **
+		VkBufferMemoryBarrier commandsBufferBarrier = 
+		{
+			/* sType               */ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			/* pNext               */ nullptr,
+			/* srcAccessMask       */ VK_ACCESS_TRANSFER_WRITE_BIT,
+			/* dstAccessMask       */ VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+			/* srcQueueFamilyIndex */ VK_QUEUE_FAMILY_IGNORED,
+			/* dstQueueFamilyIndex */ VK_QUEUE_FAMILY_IGNORED,
+			/* buffer              */ *m_deviceCommandsBuffer,
+			/* offset              */ 0,
+			/* size                */ commandsBufferCopy.size
+		};
+		
+		cb.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0,
+		                   { }, SingleElementSpan(commandsBufferBarrier), { });
+	}
+	
+	void RegionRenderList::Render(CommandBuffer& cb) const
+	{
+		uint64_t offset = 0;
+		
+		for (const MeshGroup& group : m_meshGroups)
+		{
+			cb.BindIndexBuffer(group.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			
+			VkDeviceSize vbOffsets[] = { 0 };
+			cb.BindVertexBuffers(0, 1, &group.m_vertexBuffer, vbOffsets);
+			
+			if (vulkan.limits.hasMultiDrawIndirect)
+			{
+				cb.DrawIndexedIndirect(*m_deviceCommandsBuffer, offset, group.m_meshes.size(), sizeof(VkDrawIndexedIndirectCommand));
+				
+				offset += group.m_meshes.size() * sizeof(VkDrawIndexedIndirectCommand);
+			}
+			else
+			{
+				VkDrawIndexedIndirectCommand command;
+				
+				for (const ChunkMesh* mesh : group.m_meshes)
+				{
+					mesh->WriteIndirectCommand(command);
+					
+					cb.DrawIndexed(command.indexCount, command.instanceCount, command.firstIndex,
+					               command.vertexOffset, command.firstInstance);
+				}
+			}
 		}
 	}
 }

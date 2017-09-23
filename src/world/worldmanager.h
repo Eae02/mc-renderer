@@ -8,10 +8,9 @@
 #include <atomic>
 #include <vector>
 #include <cstdint>
+#include <bitset>
 
-#include "../rendering/regions/regionuploader.h"
-#include "../rendering/regions/regionmesh.h"
-#include "regionbuildthread.h"
+#include "chunkbuildthread.h"
 #include "regiongeneratethread.h"
 #include "regioniothread.h"
 #include "world.h"
@@ -30,8 +29,6 @@ namespace MCR
 		
 		void Update(float dt, const class InputState& inputState);
 		
-		void FillCameraRenderList(class RegionRenderList& renderList, const class Frustum& frustum) const;
-		
 		inline void FillRenderList(class RegionRenderList& renderList, const class Frustum& frustum) const
 		{
 			FillRenderListR(renderList, frustum, 0, 0, m_regionTableSize, m_regionTableSize);
@@ -41,7 +38,7 @@ namespace MCR
 		
 		Region* GetRegion(RegionCoordinate coordinate);
 		
-		void MarkOutOfDate(RegionCoordinate coordinate);
+		void MarkOutOfDate(RegionCoordinate coordinate, uint32_t chunkY);
 		
 		inline const Camera& GetCamera() const
 		{
@@ -49,9 +46,6 @@ namespace MCR
 		}
 		
 	private:
-		void FillCameraRenderListR(class RegionRenderList& renderList, const class Frustum& frustum, uint8_t enterDir,
-		                           int rx, int sy, int rz, int cameraSliceY) const;
-		
 		void FillRenderListR(class RegionRenderList& renderList, const class Frustum& frustum,
 		                     int minX, int minZ, int spanX, int spanZ) const;
 		
@@ -79,16 +73,16 @@ namespace MCR
 			Loading,
 			LoadedNotBuilt,
 			Building,
-			UpToDate,
-			OutOfDate,
-			Uploading
+			Uploading,
+			Built
 		};
 		
 		struct RegionEntry
 		{
 			RegionStates m_state;
 			std::shared_ptr<Region> m_region;
-			RegionMesh m_mesh;
+			std::bitset<Region::ChunkCount> m_meshesOutOfDate;
+			std::array<ChunkMesh, Region::ChunkCount> m_meshes; //Performance improvement: don't allocate statically (faster move).
 		};
 		
 		RegionEntry* RegionEntryFromGlobalCoordinate(RegionCoordinate coordinate);
@@ -110,7 +104,7 @@ namespace MCR
 		std::vector<RegionEntry*> m_regions[2];
 		
 		MeshBuilder m_meshBuilder;
-		RegionBuildThread m_regionBuildThread;
+		ChunkBuildThread m_chunkBuildThread;
 		
 		std::unique_ptr<World> m_world;
 		Camera m_camera;

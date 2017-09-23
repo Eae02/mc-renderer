@@ -4,25 +4,29 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <memory>
+#include <cstdint>
 
-#include "../rendering/regions/regionuploader.h"
+#include "../rendering/regions/chunkuploader.h"
+#include "../rendering/regions/meshbuilder.h"
 
 namespace MCR
 {
-	class Region;
-	
-	class RegionBuildThread final
+	class ChunkBuildThread final
 	{
 	public:
 		struct BuildCommand
 		{
 			RegionCoordinate m_coordinate;
+			uint32_t m_chunkY;
 			std::weak_ptr<const Region> m_region;
 			std::weak_ptr<const Region> m_neighbors[4];
 		};
 		
-		RegionBuildThread();
-		~RegionBuildThread();
+		inline ChunkBuildThread()
+		    : m_thread(&ChunkBuildThread::ThreadTarget, this) { }
+		
+		~ChunkBuildThread();
 		
 		inline void BeginUpdating()
 		{
@@ -38,9 +42,11 @@ namespace MCR
 		}
 		
 		//Only call between BeginUpdating and EndUpdating.
-		inline void SetCameraRegion(RegionCoordinate coordinate)
+		inline void SetCameraPosition(int64_t chunkX, int64_t chunkY, int64_t chunkZ)
 		{
-			m_cameraRegion = coordinate;
+			m_cameraChunkX = chunkX;
+			m_cameraChunkY = chunkY;
+			m_cameraChunkZ = chunkZ;
 		}
 		
 		inline void EndUpdating()
@@ -52,7 +58,7 @@ namespace MCR
 			m_mutex.unlock();
 		}
 		
-		void BuildSync(const Region& region, gsl::span<const Region*> neighbors, MeshBuilder& meshBuilder);
+		void BuildSync(const Region& region, uint32_t chunkY, gsl::span<const Region*> neighbors, MeshBuilder& meshBuilder);
 		
 		template <typename CallbackTp>
 		inline void IterateCompleted(CallbackTp callback)
@@ -68,14 +74,16 @@ namespace MCR
 		
 		bool m_exit = false;
 		
-		RegionCoordinate m_cameraRegion;
+		int64_t m_cameraChunkX;
+		int64_t m_cameraChunkY;
+		int64_t m_cameraChunkZ;
 		
 		bool m_anyCommandsEnqueued = false;
 		std::vector<BuildCommand> m_buildCommands;
 		
 		MeshBuilder m_meshBuilder;
 		
-		RegionUploader m_uploader;
+		ChunkUploader m_uploader;
 		
 		std::thread m_thread;
 	};

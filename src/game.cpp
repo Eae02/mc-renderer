@@ -252,6 +252,8 @@ namespace MCR
 		
 		Font::DestroyStandard();
 		
+		ChunkBufferAllocator::s_instance.ReleaseMemory();
+		
 		worldManager = nullptr;
 		BlocksTextureManager::SetInstance(nullptr);
 		

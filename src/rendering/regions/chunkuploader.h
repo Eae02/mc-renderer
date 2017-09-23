@@ -1,25 +1,21 @@
 #pragma once
 
-#include "../../vulkan/vk.h"
-#include "regiondatabuffer.h"
-#include "meshbuilder.h"
-#include "regionmesh.h"
+#include <cstdint>
 
-#include <mutex>
-#include <vector>
-#include <optional>
+#include "chunkmesh.h"
+#include "../../vulkan/vk.h"
 
 namespace MCR
 {
-	class RegionUploader
+	class ChunkUploader
 	{
 	public:
-		RegionUploader();
+		ChunkUploader();
 		
-		void BeginUploading(int64_t x, int64_t z, const std::array<RegionMesh::SliceData, Region::SliceCount>& slices,
-		                    const MeshBuilder& meshBuilder);
+		void BeginUploading(int64_t x, int64_t y, int64_t z, Region::ChunkConnectivity connectivity,
+		                    const class MeshBuilder& meshBuilder);
 		
-		//Signature for CallbackTp: (int64_t x, int64_t z, RegionDataBuffer& dataBuffer)
+		//Signature for CallbackTp: (int64_t x, int64_t y, int64_t z, ChunkMesh& mesh)
 		template <typename CallbackTp>
 		void IterateCompleted(CallbackTp callback)
 		{
@@ -29,7 +25,7 @@ namespace MCR
 			{
 				if (vkGetFenceStatus(vulkan.device, *m_tasks[i].m_hostBuffer.m_fence) == VK_SUCCESS)
 				{
-					callback(m_tasks[i].m_x, m_tasks[i].m_z, m_tasks[i].m_meshData);
+					callback(m_tasks[i].m_x, m_tasks[i].m_y, m_tasks[i].m_z, m_tasks[i].m_chunk);
 					
 					m_hostBuffers.push_back(std::move(m_tasks[i].m_hostBuffer));
 					
@@ -65,8 +61,9 @@ namespace MCR
 		struct Task
 		{
 			int64_t m_x;
+			int64_t m_y;
 			int64_t m_z;
-			RegionMesh::Data m_meshData;
+			ChunkMesh m_chunk;
 			HostBuffer m_hostBuffer;
 			CommandBuffer m_cb;
 		};

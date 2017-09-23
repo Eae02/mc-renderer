@@ -40,7 +40,7 @@ namespace MCR
 			uint8_t m_data = 0;
 		};
 		
-		class SliceConnectivity
+		class ChunkConnectivity
 		{
 			friend class Region;
 			
@@ -79,14 +79,14 @@ namespace MCR
 		inline int64_t GetZ() const
 		{ return m_coordZ; }
 		
-		SliceConnectivity CalculateConnectivity(uint32_t sliceIndex) const;
+		ChunkConnectivity CalculateConnectivity(uint32_t chunkIndex) const;
 		
 		void Deserialize(const char* data);
 		void Serialize(char* data) const;
 		
 		static constexpr int Size = 16;
 		static constexpr int Height = 256;
-		static constexpr int SliceCount = Height / Size;
+		static constexpr int ChunkCount = Height / Size;
 		static constexpr int BlockCount = Size * Size * Height;
 		static constexpr size_t DataBufferBytes = BlockCount * (sizeof(uint8_t) + sizeof(uint8_t));
 		

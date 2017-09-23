@@ -1,5 +1,4 @@
-﻿#include "worldmanager.h"
-#include "../rendering/regions/buildregionmesh.h"
+#include "worldmanager.h"
 #include "../rendering/regionrenderlist.h"
 #include "../rendering/frustum.h"
 #include "../blocks/sides.h"
@@ -78,6 +77,8 @@ namespace MCR
 		const int64_t currentRegionX = std::floor(m_camera.GetPosition().x / Region::Size);
 		const int64_t currentRegionZ = std::floor(m_camera.GetPosition().z / Region::Size);
 		
+		const int64_t currentChunkY = std::floor(m_camera.GetPosition().y / Region::Size);
+		
 		const int shiftX = gsl::narrow<int>(m_centerRegionX - currentRegionX);
 		const int shiftZ = gsl::narrow<int>(m_centerRegionZ - currentRegionZ);
 		
@@ -88,8 +89,6 @@ namespace MCR
 		
 		if (shifted)
 		{
-			std::vector<RegionCoordinate> regionsToLoad;
-			
 			//Saves and frees regions that have been shifted off the region table
 			//or moves the region to it's new location if hasn't been shifted off.
 			if (m_hasUpdated)
@@ -197,7 +196,7 @@ namespace MCR
 		};
 		
 		//Processes built regions
-		m_regionBuildThread.IterateCompleted([&] (int64_t x, int64_t z, RegionMesh::Data& meshData)
+		m_chunkBuildThread.IterateCompleted([&] (int64_t x, int64_t y, int64_t z, ChunkMesh& mesh)
 		{
 			int localX = gsl::narrow<int>(x - m_centerRegionX) + m_loadDistance;
 			int localZ = gsl::narrow<int>(z - m_centerRegionZ) + m_loadDistance;
@@ -207,27 +206,28 @@ namespace MCR
 			
 			if (regionEntry != nullptr)
 			{
-				regionEntry->m_state = RegionStates::UpToDate;
-				regionEntry->m_mesh.SetData(std::move(meshData));
+				regionEntry->m_state = RegionStates::Built;
+				regionEntry->m_meshes[y] = std::move(mesh);
 			}
 		});
 		
-		//Used to select a mesh to build synchronously this frame.
+		//Used to select a chunk mesh to build synchronously this frame.
 		struct
 		{
 			int x; //Local x coordinate
+			uint32_t y; //Chunk y coordinate
 			int z; //Local z coordinate
 			int distToCameraSq; //Distance to the current region squared.
-		} regionToBuild;
-		regionToBuild.distToCameraSq = std::numeric_limits<int>::max();
+		} chunkToBuild;
+		chunkToBuild.distToCameraSq = std::numeric_limits<int>::max();
 		
 		bool buildThreadUpdating = false;
 		
 		//Updates the build thread's camera region
 		if (shifted)
 		{
-			m_regionBuildThread.BeginUpdating();
-			m_regionBuildThread.SetCameraRegion({ currentRegionX, currentRegionZ });
+			m_chunkBuildThread.BeginUpdating();
+			m_chunkBuildThread.SetCameraPosition(currentRegionX, currentChunkY, currentRegionZ);
 			buildThreadUpdating = true;
 		}
 		
@@ -253,7 +253,7 @@ namespace MCR
 						//(this happens to regions that have just been loaded) so a build command should be submitted
 						//to the build thread.
 						
-						RegionBuildThread::BuildCommand buildCommand;
+						ChunkBuildThread::BuildCommand buildCommand;
 						
 						bool allNeighborsLoaded = true;
 						for (int i = 0; i < 4; i++)
@@ -277,30 +277,51 @@ namespace MCR
 							
 							if (!buildThreadUpdating)
 							{
-								m_regionBuildThread.BeginUpdating();
+								m_chunkBuildThread.BeginUpdating();
 								buildThreadUpdating = true;
 							}
 							
-							m_regionBuildThread.BuildASync(buildCommand);
+							for (uint32_t y = 0; y < Region::ChunkCount; y++)
+							{
+								buildCommand.m_chunkY = y;
+								m_chunkBuildThread.BuildASync(buildCommand);
+							}
+							
 							region->m_state = RegionStates::Building;
 						}
 					}
-					else if (region->m_state == RegionStates::OutOfDate)
+					else if (region->m_state == RegionStates::Built && region->m_meshesOutOfDate.any())
 					{
-						//This region is loaded and has a mesh, which is outdated. It is set as the region to build
-						//synchronously this frame if it is closer to the camera than the currently selected region.
-						if (distToCameraSq < regionToBuild.distToCameraSq)
+						for (uint32_t y = 0; y < Region::ChunkCount; y++)
 						{
-							regionToBuild.x = x;
-							regionToBuild.z = z;
-							regionToBuild.distToCameraSq = distToCameraSq;
+							if (region->m_meshesOutOfDate[y])
+							{
+								const int cameraDY = static_cast<int>(y) - currentChunkY;
+								const int distToChunkSq = distToCameraSq + cameraDY * cameraDY;
+								
+								//This chunk is loaded and has a mesh, which is outdated. It is set as the chunk to
+								//build synchronously this frame if it is closer to the camera than the currently
+								//selected chunk.
+								if (distToChunkSq < chunkToBuild.distToCameraSq)
+								{
+									chunkToBuild.x = x;
+									chunkToBuild.y = y;
+									chunkToBuild.z = z;
+									chunkToBuild.distToCameraSq = distToCameraSq;
+								}
+							}
 						}
 					}
 				}
-				else if (region->m_state == RegionStates::UpToDate || region->m_state == RegionStates::OutOfDate)
+				else if (region->m_state == RegionStates::Built)
 				{
-					//This region has a mesh but is not within region to have one, so the mesh is discarded.
-					region->m_mesh.Clear();
+					//This region's chunks have meshes but it not within the required region, so the meshes are discarded.
+					for (ChunkMesh& mesh : region->m_meshes)
+					{
+						mesh.Reset();
+					}
+					
+					region->m_meshesOutOfDate = { };
 					region->m_state = RegionStates::LoadedNotBuilt;
 				}
 			}
@@ -308,92 +329,28 @@ namespace MCR
 		
 		if (buildThreadUpdating)
 		{
-			m_regionBuildThread.EndUpdating();
+			m_chunkBuildThread.EndUpdating();
 		}
 		
-		//If any already built regions were out of date, builds the selected one and starts uploading it.
-		if (regionToBuild.distToCameraSq != std::numeric_limits<int>::max())
+		//If any already built chunks were out of date, builds the selected one and starts uploading it.
+		if (chunkToBuild.distToCameraSq != std::numeric_limits<int>::max())
 		{
-			RegionEntry* region = m_regions[0][GetRegionIndex(regionToBuild.x, regionToBuild.z)];
+			RegionEntry* region = m_regions[0][GetRegionIndex(chunkToBuild.x, chunkToBuild.z)];
+			
 			region->m_state = RegionStates::Uploading;
+			region->m_meshesOutOfDate.reset(chunkToBuild.y);
 			
 			m_meshBuilder.Reset();
 			
 			std::array<const Region*, 4> neighbors;
 			for (int n = 0; n < 4; n++)
 			{
-				const int nx = regionToBuild.x + regionNeighborDirs[n].x;
-				const int nz = regionToBuild.z + regionNeighborDirs[n].y;
+				const int nx = chunkToBuild.x + regionNeighborDirs[n].x;
+				const int nz = chunkToBuild.z + regionNeighborDirs[n].y;
 				neighbors[n] = m_regions[0][GetRegionIndex(nx, nz)]->m_region.get();
 			}
 			
-			m_regionBuildThread.BuildSync(*region->m_region, neighbors, m_meshBuilder);
-		}
-	}
-	
-	void WorldManager::FillCameraRenderList(RegionRenderList& renderList, const Frustum& frustum) const
-	{
-		const int cameraSliceY = static_cast<int>(m_camera.GetPosition().y) / Region::Size;
-		
-		for (uint8_t s = 0; s < 6; s++)
-		{
-			FillCameraRenderListR(renderList, frustum, s, m_loadDistance, cameraSliceY, m_loadDistance, cameraSliceY);
-		}
-	}
-	
-	void WorldManager::FillCameraRenderListR(RegionRenderList& renderList, const Frustum& frustum, uint8_t enterDir,
-	                                         int rx, int sy, int rz, int cameraSliceY) const
-	{
-		if (sy < 0 || sy >= static_cast<int>(RegionMesh::NumSlices))
-			return;
-		
-		int regionIndex = GetRegionIndex(rx, rz);
-		if (regionIndex == -1)
-			return;
-		
-		RegionEntry* region = m_regions[0][regionIndex];
-		
-		if (region == nullptr || !(region->m_state == RegionStates::UpToDate ||
-		                           region->m_state == RegionStates::OutOfDate ||
-		                           region->m_state == RegionStates::Uploading))
-		{
-			return;
-		}
-		
-		RegionCoordinate worldRegCoord = GetWorldRegionCoord(rx, rz);
-		
-		AABoundingBox sliceAABB(glm::vec3(worldRegCoord.x * Region::Size, sy * Region::Size,
-		                                  worldRegCoord.z * Region::Size), Region::Size, Region::Size, Region::Size);
-		
-		if (!frustum.Intersects(sliceAABB))
-			return;
-		
-		if (region->m_mesh.IsSliceEmpty(sy))
-		{
-			if (!renderList.Add(region->m_mesh, sy))
-			{
-				//If add returned false, this slice has already been added, so it's neighbors should also not be added.
-				return;
-			}
-		}
-		
-		const glm::ivec3 toCamera(m_loadDistance - rx, cameraSliceY - sy, m_loadDistance - rz);
-		
-		for (uint8_t dir = 0; dir < 6; dir++)
-		{
-			if (!region->m_mesh.IsSliceEdgeConnected(sy, enterDir, dir))
-				continue;
-			
-			const int cameraVecDot = BlockNormals[dir].x * toCamera.x + 
-			                         BlockNormals[dir].y * toCamera.y + 
-			                         BlockNormals[dir].z * toCamera.z;
-			
-			if (cameraVecDot <= 0)
-			{
-				const uint8_t nextEnterDir = (dir % 2 == 0) ? (dir + 1) : (dir - 1);
-				FillCameraRenderListR(renderList, frustum, nextEnterDir, rx + BlockNormals[dir].x,
-				                      sy + BlockNormals[dir].y, rz + BlockNormals[dir].z, cameraSliceY);
-			}
+			m_chunkBuildThread.BuildSync(*region->m_region, chunkToBuild.y, neighbors, m_meshBuilder);
 		}
 	}
 	
@@ -421,13 +378,15 @@ namespace MCR
 			RegionEntry* region = m_regions[0][GetRegionIndex(minX, minZ)];
 			
 			//Not sure if the null check is neccessary...
-			if (region != nullptr && (region->m_state == RegionStates::UpToDate ||
-			                          region->m_state == RegionStates::OutOfDate ||
+			if (region != nullptr && (region->m_state == RegionStates::Built ||
 			                          region->m_state == RegionStates::Uploading))
 			{
-				for (uint32_t i = 0; i < Region::SliceCount; i++)
+				for (ChunkMesh& mesh : region->m_meshes)
 				{
-					renderList.Add(region->m_mesh, i);
+					if (mesh.HasData())
+					{
+						renderList.Add(mesh);
+					}
 				}
 			}
 		}
@@ -500,13 +459,13 @@ namespace MCR
 		return entry->m_region.get();
 	}
 	
-	void WorldManager::MarkOutOfDate(RegionCoordinate coordinate)
+	void WorldManager::MarkOutOfDate(RegionCoordinate coordinate, uint32_t chunkY)
 	{
 		RegionEntry* entry = RegionEntryFromGlobalCoordinate(coordinate);
 		
-		if (entry != nullptr && entry->m_state == RegionStates::UpToDate)
+		if (entry != nullptr && entry->m_state == RegionStates::Built)
 		{
-			entry->m_state = RegionStates::OutOfDate;
+			entry->m_meshesOutOfDate.set(chunkY);
 		}
 	}
 }

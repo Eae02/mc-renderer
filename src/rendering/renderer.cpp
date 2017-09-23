@@ -1,6 +1,7 @@
 ﻿#include "renderer.h"
 #include "frustum.h"
 #include "framebuffer.h"
+#include "regions/chunkbufferallocator.h"
 #include "../profiling/profiling.h"
 #include "../world/worldmanager.h"
 #include "../profiling/frameprofiler.h"
@@ -123,6 +124,11 @@ namespace MCR
 		m_regionRenderList.Render(cb);
 		
 		cb.EndRenderPass();
+		
+		if (frameIndex % 16 == 0)
+		{
+			ChunkBufferAllocator::s_instance.ProcessFreedAllocations(cb);
+		}
 		
 		cb.End();
 	}

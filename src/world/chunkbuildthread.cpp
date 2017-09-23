@@ -1,16 +1,10 @@
-#include "regionbuildthread.h"
+#include "chunkbuildthread.h"
 #include "region.h"
-#include "../rendering/regions/buildregionmesh.h"
+#include "../rendering/regions/buildchunkmesh.h"
 
 namespace MCR
 {
-	RegionBuildThread::RegionBuildThread()
-	    : m_thread(&RegionBuildThread::ThreadTarget, this)
-	{
-		
-	}
-	
-	RegionBuildThread::~RegionBuildThread()
+	ChunkBuildThread::~ChunkBuildThread()
 	{
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
@@ -21,30 +15,28 @@ namespace MCR
 		m_thread.join();
 	}
 	
-	void RegionBuildThread::BuildSync(const Region& region, gsl::span<const Region*> neighbors,
-	                                  MeshBuilder& meshBuilder)
+	void ChunkBuildThread::BuildSync(const Region& region, uint32_t chunkY, gsl::span<const Region*> neighbors,
+	                                 MeshBuilder& meshBuilder)
 	{
-		std::array<RegionMesh::SliceData, Region::SliceCount> slices;
-		
-		for (uint32_t s = 0; s < RegionMesh::NumSlices; s++)
-		{
-			slices[s].m_connectivity = region.CalculateConnectivity(s);
-		}
-		
-		RegionMeshBuildParams buildParams;
+		ChunkMeshBuildParams buildParams;
 		buildParams.m_meshBuilder = &meshBuilder;
 		buildParams.m_region = &region;
-		buildParams.m_slicesOut = slices;
+		buildParams.m_chunkY = chunkY;
 		std::copy_n(neighbors.begin(), 4, buildParams.m_neighbors);
 		
 		meshBuilder.Reset();
 		
-		BuildRegionMesh(buildParams);
+		BuildChunkMesh(buildParams);
 		
-		m_uploader.BeginUploading(region.GetX(), region.GetZ(), slices, meshBuilder);
+		if (!meshBuilder.Empty())
+		{
+			const Region::ChunkConnectivity connectivity = region.CalculateConnectivity(chunkY);
+			
+			m_uploader.BeginUploading(region.GetX(), chunkY, region.GetZ(), connectivity, meshBuilder);
+		}
 	}
 	
-	void RegionBuildThread::ThreadTarget()
+	void ChunkBuildThread::ThreadTarget()
 	{
 		while (true)
 		{
@@ -57,19 +49,24 @@ namespace MCR
 			
 			//Selects the closest region to the camera for building.
 			ssize_t selectedIndex = -1;
-			uint64_t selectedRegionDistFromCamera = 0;
+			uint64_t selectedChunkDistFromCameraSq = 0;
 			for (size_t i = 0; i < m_buildCommands.size(); i++)
 			{
-				uint64_t distFromCamera = RegionCoordinate::DistanceSq(m_buildCommands[i].m_coordinate, m_cameraRegion);
-				if (selectedRegionDistFromCamera > distFromCamera || selectedIndex == -1)
+				const int64_t dx = m_buildCommands[i].m_coordinate.x - m_cameraChunkX;
+				const int64_t dy = static_cast<int64_t>(m_buildCommands[i].m_chunkY) - m_cameraChunkY;
+				const int64_t dz = m_buildCommands[i].m_coordinate.z - m_cameraChunkZ;
+				
+				const uint64_t distFromCameraSq = dx * dx + dy * dy + dz * dz;
+				if (selectedChunkDistFromCameraSq > distFromCameraSq || selectedIndex == -1)
 				{
 					selectedIndex = i;
-					selectedRegionDistFromCamera = distFromCamera;
+					selectedChunkDistFromCameraSq = distFromCameraSq;
 				}
 			}
 			
 			BuildCommand buildCommand = std::move(m_buildCommands[selectedIndex]);
 			
+			//Removes the selected build command from the list.
 			if (selectedIndex != static_cast<ssize_t>(m_buildCommands.size()) - 1)
 			{
 				m_buildCommands[selectedIndex] = std::move(m_buildCommands.back());
@@ -99,7 +96,7 @@ namespace MCR
 			
 			if (!anyNeighborNull)
 			{
-				BuildSync(*region, neighborRegionsP, m_meshBuilder);
+				BuildSync(*region, buildCommand.m_chunkY, neighborRegionsP, m_meshBuilder);
 			}
 		}
 	}

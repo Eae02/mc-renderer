@@ -1,7 +1,7 @@
 #pragma once
 
 #include "meshbuilder.h"
-#include "regionmesh.h"
+#include "chunkmesh.h"
 #include "../../world/region.h"
 
 namespace MCR
@@ -14,13 +14,13 @@ namespace MCR
 		NeighborNegZ,
 	};
 	
-	struct RegionMeshBuildParams
+	struct ChunkMeshBuildParams
 	{
 		const Region* m_region;
 		const Region* m_neighbors[4]; //Indexed using RegionNeighbors
+		uint32_t m_chunkY;
 		MeshBuilder* m_meshBuilder;
-		gsl::span<RegionMesh::SliceData> m_slicesOut;
 	};
 	
-	void BuildRegionMesh(const RegionMeshBuildParams& buildParams);
+	void BuildChunkMesh(const ChunkMeshBuildParams& params);
 }

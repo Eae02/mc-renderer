@@ -21,6 +21,11 @@ namespace MCR
 			m_indices.push_back(i3);
 		}
 		
+		inline bool Empty() const
+		{
+			return m_vertices.empty();
+		}
+		
 		inline uint32_t GetNumIndices() const
 		{
 			return static_cast<uint32_t>(m_indices.size());

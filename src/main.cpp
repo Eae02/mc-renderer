@@ -4,7 +4,6 @@
 #include "game.h"
 #include "utils.h"
 #include "vulkan/instance.h"
-#include "rendering/regions/regiondatabuffer.h"
 #include "rendering/shaders/shadermodules.h"
 #include "rendering/setlayouts.h"
 #include "ui/font.h"
@@ -52,7 +51,6 @@ int main()
 	
 	MCR::DestroyShaderModules();
 	MCR::DestroyDescriptorSetLayouts();
-	MCR::RegionDataBuffer::DestroyResources();
 	
 	MCR::DestroyVulkan();
 	

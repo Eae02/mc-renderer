@@ -34,26 +34,26 @@ namespace MCR
 		}
 	}
 	
-	Region::SliceConnectivity Region::CalculateConnectivity(uint32_t sliceIndex) const
+	Region::ChunkConnectivity Region::CalculateConnectivity(uint32_t chunkIndex) const
 	{
-		SliceConnectivity connectivity;
+		ChunkConnectivity connectivity;
 		
-		constexpr size_t blocksPerSlice = Size * Size * Size;
+		constexpr size_t blocksPerChunk = Size * Size * Size;
 		
 		using Coord = glm::tvec3<uint8_t>;
 		
 		//Amount of (stack) memory to allocate for the coordinates stack.
 		//Should be equal to the worst case space complexity for the depth first search.
-		constexpr size_t maxCoordinates = blocksPerSlice;
+		constexpr size_t maxCoordinates = blocksPerChunk;
 		
 		std::array<Coord, maxCoordinates> coordinatesStack;
 		size_t coordinatesStackSize = 0;
 		
-		std::bitset<blocksPerSlice> blocksVisited;
+		std::bitset<blocksPerChunk> blocksVisited;
 		
-		const uint64_t baseBlockIndex = sliceIndex * blocksPerSlice;
+		const uint64_t baseBlockIndex = chunkIndex * blocksPerChunk;
 		
-		auto GetSliceBlockIndex = [] (Coord coord)
+		auto GetChunkBlockIndex = [] (Coord coord)
 		{
 			return coord.x + (coord.z + coord.y * Size) * Size;
 		};
@@ -77,7 +77,7 @@ namespace MCR
 					
 					auto MaybePushCoord = [&] (Coord coord)
 					{
-						size_t index = GetSliceBlockIndex(srcCoord);
+						size_t index = GetChunkBlockIndex(srcCoord);
 						
 						if (blocksVisited[index] || BlockType::GetByID(m_blocks[baseBlockIndex + index].m_id).IsOpaque())
 							return false;
@@ -163,12 +163,12 @@ namespace MCR
 		return static_cast<uint16_t>(1) << connectionIndices[side1][side2];
 	}
 	
-	bool Region::SliceConnectivity::IsConnected(uint8_t side1, uint8_t side2) const
+	bool Region::ChunkConnectivity::IsConnected(uint8_t side1, uint8_t side2) const
 	{
 		return m_data & GetConnectionMask(side1, side2);
 	}
 	
-	void Region::SliceConnectivity::SetConnected(uint8_t side1, uint8_t side2)
+	void Region::ChunkConnectivity::SetConnected(uint8_t side1, uint8_t side2)
 	{
 		m_data |= GetConnectionMask(side1, side2);
 	}

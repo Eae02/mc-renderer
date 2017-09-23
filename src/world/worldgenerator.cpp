@@ -356,7 +356,10 @@ namespace MCR
 			
 			ProcessFutureRegion(futureRegion, *region);
 			
-			worldManager.MarkOutOfDate(futureRegion.m_coordinate);
+			for (uint32_t y = 0; y < Region::ChunkCount; y++)
+			{
+				worldManager.MarkOutOfDate(futureRegion.m_coordinate, y);
+			}
 			
 			lock.lock();
 		}

@@ -1,8 +1,9 @@
-#include "regionuploader.h"
+#include "chunkuploader.h"
+#include "meshbuilder.h"
 
 namespace MCR
 {
-	RegionUploader::HostBuffer::HostBuffer(uint64_t size) : m_size(size), m_fence(CreateVkFence())
+	ChunkUploader::HostBuffer::HostBuffer(uint64_t size) : m_size(size), m_fence(CreateVkFence())
 	{
 		VmaMemoryRequirements memoryRequirements = { };
 		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT;
@@ -18,27 +19,20 @@ namespace MCR
 		m_memory = allocationInfo.pMappedData;
 	}
 	
-	RegionUploader::RegionUploader()
+	ChunkUploader::ChunkUploader()
 	    : m_commandPool(CreateCommandPool(QUEUE_FAMILY_TRANSFER, 0))
 	{
 		
 	}
 	
-	void RegionUploader::BeginUploading(int64_t x, int64_t z,
-	                                    const std::array<RegionMesh::SliceData, Region::SliceCount>& slices,
-	                                    const MeshBuilder& meshBuilder)
+	void ChunkUploader::BeginUploading(int64_t x, int64_t y, int64_t z, Region::ChunkConnectivity connectivity,
+	                                   const MeshBuilder& meshBuilder)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
 		uint64_t size = meshBuilder.GetRequiredBufferSize();
 		
-		RegionMesh::Data meshData = 
-		{
-			RegionDataBuffer::Allocate(size),
-			meshBuilder.GetNumVertices(),
-			meshBuilder.GetNumIndices(),
-			slices
-		};
+		ChunkMesh chunk(meshBuilder.GetNumIndices(), meshBuilder.GetNumVertices(), connectivity);
 		
 		HostBuffer hostBuffer = AllocateHostBuffer(size);
 		
@@ -46,12 +40,21 @@ namespace MCR
 		
 		CommandBuffer commandBuffer(*m_commandPool);
 		
-		meshData.m_buffer.Upload(commandBuffer, *hostBuffer.m_buffer, size, *hostBuffer.m_fence);
+		commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		
-		m_tasks.push_back({ x, z, std::move(meshData), std::move(hostBuffer), std::move(commandBuffer) });
+		chunk.Upload(commandBuffer, *hostBuffer.m_buffer);
+		
+		commandBuffer.End();
+		
+		VkSubmitInfo transferSubmitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+		transferSubmitInfo.commandBufferCount = 1;
+		transferSubmitInfo.pCommandBuffers = &commandBuffer.GetVkCB();
+		vulkan.queues[QUEUE_FAMILY_TRANSFER]->Submit(1, &transferSubmitInfo, *hostBuffer.m_fence);
+		
+		m_tasks.push_back({ x, y, z, std::move(chunk), std::move(hostBuffer), std::move(commandBuffer) });
 	}
 	
-	RegionUploader::HostBuffer RegionUploader::AllocateHostBuffer(uint64_t size)
+	ChunkUploader::HostBuffer ChunkUploader::AllocateHostBuffer(uint64_t size)
 	{
 		auto it = std::find_if(MAKE_RANGE(m_hostBuffers), [&] (const HostBuffer& buffer)
 		{

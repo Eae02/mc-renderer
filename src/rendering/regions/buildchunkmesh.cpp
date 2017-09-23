@@ -1,25 +1,15 @@
-#include "buildregionmesh.h"
-#include "regionmesh.h"
+#include "buildchunkmesh.h"
 #include "../../blocks/blocktype.h"
-#include "../../blocks/sides.h"
 
 namespace MCR
 {
-	void BuildRegionMesh(const RegionMeshBuildParams& params)
+	void BuildChunkMesh(const ChunkMeshBuildParams& params)
 	{
-#ifdef MCR_DEBUG
-		if (params.m_slicesOut.size() != RegionMesh::NumSlices)
-		{
-			throw std::invalid_argument("Invalid number of slice offsets passed to BuildRegionMesh.");
-		}
-#endif
+		const int64_t baseWorldY = params.m_chunkY * Region::Size;
 		
-		for (int y = 0; y < Region::Height; y++)
+		for (int yo = 0; yo < Region::Size; yo++)
 		{
-			if (y % Region::Size == 0)
-			{
-				params.m_slicesOut[y / Region::Size].m_indexOffset = params.m_meshBuilder->GetNumIndices();
-			}
+			const int64_t y = yo + baseWorldY;
 			
 			for (int z = 0; z < Region::Size; z++)
 			{
@@ -110,4 +100,6 @@ namespace MCR
 			}
 		}
 	}
+	
+	
 }
