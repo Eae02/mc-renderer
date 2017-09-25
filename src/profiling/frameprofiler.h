@@ -78,6 +78,8 @@ namespace MCR
 
 #else
 
+#include "../vulkan/vk.h"
+
 namespace MCR
 {
 	inline uint32_t BeginGPUTimer(CommandBuffer&, VkPipelineStageFlagBits, std::string_view)

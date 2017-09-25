@@ -39,9 +39,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 if (${MSVC})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4250 /wd4251 /wd4307 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS")
-	
-	set(ASSIMP_LIBRARIES "${_VCPKG_INSTALLED_DIR}/x64-windows/lib/assimp-vc140-mt.lib")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4250 /wd4251 /wd4307 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /std:c++latest")
 endif()
 
 #Sets link libraries
@@ -55,7 +53,7 @@ link_libraries(
 
 #Sets include directories
 include_directories(SYSTEM
-	${SDL2_INCLUDE_DIRS}
+	${SDL2_INCLUDE_DIR}
 	${VULKAN_INCLUDE_DIR}
 	${GLM_INCLUDE_DIRS}
 	${FREETYPE_INCLUDE_DIRS}

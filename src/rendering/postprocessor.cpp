@@ -57,7 +57,7 @@ namespace MCR
 			/* flags              */ 0,
 			/* stage              */ { },
 			/* layout             */ pipelineLayout,
-			/* basePipelineHandle */ nullptr,
+			/* basePipelineHandle */ VK_NULL_HANDLE,
 			/* basePipelineIndex  */ -1
 		};
 		
@@ -68,7 +68,7 @@ namespace MCR
 		                            m_depthSampler.GetCreateAddress()));
 		
 		VkPipeline pipeline;
-		CheckResult(vkCreateComputePipelines(vulkan.device, nullptr, 1, &pipelineCreateInfo, nullptr, &pipeline));
+		CheckResult(vkCreateComputePipelines(vulkan.device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline));
 		m_pipeline = pipeline;
 	}
 	
@@ -83,7 +83,7 @@ namespace MCR
 	{
 		VkWriteDescriptorSet dsWrites[2];
 		
-		VkDescriptorImageInfo colorImageInfo = { nullptr, framebuffer.GetColorImageView(), VK_IMAGE_LAYOUT_GENERAL };
+		VkDescriptorImageInfo colorImageInfo = { VK_NULL_HANDLE, framebuffer.GetColorImageView(), VK_IMAGE_LAYOUT_GENERAL };
 		m_descriptorSet.InitWriteDescriptorSet(dsWrites[0], 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, colorImageInfo);
 		
 		VkDescriptorImageInfo depthImageInfo = { *m_depthSampler, framebuffer.GetDepthImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };

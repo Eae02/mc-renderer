@@ -2,5 +2,6 @@ CMakeLists.txt.user
 bin
 .build
 .idea
+.vs
 res/spv
 res/world

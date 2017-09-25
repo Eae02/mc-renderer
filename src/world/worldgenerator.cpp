@@ -5,8 +5,6 @@
 #include <random>
 #include <glm/gtc/constants.hpp>
 
-#include <byteswap.h>
-
 namespace MCR
 {
 	WorldGenerator::WorldGenerator()

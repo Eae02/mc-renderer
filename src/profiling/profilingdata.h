@@ -6,6 +6,7 @@
 
 #include "timertypes.h"
 
+#ifdef MCR_DEBUG
 namespace MCR
 {
 	class ProfilingData
@@ -37,3 +38,4 @@ namespace MCR
 		std::vector<Duration> m_durations;
 	};
 }
+#endif

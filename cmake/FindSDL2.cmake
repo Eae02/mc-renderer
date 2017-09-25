@@ -103,18 +103,18 @@
 # (To distribute this file outside of CMake, substitute the full
 # License text for the above reference.)
 
-FIND_PATH(SDL2_INCLUDE_DIR SDL.h
+FIND_PATH(SDL2_INCLUDE_DIR SDL2/SDL.h
 	HINTS
 	${SDL2}
 	$ENV{SDL2}
-	PATH_SUFFIXES include/SDL2 include SDL2
-	i686-w64-mingw32/include/SDL2
-	x86_64-w64-mingw32/include/SDL2
+	PATH_SUFFIXES include include SDL2
+	i686-w64-mingw32/include
+	x86_64-w64-mingw32/include
 	PATHS
 	~/Library/Frameworks
 	/Library/Frameworks
-	/usr/local/include/SDL2
-	/usr/include/SDL2
+	/usr/local/include
+	/usr/include
 	/sw # Fink
 	/opt/local # DarwinPorts
 	/opt/csw # Blastwave

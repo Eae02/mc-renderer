@@ -4,6 +4,21 @@
 #include <sstream>
 #include <stb_image.h>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+
+uint32_t __inline ctz(uint32_t value)
+{
+	unsigned long trailingZero;
+	_BitScanForward(&trailingZero, value);
+	return trailingZero;
+}
+#endif
+
+#ifdef __GNUC__
+#define ctz __builtin_ctz
+#endif
+
 namespace MCR
 {
 	constexpr uint32_t BlocksTextureManager::TextureResolution;
@@ -63,7 +78,7 @@ namespace MCR
 			texturesMemory.emplace_back(reinterpret_cast<uint8_t*>(memory));
 		}
 		
-		const uint32_t mipLevels = __builtin_ctz(TextureResolution);
+		const uint32_t mipLevels = ctz(TextureResolution);
 		const uint64_t bytesPerLayer = TextureResolution * TextureResolution * 4;
 		
 		const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;

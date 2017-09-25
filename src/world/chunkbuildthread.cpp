@@ -48,7 +48,7 @@ namespace MCR
 				break;
 			
 			//Selects the closest region to the camera for building.
-			ssize_t selectedIndex = -1;
+			long selectedIndex = -1;
 			uint64_t selectedChunkDistFromCameraSq = 0;
 			for (size_t i = 0; i < m_buildCommands.size(); i++)
 			{
@@ -67,7 +67,7 @@ namespace MCR
 			BuildCommand buildCommand = std::move(m_buildCommands[selectedIndex]);
 			
 			//Removes the selected build command from the list.
-			if (selectedIndex != static_cast<ssize_t>(m_buildCommands.size()) - 1)
+			if (selectedIndex != static_cast<long>(m_buildCommands.size()) - 1)
 			{
 				m_buildCommands[selectedIndex] = std::move(m_buildCommands.back());
 			}

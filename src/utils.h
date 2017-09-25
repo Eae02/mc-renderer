@@ -8,6 +8,17 @@
 #define constexpr_if if
 #endif
 
+#ifdef __GNU_C__
+#include <byteswap.h>
+#endif
+
+#ifdef _MSC_VER
+#include <cstdlib>
+#define bswap_16 _byteswap_short
+#define bswap_32 _byteswap_long
+#define bswap_64 _byteswap_uint64
+#endif
+
 #include <ostream>
 #include <gsl/span>
 #include <mutex>

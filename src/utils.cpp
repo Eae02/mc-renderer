@@ -44,7 +44,7 @@ namespace MCR
 		{
 #if defined(__linux__)
 			char exePathOut[PATH_MAX];
-			ssize_t numBytesWritten = readlink("/proc/self/exe", exePathOut, PATH_MAX);
+			long numBytesWritten = readlink("/proc/self/exe", exePathOut, PATH_MAX);
 			
 			if (numBytesWritten == -1)
 			{
@@ -88,7 +88,7 @@ namespace MCR
 	{
 		size_t fileSize = fs::file_size(path);
 		
-		std::ifstream stream(path);
+		std::ifstream stream(path, std::ios::binary);
 		if (!stream)
 		{
 			throw std::runtime_error("Error opening file for reading: '" + path.string() + "'.");
@@ -114,7 +114,7 @@ namespace MCR
 			if (statusFD == -1)
 				return false;
 			
-			ssize_t numRead = read(statusFD, buffer.data(), buffer.size() - 1);
+			long numRead = read(statusFD, buffer.data(), buffer.size() - 1);
 			
 			if (numRead > 0)
 			{
