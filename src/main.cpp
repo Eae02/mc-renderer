@@ -13,7 +13,9 @@
 
 #undef main
 
+#ifdef _MSC_VER
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#endif
 
 constexpr int WindowWidth = 1400;
 constexpr int WindowHeight = 800;

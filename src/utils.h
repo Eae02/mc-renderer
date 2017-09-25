@@ -8,7 +8,7 @@
 #define constexpr_if if
 #endif
 
-#ifdef __GNU_C__
+#ifdef __GNUC__
 #include <byteswap.h>
 #endif
 

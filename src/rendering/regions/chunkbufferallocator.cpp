@@ -23,7 +23,7 @@ namespace MCR
 		InitBufferCreateInfo(indexBufferCreateInfo, VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
 		                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, IndicesPerPage * sizeof(uint32_t));
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &vertexBufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &indexBufferCreateInfo, &memoryRequirements,
 		                            m_indexBuffer.GetCreateAddress(), m_indexAllocation.GetCreateAddress(), nullptr));
 	}
 	
