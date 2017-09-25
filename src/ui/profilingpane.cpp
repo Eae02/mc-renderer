@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <sstream>
 
+#ifdef MCR_DEBUG
 namespace MCR
 {
 	void ProfilingPane::FrameEnd(ProfilingData profilingData, const InputState& inputState,
@@ -74,3 +75,4 @@ namespace MCR
 		}
 	}
 }
+#endif

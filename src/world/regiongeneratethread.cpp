@@ -48,7 +48,7 @@ namespace MCR
 				break;
 			
 			//Selects the closest region to the camera for generation.
-			ssize_t selectedIndex = -1;
+			long selectedIndex = -1;
 			uint64_t selectedRegionDistFromCamera = 0;
 			for (size_t i = 0; i < m_regionsToGenerate.size(); i++)
 			{

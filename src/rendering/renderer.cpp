@@ -73,7 +73,9 @@ namespace MCR
 		const glm::mat4 viewProj = m_projectionMatrix * camera.GetViewMatrix();
 		const glm::mat4 invViewProj = camera.GetInverseViewMatrix() * m_invProjectionMatrix;
 		
-		params.m_frameProfiler->Reset(cb);
+#ifdef MCR_DEBUG
+		currentFrameProfiler->Reset(cb);
+#endif
 		
 		m_renderSettingsBuffer.SetData(cb, viewProj, invViewProj, camera.GetPosition(), params.m_time,
 		                               *params.m_timeManager);

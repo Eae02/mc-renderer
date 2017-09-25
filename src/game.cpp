@@ -24,7 +24,9 @@ namespace MCR
 	
 	TimeManager timeManager;
 	
+#ifdef MCR_DEBUG
 	ProfilingPane profilingPane;
+#endif
 	
 	void Initialize()
 	{
@@ -56,7 +58,10 @@ namespace MCR
 	{
 		VkHandle<VkFence> m_fence;
 		VkHandle<VkSemaphore> m_signalSemaphore;
+		
+#ifdef MCR_DEBUG
 		FrameProfiler m_profiler;
+#endif
 	};
 	
 	void RunGameLoop(SDL_Window* window)
@@ -165,11 +170,13 @@ namespace MCR
 			uiDrawList.Reset();
 			
 			FrameQueueEntry& frame = frames[frameQueueIndex];
+			
+#ifdef MCR_DEBUG
 			currentFrameProfiler = &frame.m_profiler;
+			ProfilingData profilingData;
+#endif
 			
 			UpdateGame(lastFrameTime.count() * 1E-9f, inputState);
-			
-			ProfilingData profilingData;
 			
 			if (frameIndex >= MaxQueuedFrames)
 			{
@@ -178,7 +185,9 @@ namespace MCR
 					CheckResult(vkWaitForFences(vulkan.device, 1, &*frame.m_fence, true, UINT64_MAX));
 				}
 				
+#ifdef MCR_DEBUG
 				profilingData = frame.m_profiler.GetData();
+#endif
 			}
 			
 			//Checks if the drawable size has changed.
@@ -205,9 +214,11 @@ namespace MCR
 			
 			ProcessVulkanDestroyList();
 			
-			renderer.Render({ timeF, &frame.m_profiler, &timeManager });
+			renderer.Render({ timeF, &timeManager });
 			
+#ifdef MCR_DEBUG
 			profilingPane.FrameEnd(profilingData, inputState, uiDrawList);
+#endif
 			
 			uiGraphicsContext.Draw(uiDrawList, framebuffer);
 			

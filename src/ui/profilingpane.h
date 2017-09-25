@@ -7,6 +7,7 @@
 
 namespace MCR
 {
+#ifdef MCR_DEBUG
 	class ProfilingPane
 	{
 	public:
@@ -23,4 +24,5 @@ namespace MCR
 		
 		bool m_isMoving = false;
 	};
+#endif
 }

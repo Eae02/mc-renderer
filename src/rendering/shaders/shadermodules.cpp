@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 namespace MCR
 {
@@ -29,19 +30,33 @@ namespace MCR
 	{
 		shaderModules.clear();
 		
+		std::vector<uint32_t> fileBuffer;
+		
 		for (std::string_view shaderModuleName : shaderModuleNames)
 		{
 			fs::path path = GetResourcePath() / "spv" / (std::string(shaderModuleName) + ".spv");
 			
-			std::vector<char> contents = ReadFileContents(path);
+			size_t fileSize = fs::file_size(path);
+			
+			fileBuffer.resize(DivRoundUp(fileSize, sizeof(uint32_t)));
+			
+			{
+				std::ifstream stream(path, std::ios::binary);
+				if (!stream)
+				{
+					throw std::runtime_error("Error opening shader for reading: '" + path.string() + "'.");
+				}
+				
+				stream.read(reinterpret_cast<char*>(fileBuffer.data()), fileSize);
+			}
 			
 			const VkShaderModuleCreateInfo createInfo = 
 			{
 				/* sType    */ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 				/* pNext    */ nullptr,
 				/* flags    */ 0,
-				/* codeSize */ RoundToNextMultiple(contents.size(), sizeof(uint32_t)),
-				/* pCode    */ reinterpret_cast<const uint32_t*>(contents.data())
+				/* codeSize */ fileBuffer.size() * sizeof(uint32_t),
+				/* pCode    */ fileBuffer.data()
 			};
 			
 			VkShaderModule module;

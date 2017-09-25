@@ -83,7 +83,7 @@ namespace MCR
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
-		for (ssize_t i = static_cast<ssize_t>(m_freedAllocationsInUse.size()) - 1; i >= 0; i--)
+		for (long i = static_cast<long>(m_freedAllocationsInUse.size()) - 1; i >= 0; i--)
 		{
 			if (m_freedAllocationsInUse[i].m_lastUsedFrameIndex + MaxQueuedFrames <= frameIndex)
 			{
@@ -127,7 +127,7 @@ namespace MCR
 				FreeAllocationData(m_freedAllocationsInUse[i]);
 				
 				//Removes the allocation from the list.
-				if (i != static_cast<ssize_t>(m_freedAllocationsInUse.size()) - 1)
+				if (i != static_cast<long>(m_freedAllocationsInUse.size()) - 1)
 				{
 					m_freedAllocationsInUse[i] = m_freedAllocationsInUse.back();
 				}
