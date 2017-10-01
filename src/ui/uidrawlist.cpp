@@ -6,6 +6,8 @@
 
 namespace MCR
 {
+	static const glm::vec3 solidColorTexCoord(0, 0, -1);
+	
 	glm::vec2 UIDrawList::AddText(const Font& font, std::string_view text, const glm::vec2 position,
 	                              const glm::vec4& color, const TextPosX posX, const TextPosY posY)
 	{
@@ -32,6 +34,12 @@ namespace MCR
 		auto lineBeg = text.begin();
 		while (lineBeg != text.end())
 		{
+			if (*lineBeg == '\n')
+			{
+				++lineBeg;
+				continue;
+			}
+			
 			auto lineEnd = std::find(lineBeg, text.end(), '\n');
 			
 			float linePosX = position.x;
@@ -106,7 +114,7 @@ namespace MCR
 			{
 				Vertex& v = vertices[x * 2 + y];
 				v.m_position = pos1 + d * glm::vec2(x, y);
-				v.m_texCoord = glm::vec3();
+				v.m_texCoord = solidColorTexCoord;
 				v.m_color = color;
 			}
 		}
@@ -131,7 +139,7 @@ namespace MCR
 		for (int i = 0; i < 4; i++)
 		{
 			vertices[i].m_color = color;
-			vertices[i].m_texCoord = glm::vec3();
+			vertices[i].m_texCoord = solidColorTexCoord;
 		}
 		
 		AppendQuad(vertices.data());
@@ -145,7 +153,7 @@ namespace MCR
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
 			vertices[i].m_position = positions[i];
-			vertices[i].m_texCoord = glm::vec3();
+			vertices[i].m_texCoord = solidColorTexCoord;
 			vertices[i].m_color = color;
 		}
 		
@@ -160,7 +168,7 @@ namespace MCR
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
 			vertices[i].m_position = positions[i];
-			vertices[i].m_texCoord = glm::vec3();
+			vertices[i].m_texCoord = solidColorTexCoord;
 			vertices[i].m_color = colors[i];
 		}
 		
@@ -179,7 +187,7 @@ namespace MCR
 		{
 			BeginBatch(batch.m_descriptorSet);
 			
-			m_batches.back().m_numIndices = batch.m_numIndices;
+			m_batches.back().m_numIndices += batch.m_numIndices;
 			
 			const uint32_t* srcIndices = other.m_indices.data() + batch.m_firstIndex;
 			
@@ -222,13 +230,12 @@ namespace MCR
 	{
 		const uint32_t baseIndex = static_cast<uint32_t>(m_vertices.size());
 		
+		m_vertices.reserve(m_vertices.size() + 3);
 		for (uint32_t i = 0; i < 3; i++)
 		{
+			m_vertices.push_back(vertices[i]);
 			m_indices.push_back(baseIndex + i);
 		}
-		
-		m_vertices.resize(m_vertices.size() + 3);
-		std::copy_n(vertices, 3, m_vertices.end() - 3);
 		
 		m_batches.back().m_numIndices += 3;
 	}
@@ -251,9 +258,16 @@ namespace MCR
 	
 	void UIDrawList::BeginBatch(VkDescriptorSet descriptorSet)
 	{
-		if (m_batches.empty() || m_batches.back().m_descriptorSet != descriptorSet)
+		if (m_batches.empty() || (m_batches.back().m_descriptorSet != descriptorSet && descriptorSet))
 		{
-			m_batches.push_back({ gsl::narrow_cast<uint32_t>(m_indices.size()), 0, descriptorSet });
+			if (!m_batches.empty() && m_batches.back().m_descriptorSet == VK_NULL_HANDLE)
+			{
+				m_batches.back().m_descriptorSet = descriptorSet;
+			}
+			else
+			{
+				m_batches.push_back({ gsl::narrow_cast<uint32_t>(m_indices.size()), 0, descriptorSet });
+			}
 		}
 	}
 }

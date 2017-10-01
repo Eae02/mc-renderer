@@ -19,7 +19,7 @@ namespace MCR
 				{
 					const int64_t worldX = x + params.m_region->GetX() * Region::Size;
 					
-					Region::BlockEntry block = params.m_region->At(x, y, z);
+					Region::BlockEntry block = params.m_region->Get(x, y, z);
 					const BlockType& blockType = BlockType::GetByID(block.m_id);
 					
 					if (!blockType.IsInitialized())
@@ -69,7 +69,7 @@ namespace MCR
 						//Checks if the front block is opaque.
 						if (frontBlockPos.y < Region::Height)
 						{
-							uint8_t frontBlockID = frontRegion->At(frontBlockPos.x, frontBlockPos.y, frontBlockPos.z).m_id;
+							uint8_t frontBlockID = frontRegion->Get(frontBlockPos.x, frontBlockPos.y, frontBlockPos.z).m_id;
 							const BlockType& frontBlockType = BlockType::GetByID(frontBlockID);
 							
 							if (frontBlockType.IsOpaque())

@@ -12,6 +12,12 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
 	};
 	
+	static DSLayoutBinding DebugShader_Global[] = 
+	{
+		//Render settings buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT }
+	};
+	
 	static DSLayoutBinding PostProcess[] = 
 	{
 		//Render settings buffer
@@ -39,6 +45,7 @@ namespace MCR
 	void RegisterSetLayouts()
 	{
 		RegisterDescriptorSetLayout("BlockShader_Global", BlockShader_Global);
+		RegisterDescriptorSetLayout("DebugShader_Global", DebugShader_Global);
 		RegisterDescriptorSetLayout("PostProcess", PostProcess);
 		RegisterDescriptorSetLayout("UI_Sampler", UI_Sampler);
 		RegisterDescriptorSetLayout("UI_Image", UI_Image);

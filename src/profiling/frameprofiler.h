@@ -17,6 +17,7 @@ namespace MCR
 	public:
 		FrameProfiler();
 		
+		void NewFrame();
 		void Reset(CommandBuffer& commandBuffer);
 		
 		uint32_t BeginGPUTimer(CommandBuffer& commandBuffer, VkPipelineStageFlagBits waitStages, std::string_view name);
@@ -27,7 +28,7 @@ namespace MCR
 		
 		void EndCPUTimer(uint32_t timerID);
 		
-		ProfilingData GetData() const;
+		ProfilingData GetData(std::chrono::duration<float, std::milli> frameTime) const;
 		
 		static constexpr uint32_t MaxGPUTimers = 32;
 		static constexpr uint32_t MaxCPUTimers = 32;

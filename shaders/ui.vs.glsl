@@ -15,7 +15,6 @@ layout(push_constant) uniform PushConstants
 void main()
 {
 	textureCoordinate_out = textureCoordinate_in;
-	//textureCoordinate_out.y = 1.0 - textureCoordinate_in.y;
 	
 	color_out = color_in;
 	

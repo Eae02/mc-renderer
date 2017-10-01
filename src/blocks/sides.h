@@ -14,6 +14,8 @@ namespace MCR
 		BLOCK_SIDE_NEGZ
 	};
 	
+	extern const uint8_t OpposingSides[6];
+	
 	extern const glm::ivec3 BlockNormals[6];
 	
 	extern const glm::ivec3 BlockTangents[6];

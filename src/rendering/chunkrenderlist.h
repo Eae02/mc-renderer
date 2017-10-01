@@ -5,10 +5,10 @@
 
 namespace MCR
 {
-	class RegionRenderList
+	class ChunkRenderList
 	{
 	public:
-		RegionRenderList() = default;
+		ChunkRenderList() = default;
 		
 		void Begin();
 		

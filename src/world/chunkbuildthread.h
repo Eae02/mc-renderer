@@ -58,7 +58,8 @@ namespace MCR
 			m_mutex.unlock();
 		}
 		
-		void BuildSync(const Region& region, uint32_t chunkY, gsl::span<const Region*> neighbors, MeshBuilder& meshBuilder);
+		void BuildSync(const Region& region, uint32_t chunkY, gsl::span<const Region*> neighbors,
+		               MeshBuilder& meshBuilder);
 		
 		template <typename CallbackTp>
 		inline void IterateCompleted(CallbackTp callback)

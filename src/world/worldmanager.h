@@ -20,6 +20,8 @@ namespace MCR
 {
 	class WorldManager
 	{
+		friend class ChunkVisibilityCalculator;
+		
 	public:
 		WorldManager();
 		
@@ -29,14 +31,21 @@ namespace MCR
 		
 		void Update(float dt, const class InputState& inputState);
 		
-		inline void FillRenderList(class RegionRenderList& renderList, const class Frustum& frustum) const
+		inline void FillRenderList(class ChunkRenderList& renderList, const class Frustum& frustum) const
 		{
 			FillRenderListR(renderList, frustum, 0, 0, m_regionTableSize, m_regionTableSize);
 		}
 		
+		ChunkMesh* GetChunkMeshForRendering(int64_t x, int y, int64_t z) const;
+		
 		void SetWorld(std::unique_ptr<World> world);
 		
 		Region* GetRegion(RegionCoordinate coordinate);
+		
+		const Region* GetRegion(RegionCoordinate coordinate) const
+		{
+			return const_cast<WorldManager*>(this)->GetRegion(coordinate);
+		}
 		
 		void MarkOutOfDate(RegionCoordinate coordinate, uint32_t chunkY);
 		
@@ -46,7 +55,7 @@ namespace MCR
 		}
 		
 	private:
-		void FillRenderListR(class RegionRenderList& renderList, const class Frustum& frustum,
+		void FillRenderListR(class ChunkRenderList& renderList, const class Frustum& frustum,
 		                     int minX, int minZ, int spanX, int spanZ) const;
 		
 		inline RegionCoordinate GetWorldRegionCoord(int x, int z) const

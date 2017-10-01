@@ -14,6 +14,12 @@ namespace MCR
 		
 		void Label(std::string_view text);
 		
+		template <typename CallbackTp>
+		inline void CustomControl(CallbackTp callback)
+		{
+			AddControlArea(callback(m_drawList, m_inputState, const_cast<const glm::vec2&>(m_nextPosition)));
+		}
+		
 		inline glm::vec2 GetRequiredSize() const
 		{
 			return m_requiredSize;

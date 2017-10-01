@@ -12,16 +12,19 @@ namespace MCR
 		
 	}
 	
+	void FrameProfiler::NewFrame()
+	{
+		m_numUsedCPUTimers = 0;
+		m_numUsedGPUTimers = 0;
+		m_numUsedTimers = 0;
+	}
+	
 	void FrameProfiler::Reset(CommandBuffer& commandBuffer)
 	{
 		if (m_numUsedGPUTimers > 0)
 		{
 			commandBuffer.ResetQueryPool(*m_queryPool, 0, m_numUsedGPUTimers * 2);
 		}
-		
-		m_numUsedCPUTimers = 0;
-		m_numUsedGPUTimers = 0;
-		m_numUsedTimers = 0;
 	}
 	
 	uint32_t FrameProfiler::BeginGPUTimer(CommandBuffer& commandBuffer, VkPipelineStageFlagBits waitStages,
@@ -53,7 +56,7 @@ namespace MCR
 		m_cpuTimerDurations[index] = std::chrono::high_resolution_clock::now() - m_cpuTimerStarts[index];
 	}
 	
-	ProfilingData FrameProfiler::GetData() const
+	ProfilingData FrameProfiler::GetData(std::chrono::duration<float, std::milli> frameTime) const
 	{
 		uint64_t gpuTimestamps[MaxGPUTimers * 2];
 		
@@ -85,7 +88,7 @@ namespace MCR
 			}
 		}
 		
-		return ProfilingData(std::move(durations));
+		return ProfilingData(std::move(durations), frameTime);
 	}
 }
 

@@ -49,6 +49,11 @@ namespace MCR
 			command.firstInstance = 0;
 		}
 		
+		inline bool IsSideConnected(uint8_t side1, uint8_t side2) const
+		{
+			return m_connectivity.IsConnected(side1, side2);
+		}
+		
 	private:
 		ChunkBufferAllocator::Allocation m_allocation;
 		Region::ChunkConnectivity m_connectivity;

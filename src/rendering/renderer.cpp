@@ -54,7 +54,8 @@ namespace MCR
 	}
 	
 	Renderer::Renderer()
-	    : m_renderPass(CreateRenderPass()), m_blockShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo())
+	    : m_renderPass(CreateRenderPass()), m_blockShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo()),
+	      m_debugShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo())
 	{
 		for (CommandBuffer& cb : m_commandBuffers)
 		{
@@ -104,28 +105,54 @@ namespace MCR
 			/* pClearValues    */ clearValues.data()
 		};
 		
-		m_regionRenderList.Begin();
+		m_chunkRenderList.Begin();
 		
 		{
 			MCR_SCOPED_TIMER(0, "Render List Fill")
-			m_worldManager->FillRenderList(m_regionRenderList, m_frustum);
+			
+			if (m_enableOcclusionCulling)
+			{
+				m_visibilityCalculator.FillRenderList(m_chunkRenderList, *m_worldManager, camera, m_frustum);
+				
+				if (m_shouldCaptureVisibilityGraph)
+				{
+					m_visibilityGraph = std::make_unique<ChunkVisibilityGraph>(m_visibilityCalculator.GetVisibilityGraph(cb));
+					m_shouldCaptureVisibilityGraph = false;
+				}
+			}
+			else
+			{
+				m_worldManager->FillRenderList(m_chunkRenderList, m_frustum);
+			}
 		}
 		
 		{
 			MCR_SCOPED_TIMER(0, "Render List End")
-			m_regionRenderList.End(cb);
+			m_chunkRenderList.End(cb);
 		}
 		
-		cb.BeginRenderPass(&renderPassBeginInfo);
-		
-		m_blockShader.Bind(cb, m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
-		
-		cb.SetViewport(0, SingleElementSpan(viewport));
-		cb.SetScissor(0, SingleElementSpan(renderArea));
-		
-		m_regionRenderList.Render(cb);
-		
-		cb.EndRenderPass();
+		{
+			MCR_SCOPED_TIMER(0, "Render pass record")
+			
+			cb.BeginRenderPass(&renderPassBeginInfo);
+			
+			m_blockShader.Bind(cb, m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
+			
+			cb.SetViewport(0, SingleElementSpan(viewport));
+			cb.SetScissor(0, SingleElementSpan(renderArea));
+			
+			m_chunkRenderList.Render(cb);
+			
+			if (m_visibilityGraph)
+			{
+				m_debugShader.Bind(cb);
+				m_debugShader.SetColor(cb, glm::vec4(0.3f, 1.0f, 0.3f, 0.3f));
+				
+				m_visibilityGraph->Draw(cb);
+			}
+			
+			cb.EndRenderPass();
+		}
 		
 		if (frameIndex % 16 == 0)
 		{

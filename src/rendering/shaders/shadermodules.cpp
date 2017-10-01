@@ -21,6 +21,8 @@ namespace MCR
 	{
 		"block.vs",
 		"block.fs",
+		"debug.vs",
+		"debug.fs",
 		"post.cs",
 		"ui.vs",
 		"ui.fs"

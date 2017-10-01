@@ -11,5 +11,9 @@ layout(set=1, binding=0) uniform texture2DArray tex;
 
 void main()
 {
-	color_out = color_in * texture(sampler2DArray(tex, texSampler), textureCoordinate_in);
+	color_out = color_in;
+	if (textureCoordinate_in.z >= 0)
+	{
+		color_out *= texture(sampler2DArray(tex, texSampler), textureCoordinate_in);
+	}
 }

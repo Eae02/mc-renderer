@@ -80,6 +80,9 @@ namespace MCR
 		m_invViewMatrix = glm::translate(glm::mat4(), m_position) *
 		                  m_rotationMatrix *
 		                  glm::scale(glm::mat4(), glm::vec3(1, -1, 1));
+		
+		//forward = m_invViewMatrix * (0, 0, -1, 0)
+		m_forward = -m_invViewMatrix[2];
 	}
 	
 }

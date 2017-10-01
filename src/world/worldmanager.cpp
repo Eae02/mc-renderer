@@ -1,5 +1,5 @@
 #include "worldmanager.h"
-#include "../rendering/regionrenderlist.h"
+#include "../rendering/chunkrenderlist.h"
 #include "../rendering/frustum.h"
 #include "../blocks/sides.h"
 
@@ -10,7 +10,7 @@ namespace MCR
 	WorldManager::WorldManager()
 	    : m_generateThread(4)
 	{
-		SetRenderDistance(25);
+		SetRenderDistance(20);
 	}
 	
 	constexpr bool enableIO = false;
@@ -44,7 +44,7 @@ namespace MCR
 		m_hasUpdated = false;
 		
 		m_renderDistanceSq = renderDist * renderDist;
-		m_loadDistance = renderDist + 1;
+		m_loadDistance = renderDist + 3;
 		
 		m_regionTableSize = m_loadDistance * 2 + 1;
 		const int numRegionEntries = m_regionTableSize * m_regionTableSize;
@@ -354,7 +354,23 @@ namespace MCR
 		}
 	}
 	
-	void WorldManager::FillRenderListR(RegionRenderList& renderList, const Frustum& frustum,
+	ChunkMesh* WorldManager::GetChunkMeshForRendering(int64_t x, int y, int64_t z) const
+	{
+		int regionIndex = GetRegionIndex(x - m_centerRegionX + m_loadDistance, z - m_centerRegionZ + m_loadDistance);
+		if (regionIndex == -1)
+			return nullptr;
+		
+		RegionEntry* region = m_regions[0][regionIndex];
+		
+		if (region == nullptr || (region->m_state != RegionStates::Built && region->m_state != RegionStates::Uploading))
+		{
+			return nullptr;
+		}
+		
+		return &region->m_meshes[y];
+	}
+	
+	void WorldManager::FillRenderListR(ChunkRenderList& renderList, const Frustum& frustum,
 	                                   int minX, int minZ, int spanX, int spanZ) const
 	{
 		if (spanX <= 0 || spanZ <= 0)

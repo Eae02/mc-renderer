@@ -2,11 +2,13 @@
 
 #include "../vulkan/vk.h"
 #include "frustum.h"
-#include "regionrenderlist.h"
+#include "chunkrenderlist.h"
 #include "framebuffer.h"
 #include "rendersettingsbuffer.h"
 #include "shaders/blockshader.h"
+#include "shaders/debugshader.h"
 #include "postprocessor.h"
+#include "chunkvisibilitycalculator.h"
 
 namespace MCR
 {
@@ -50,6 +52,21 @@ namespace MCR
 			return m_wireframe;
 		}
 		
+		inline void SetEnableOcclusionCulling(bool enableOcclusionCulling)
+		{
+			m_enableOcclusionCulling = enableOcclusionCulling;
+		}
+		
+		inline bool IsOcclusionCullingEnabled()
+		{
+			return m_enableOcclusionCulling;
+		}
+		
+		inline void CaptureVisibilityGraph()
+		{
+			m_shouldCaptureVisibilityGraph = true;
+		}
+		
 		inline VkRenderPass GetRenderPass() const
 		{
 			return *m_renderPass;
@@ -72,6 +89,8 @@ namespace MCR
 	private:
 		static VkRenderPass CreateRenderPass();
 		
+		ChunkVisibilityCalculator m_visibilityCalculator;
+		
 		VkHandle<VkRenderPass> m_renderPass;
 		
 		RenderSettingsBuffer m_renderSettingsBuffer;
@@ -79,12 +98,18 @@ namespace MCR
 		PostProcessor m_postProcessor;
 		
 		BlockShader m_blockShader;
+		DebugShader m_debugShader;
 		
-		RegionRenderList m_regionRenderList;
+		std::unique_ptr<ChunkVisibilityGraph> m_visibilityGraph;
+		bool m_shouldCaptureVisibilityGraph = false;
+		
+		ChunkRenderList m_chunkRenderList;
 		
 		const Framebuffer* m_framebuffer;
 		
 		std::array<CommandBuffer, MaxQueuedFrames> m_commandBuffers;
+		
+		bool m_enableOcclusionCulling = true;
 		
 		bool m_isFrustumFrozen = false;
 		Frustum m_frustum;

@@ -2,6 +2,16 @@
 
 namespace MCR
 {
+	const uint8_t OpposingSides[6] = 
+	{
+		/* BLOCK_SIDE_POSX -> */ BLOCK_SIDE_NEGX,
+		/* BLOCK_SIDE_NEGX -> */ BLOCK_SIDE_POSX,
+		/* BLOCK_SIDE_POSY -> */ BLOCK_SIDE_NEGY,
+		/* BLOCK_SIDE_NEGY -> */ BLOCK_SIDE_POSY,
+		/* BLOCK_SIDE_POSZ -> */ BLOCK_SIDE_NEGZ,
+		/* BLOCK_SIDE_NEGZ -> */ BLOCK_SIDE_POSZ
+	};
+	
 	const glm::ivec3 BlockNormals[6] =
 	{
 		{  1, 0, 0 },

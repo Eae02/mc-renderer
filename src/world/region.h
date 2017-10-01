@@ -45,12 +45,14 @@ namespace MCR
 			friend class Region;
 			
 		public:
+			inline ChunkConnectivity() : m_data(0x1) { }
+			
 			bool IsConnected(uint8_t side1, uint8_t side2) const;
 			
 		private:
 			void SetConnected(uint8_t side1, uint8_t side2);
 			
-			uint16_t m_data = 0x1;
+			uint16_t m_data;
 		};
 		
 		Region() = default;
@@ -64,12 +66,19 @@ namespace MCR
 			m_coordZ = coordZ;
 		}
 		
-		inline BlockEntry& At(int locX, int locY, int locZ)
+		inline void Set(glm::ivec3 locPos, BlockEntry newEntry)
 		{
-			return m_blocks[GetBlockIndex(locX, locY, locZ)];
+			return Set(locPos.x, locPos.y, locPos.z, newEntry);
 		}
 		
-		inline BlockEntry At(int locX, int locY, int locZ) const
+		void Set(int locX, int locY, int locZ, BlockEntry newEntry);
+		
+		inline BlockEntry Get(glm::ivec3 locPos) const
+		{
+			return m_blocks[GetBlockIndex(locPos.x, locPos.y, locPos.z)];
+		}
+		
+		inline BlockEntry Get(int locX, int locY, int locZ) const
 		{
 			return m_blocks[GetBlockIndex(locX, locY, locZ)];
 		}
@@ -78,6 +87,11 @@ namespace MCR
 		{ return m_coordX; }
 		inline int64_t GetZ() const
 		{ return m_coordZ; }
+		
+		inline bool IsChunkOpaque(int y) const
+		{
+			return m_opaquePerChunk[y] == Size * Size * Size;
+		}
 		
 		ChunkConnectivity CalculateConnectivity(uint32_t chunkIndex) const;
 		
@@ -102,6 +116,8 @@ namespace MCR
 #endif
 			return locX + (locZ + locY * Size) * Size;
 		}
+		
+		std::array<int, ChunkCount> m_opaquePerChunk;
 		
 		std::array<BlockEntry, BlockCount> m_blocks;
 		

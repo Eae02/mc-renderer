@@ -1,8 +1,8 @@
-#include "regionrenderlist.h"
+#include "chunkrenderlist.h"
 
 namespace MCR
 {
-	void RegionRenderList::Begin()
+	void ChunkRenderList::Begin()
 	{
 		for (MeshGroup& group : m_meshGroups)
 		{
@@ -12,7 +12,7 @@ namespace MCR
 		m_numMeshes = 0;
 	}
 	
-	void RegionRenderList::Add(ChunkMesh& mesh)
+	void ChunkRenderList::Add(ChunkMesh& mesh)
 	{
 		auto groupIt = std::find_if(MAKE_RANGE(m_meshGroups), [&] (const MeshGroup& group)
 		{
@@ -21,6 +21,8 @@ namespace MCR
 		
 		if (groupIt != m_meshGroups.end())
 		{
+			assert(std::find(MAKE_RANGE(groupIt->m_meshes), &mesh) == groupIt->m_meshes.end());
+			
 			groupIt->m_meshes.push_back(&mesh);
 		}
 		else
@@ -31,7 +33,7 @@ namespace MCR
 		m_numMeshes++;
 	}
 	
-	void RegionRenderList::End(CommandBuffer& cb)
+	void ChunkRenderList::End(CommandBuffer& cb)
 	{
 		if (m_numMeshes == 0)
 			return;
@@ -124,7 +126,7 @@ namespace MCR
 		                   { }, SingleElementSpan(commandsBufferBarrier), { });
 	}
 	
-	void RegionRenderList::Render(CommandBuffer& cb) const
+	void ChunkRenderList::Render(CommandBuffer& cb) const
 	{
 		uint64_t offset = 0;
 		
@@ -137,7 +139,8 @@ namespace MCR
 			
 			if (vulkan.limits.hasMultiDrawIndirect)
 			{
-				cb.DrawIndexedIndirect(*m_deviceCommandsBuffer, offset, group.m_meshes.size(), sizeof(VkDrawIndexedIndirectCommand));
+				cb.DrawIndexedIndirect(*m_deviceCommandsBuffer, offset, group.m_meshes.size(),
+				                       sizeof(VkDrawIndexedIndirectCommand));
 				
 				offset += group.m_meshes.size() * sizeof(VkDrawIndexedIndirectCommand);
 			}

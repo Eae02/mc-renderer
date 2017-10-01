@@ -202,11 +202,9 @@ namespace MCR
 						    blockRegPos.x < Region::Size && blockRegPos.y < Region::Height &&
 						    blockRegPos.z < Region::Size)
 						{
-							Region::BlockEntry& block = region.At(blockRegPos.x, blockRegPos.y, blockRegPos.z);
-							
-							if (block.m_id != BlockIDs::Bedrock)
+							if (region.Get(blockRegPos).m_id != BlockIDs::Bedrock)
 							{
-								block.m_id = BlockIDs::Air;
+								region.Set(blockRegPos, { BlockIDs::Air });
 							}
 						}
 					}
@@ -236,7 +234,7 @@ namespace MCR
 		
 		for (const FutureBlockPlacement& blockPlacement : futureRegion.m_blockPlacements)
 		{
-			region.At(blockPlacement.m_x, blockPlacement.m_y, blockPlacement.m_z) = blockPlacement.m_block;
+			region.Set(blockPlacement.m_x, blockPlacement.m_y, blockPlacement.m_z, blockPlacement.m_block);
 		}
 	}
 	
@@ -272,8 +270,7 @@ namespace MCR
 				
 				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y > 0; y--)
 				{
-					Region::BlockEntry& block = region.At(lx, y, lz);
-					
+					Region::BlockEntry block;
 					block.m_data = 0;
 					
 					double py = y / PerlinDiv;
@@ -300,7 +297,7 @@ namespace MCR
 								{
 									double flowerIndexD = std::floor(flowerVal / flowerFrequency * ArrayLength(flowerIDs));
 									
-									region.At(lx, y + 1, lz).m_id = flowerIDs[static_cast<int>(flowerIndexD)];
+									region.Set(lx, y + 1, lz, { flowerIDs[static_cast<int>(flowerIndexD)] });
 								}
 							}
 						}
@@ -311,9 +308,11 @@ namespace MCR
 						
 						blocksSinceAir++;
 					}
+					
+					region.Set(lx, y, lz, block);
 				}
 				
-				region.At(lx, 0, lz).m_id = BlockIDs::Bedrock;
+				region.Set(lx, 0, lz, { BlockIDs::Bedrock });
 			}
 		}
 		
@@ -326,9 +325,7 @@ namespace MCR
 			
 			for (int j = oreGroupsPerRegion[i](randEngine); j > 0; j--)
 			{
-				const int originX = orePosXZDist(randEngine);
-				const int originY = yPositionDist(randEngine);
-				const int originZ = orePosXZDist(randEngine);
+				const glm::ivec3 origin(orePosXZDist(randEngine), yPositionDist(randEngine), orePosXZDist(randEngine));
 				
 				for (int y = 0; y < 2; y++)
 				{
@@ -336,11 +333,11 @@ namespace MCR
 					{
 						for (int x = 0; x < 2; x++)
 						{
-							Region::BlockEntry& block = region.At(originX + x, originY + y, originZ + z);
+							glm::ivec3 blockPos = origin + glm::ivec3(x, y, z);
 							
-							if (block.m_id == BlockIDs::Stone)
+							if (region.Get(blockPos).m_id == BlockIDs::Stone)
 							{
-								block.m_id = oreIDs[i];
+								region.Set(blockPos, { oreIDs[i] });
 							}
 						}
 					}
@@ -418,9 +415,17 @@ namespace MCR
 			
 			ProcessFutureRegion(futureRegion, *region);
 			
+			const glm::ivec2 neighbors[] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+			
 			for (uint32_t y = 0; y < Region::ChunkCount; y++)
 			{
 				worldManager.MarkOutOfDate(futureRegion.m_coordinate, y);
+				
+				for (glm::ivec2 neighbor : neighbors)
+				{
+					worldManager.MarkOutOfDate({ futureRegion.m_coordinate.x + neighbor.x,
+					                             futureRegion.m_coordinate.z + neighbor.y }, y);
+				}
 			}
 			
 			lock.lock();

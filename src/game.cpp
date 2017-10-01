@@ -144,7 +144,15 @@ namespace MCR
 					
 					if (event.key.state == SDL_PRESSED)
 					{
-						if (event.key.keysym.scancode == SDL_SCANCODE_F7)
+						if (event.key.keysym.scancode == SDL_SCANCODE_F5)
+						{
+							renderer.CaptureVisibilityGraph();
+						}
+						else if (event.key.keysym.scancode == SDL_SCANCODE_F6)
+						{
+							renderer.SetEnableOcclusionCulling(!renderer.IsOcclusionCullingEnabled());
+						}
+						else if (event.key.keysym.scancode == SDL_SCANCODE_F7)
 						{
 							renderer.SetWireframe(!renderer.Wireframe());
 						}
@@ -186,7 +194,8 @@ namespace MCR
 				}
 				
 #ifdef MCR_DEBUG
-				profilingData = frame.m_profiler.GetData();
+				profilingData = frame.m_profiler.GetData(lastFrameTime);
+				currentFrameProfiler->NewFrame();
 #endif
 			}
 			
@@ -214,13 +223,19 @@ namespace MCR
 			
 			ProcessVulkanDestroyList();
 			
-			renderer.Render({ timeF, &timeManager });
+			{
+				MCR_SCOPED_TIMER(0, "Render")
+				renderer.Render({ timeF, &timeManager });
+			}
 			
 #ifdef MCR_DEBUG
 			profilingPane.FrameEnd(profilingData, inputState, uiDrawList);
 #endif
 			
-			uiGraphicsContext.Draw(uiDrawList, framebuffer);
+			{
+				MCR_SCOPED_TIMER(0, "UI Render")
+				uiGraphicsContext.Draw(uiDrawList, framebuffer);
+			}
 			
 			const VkCommandBuffer commandBuffers[] =
 			{

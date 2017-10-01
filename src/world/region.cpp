@@ -34,6 +34,23 @@ namespace MCR
 		}
 	}
 	
+	void Region::Set(int locX, int locY, int locZ, Region::BlockEntry newEntry)
+	{
+		const size_t index = GetBlockIndex(locX, locY, locZ);
+		
+		if (BlockType::GetByID(m_blocks[index].m_id).IsOpaque())
+		{
+			m_opaquePerChunk[locY / Size]--;
+		}
+		
+		if (BlockType::GetByID(newEntry.m_id).IsOpaque())
+		{
+			m_opaquePerChunk[locY / Size]++;
+		}
+		
+		m_blocks[index] = newEntry;
+	}
+	
 	Region::ChunkConnectivity Region::CalculateConnectivity(uint32_t chunkIndex) const
 	{
 		ChunkConnectivity connectivity;
@@ -58,11 +75,18 @@ namespace MCR
 			return coord.x + (coord.z + coord.y * Size) * Size;
 		};
 		
+		const uint8_t constCoordValues[6] = 
+		{
+			Size - 1, 0,
+			Size - 1, 0,
+			Size - 1, 0,
+		};
+		
+		const Coord steps[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
+		
 		for (uint8_t side = 0; side < 6; side++)
 		{
 			const uint8_t constCoord = side / 2;
-			const uint8_t constCoordVal = (side % 2) ? (Region::Size - 1) : 0;
-			
 			const uint8_t varyCoord1 = (constCoord + 1) % 3;
 			const uint8_t varyCoord2 = (constCoord + 2) % 3;
 			
@@ -71,13 +95,13 @@ namespace MCR
 				for (uint8_t j = 0; j < Region::Size; j++)
 				{
 					Coord srcCoord;
-					srcCoord[constCoord] = constCoordVal;
+					srcCoord[constCoord] = constCoordValues[side];
 					srcCoord[varyCoord1] = i;
 					srcCoord[varyCoord2] = j;
 					
 					auto MaybePushCoord = [&] (Coord coord)
 					{
-						size_t index = GetChunkBlockIndex(srcCoord);
+						size_t index = GetChunkBlockIndex(coord);
 						
 						if (blocksVisited[index] || BlockType::GetByID(m_blocks[baseBlockIndex + index].m_id).IsOpaque())
 							return false;
@@ -90,7 +114,8 @@ namespace MCR
 					if (!MaybePushCoord(srcCoord))
 						continue;
 					
-					bool touchedEdges[6] = { };
+					bool touchedEdges[6];
+					memset(touchedEdges, 0, sizeof(touchedEdges));
 					
 					while (coordinatesStackSize > 0)
 					{
@@ -104,24 +129,22 @@ namespace MCR
 						{
 							if (coord[dim] == 0)
 							{
-								touchedEdges[dim * 2] = true;
-							}
-							else
-							{
-								Coord nCoord = coord;
-								nCoord[dim]--;
-								MaybePushCoord(nCoord);
-							}
-							
-							if (coord[dim] == Size - 1)
-							{
+								//We touched the negative edge for this dimension.
 								touchedEdges[dim * 2 + 1] = true;
 							}
 							else
 							{
-								Coord nCoord = coord;
-								nCoord[dim]++;
-								MaybePushCoord(nCoord);
+								MaybePushCoord(coord - steps[dim]);
+							}
+							
+							if (coord[dim] == Size - 1)
+							{
+								//We touched the positive edge for this dimension.
+								touchedEdges[dim * 2] = true;
+							}
+							else
+							{
+								MaybePushCoord(coord + steps[dim]);
 							}
 						}
 					}
