@@ -10,6 +10,7 @@ namespace MCR
 		struct CreateInfo
 		{
 			std::string_view                                     vsName;
+			std::string_view                                     gsName;
 			std::string_view                                     fsName;
 			gsl::span<const std::string_view>                    setLayoutNames;
 			gsl::span<const VkPushConstantRange>                 pushConstantRanges;
@@ -34,14 +35,13 @@ namespace MCR
 			Wireframe
 		};
 		
-		void Bind(CommandBuffer& cb, BindModes mode) const;
+		void Bind(CommandBuffer& cb, BindModes mode = BindModes::Default) const;
 		
 		inline VkPipelineLayout GetLayout() const
 		{
 			return *m_pipelineLayout;
 		}
 		
-	protected:
 		Shader(VkRenderPass renderPass, const CreateInfo& createInfo);
 		
 	private:

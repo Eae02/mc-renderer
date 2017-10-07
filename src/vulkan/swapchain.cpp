@@ -15,17 +15,15 @@ namespace SwapChain
 	
 	static std::vector<VkImage> swapChainImages;
 	
-	static std::vector<CommandBuffer> blitCommandBuffers;
+	static uint32_t imageCount;
 	
 	static VkSurfaceFormatKHR surfaceFormat;
-	
-	static PresentImage presentImage;
 	
 	static VkExtent2D dimensions;
 	static bool enableVSync;
 	
-	static VkHandle<VkSemaphore> aquireSemaphore;
-	static VkHandle<VkSemaphore> blitSemaphore;
+	static std::vector<VkHandle<VkSemaphore>> aquireSemaphores;
+	static uint32_t aquireSemaphoreIndex = 0;
 	
 	inline VkSurfaceFormatKHR SelectSurfaceFormat()
 	{
@@ -98,60 +96,30 @@ namespace SwapChain
 	
 	inline bool CheckSurfaceCapabilities(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
-		return bool(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+		//return bool(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+		
+		return bool(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	}
 	
 	void Initialize()
 	{
 		surfaceFormat = SelectSurfaceFormat();
 		
-		aquireSemaphore = CreateVkSemaphore();
-		blitSemaphore = CreateVkSemaphore();
-	}
-	
-	static void RecordBlitCommandBuffers()
-	{
-		while (swapChainImages.size() > blitCommandBuffers.size())
+		VkSurfaceCapabilitiesKHR capabilities;
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan.physicalDevice, vulkan.surface, &capabilities);
+		
+		imageCount = capabilities.minImageCount + 1;
+		if (capabilities.maxImageCount != 0 && imageCount > capabilities.maxImageCount)
 		{
-			blitCommandBuffers.emplace_back(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
+			imageCount = capabilities.maxImageCount;
 		}
 		
-		for (size_t i = 0; i < swapChainImages.size(); i++)
+		swapChainImages.resize(imageCount);
+		
+		aquireSemaphores.resize(imageCount);
+		for (uint32_t i = 0; i < imageCount; i++)
 		{
-			CommandBuffer& cb = blitCommandBuffers[i];
-			
-			cb.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-			
-			VkImageMemoryBarrier barrier;
-			
-			//Barrier which sets the layout of the swap chain image to TRANSFER_DST_OPTIMAL.
-			InitImageMemoryBarrier(barrier, swapChainImages[i]);
-			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-			
-			cb.PipelineBarrier(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-			                   { }, { }, SingleElementSpan(barrier));
-			
-			const VkImageBlit blitRegion = 
-			{
-				/* srcSubresource */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-				/* srcOffsets[2]  */ { { 0, 0, 0 }, { presentImage.m_width, presentImage.m_height, 1 } },
-				/* dstSubresource */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-				/* dstOffsets[2]  */ { { 0, 0, 0 }, { dimensions.width, dimensions.height, 1 } }
-			};
-			cb.BlitImage(presentImage.m_image, swapChainImages[i], blitRegion, VK_FILTER_NEAREST);
-			
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			barrier.dstAccessMask = 0;
-			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-			
-			cb.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
-			                   { }, { }, SingleElementSpan(barrier));
-			
-			cb.End();
+			aquireSemaphores[i] = CreateVkSemaphore();
 		}
 	}
 	
@@ -186,12 +154,6 @@ namespace SwapChain
 			return;
 		}
 		
-		uint32_t imageCount = capabilities.minImageCount + 1;
-		if (capabilities.maxImageCount != 0 && imageCount > capabilities.maxImageCount)
-		{
-			imageCount = capabilities.maxImageCount;
-		}
-		
 		dimensions = capabilities.currentExtent;
 		enableVSync = t_enableVSync;
 		
@@ -207,47 +169,41 @@ namespace SwapChain
 		chainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		chainCreateInfo.presentMode = SelectPresentMode(t_enableVSync);
 		chainCreateInfo.clipped = true;
-		chainCreateInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-		
-		Log("Creating swap chain, present mode: ", GetPresentModeName(chainCreateInfo.presentMode), ", images: ", imageCount);
+		chainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		
 		CheckResult(vkCreateSwapchainKHR(vulkan.device, &chainCreateInfo, nullptr, swapChain.GetCreateAddress()));
 		
-		vkGetSwapchainImagesKHR(vulkan.device, *swapChain, &imageCount, nullptr);
-		swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(vulkan.device, *swapChain, &imageCount, swapChainImages.data());
+		uint32_t createdImageCount;
+		vkGetSwapchainImagesKHR(vulkan.device, *swapChain, &createdImageCount, nullptr);
 		
-		if (presentImage.m_image)
+		if (createdImageCount != imageCount)
 		{
-			RecordBlitCommandBuffers();
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Creating Swapchain",
+			                         "Number of swapchain images changed at runtime.", nullptr);
+			std::exit(1);
 		}
+		
+		vkGetSwapchainImagesKHR(vulkan.device, *swapChain, &createdImageCount, swapChainImages.data());
+		
+		Log("Creating swap chain, present mode: ", GetPresentModeName(chainCreateInfo.presentMode),
+		    ", images: ", createdImageCount);
 	}
 	
 	void Destroy()
 	{
 		swapChain.Reset();
-		
-		aquireSemaphore.Reset();
-		blitSemaphore.Reset();
-		
-		blitCommandBuffers.clear();
+		aquireSemaphores.clear();
 	}
 	
-	void SetPresentImage(const PresentImage& t_presentImage)
+	uint32_t AquireImage(VkSemaphore& aquireSemaphoreOut)
 	{
-		presentImage = t_presentImage;
+		aquireSemaphoreOut = *aquireSemaphores[aquireSemaphoreIndex];
+		aquireSemaphoreIndex = (aquireSemaphoreIndex + 1) % imageCount;
 		
-		if (!swapChainImages.empty())
-		{
-			RecordBlitCommandBuffers();
-		}
-	}
-	
-	uint32_t AquireImage()
-	{
+	preAquire:
 		uint32_t imageIndex;
 		VkResult aquireResult = vkAcquireNextImageKHR(vulkan.device, *swapChain, UINT64_MAX,
-		                                              *aquireSemaphore, nullptr, &imageIndex);
+		                                              aquireSemaphoreOut, nullptr, &imageIndex);
 		
 		switch (aquireResult)
 		{
@@ -257,34 +213,18 @@ namespace SwapChain
 		case VK_SUBOPTIMAL_KHR:
 		case VK_ERROR_OUT_OF_DATE_KHR:
 			Create(enableVSync, true);
-			return AquireImage();
+			goto preAquire;
 			
 		default:
 			throw std::runtime_error("Error acquiring next image from swap chain.");
 		}
 	}
 	
-	void Present(VkSemaphore waitSemaphore, VkPipelineStageFlags waitDstStageMask)
+	void Present(VkSemaphore waitSemaphore, uint32_t imageIndex)
 	{
-		uint32_t imageIndex = AquireImage();
-		
-		VkSemaphore waitSemaphores[2] = { waitSemaphore, *aquireSemaphore };
-		VkPipelineStageFlags waitStageMasks[2] = { waitDstStageMask, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		
-		VkSubmitInfo blitSubmitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
-		blitSubmitInfo.commandBufferCount = 1;
-		blitSubmitInfo.pCommandBuffers = &blitCommandBuffers[imageIndex].GetVkCB();
-		blitSubmitInfo.waitSemaphoreCount = 2;
-		blitSubmitInfo.pWaitSemaphores = waitSemaphores;
-		blitSubmitInfo.pWaitDstStageMask = waitStageMasks;
-		blitSubmitInfo.signalSemaphoreCount = 1;
-		blitSubmitInfo.pSignalSemaphores = &*blitSemaphore;
-		
-		vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &blitSubmitInfo, nullptr);
-		
 		VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = &*blitSemaphore;
+		presentInfo.pWaitSemaphores = &waitSemaphore;
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = &*swapChain;
 		presentInfo.pImageIndices = &imageIndex;
@@ -302,6 +242,21 @@ namespace SwapChain
 		default:
 			throw std::runtime_error("Error during image presentation.");
 		}
+	}
+	
+	uint32_t GetImageCount()
+	{
+		return imageCount;
+	}
+	
+	VkFormat GetImageFormat()
+	{
+		return surfaceFormat.format;
+	}
+	
+	gsl::span<const VkImage> GetImages()
+	{
+		return swapChainImages;
 	}
 }
 }

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "../vulkan/vk.h"
+#include "shaders/skyshader.h"
 
 namespace MCR
 {
 	class PostProcessor
 	{
 	public:
-		PostProcessor();
+		PostProcessor(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void SetRenderSettings(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
@@ -15,17 +16,14 @@ namespace MCR
 		
 		inline VkCommandBuffer GetCommandBuffer() const
 		{
-			return m_commandBuffer.GetVkCB();
+			return m_commandBuffers[frameQueueIndex].GetVkCB();
 		}
 		
 	private:
-		VkHandle<VkPipelineLayout> m_pipelineLayout;
-		VkHandle<VkPipeline> m_pipeline;
+		VkHandle<VkRenderPass> m_renderPass;
 		
-		VkHandle<VkSampler> m_depthSampler;
+		SkyShader m_skyShader;
 		
-		CommandBuffer m_commandBuffer;
-		
-		UniqueDescriptorSet m_descriptorSet;
+		std::vector<CommandBuffer> m_commandBuffers;
 	};
 }

@@ -61,6 +61,7 @@ int main()
 	{
 #endif
 	
+	MCR::CreateSamplers();
 	MCR::LoadShaderModules();
 	MCR::RegisterSetLayouts();
 	
@@ -68,6 +69,7 @@ int main()
 	
 	MCR::DestroyShaderModules();
 	MCR::DestroyDescriptorSetLayouts();
+	MCR::DestroySamplers();
 	
 	MCR::DestroyVulkan();
 	

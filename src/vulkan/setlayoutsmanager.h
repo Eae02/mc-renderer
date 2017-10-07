@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "samplers.h"
 #include "vkhandle.h"
 
 #include <string>
@@ -12,9 +13,15 @@ namespace MCR
 {
 	struct DSLayoutBinding
 	{
-		VkDescriptorType   descriptorType;
-		uint32_t           descriptorCount;
-		VkShaderStageFlags stageFlags;
+		VkDescriptorType m_descriptorType;
+		VkShaderStageFlags m_stageFlags;
+		uint32_t m_descriptorCount;
+		const Samplers* m_immutableSamplers;
+		
+		inline DSLayoutBinding(VkDescriptorType descriptorType, VkShaderStageFlags stageFlags,
+		                       uint32_t count = 1, const Samplers* immutableSamplers = nullptr)
+		    : m_descriptorType(descriptorType), m_stageFlags(stageFlags), m_descriptorCount(count),
+		      m_immutableSamplers(immutableSamplers) { }
 	};
 	
 	void RegisterDescriptorSetLayout(std::string name, gsl::span<const DSLayoutBinding> bindings);

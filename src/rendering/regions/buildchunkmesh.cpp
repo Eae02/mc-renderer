@@ -92,7 +92,7 @@ namespace MCR
 							for (int vy = 0; vy < 2; vy++)
 							{
 								const glm::vec3 pos = faceCenter + up * (vy - 0.5f) + left * (vx - 0.5f);
-								params.m_meshBuilder->AddVertex(pos, { vx, 1 - vy }, layer);
+								params.m_meshBuilder->AddVertex(pos, BlockNormals[s], { vx, 1 - vy }, layer);
 							}
 						}
 					}

@@ -1,0 +1,89 @@
+#ifndef LIGHT_H
+#define LIGHT_H
+
+#include "dlight.glh"
+
+const float PI = 3.141;
+
+struct MaterialData
+{
+	vec3 albedo;
+	vec3 normal;
+	float metallic;
+	float roughness;
+};
+
+vec3 fresnelSchlick(float cosT, vec3 F0, float roughness)
+{
+	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosT, 5.0);
+}
+
+vec3 calcFresnel(MaterialData data, vec3 toEye)
+{
+	const vec3 dielectricF0 = vec3(0.04);
+	
+	vec3 F0 = mix(dielectricF0, data.albedo, data.metallic);
+	return fresnelSchlick(max(dot(data.normal, toEye), 0.0), F0, data.roughness);
+}
+
+float distributionGGX(vec3 normal, vec3 H, float roughness)
+{
+	float a = roughness * roughness;
+	float a2 = a * a;
+	float NdotH = max(dot(normal, H), 0.0);
+	float NdotH2 = NdotH * NdotH;
+	
+	float denominator = (NdotH2 * (a2 - 1.0) + 1.0);
+	denominator = PI * denominator * denominator;
+	
+	return a2 / denominator;
+}
+
+float geometrySchlickGGX(float NdotV, float roughness)
+{
+	float r = (roughness + 1.0);
+	float k = (r * r) / 8.0;
+	
+	return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float geometrySmith(vec3 normal, vec3 toEye, vec3 toLight, float roughness)
+{
+	float NdotV = max(dot(normal, toEye), 0.0);
+	float NdotL = max(dot(normal, toLight), 0.0);
+	float ggx2  = geometrySchlickGGX(NdotV, roughness);
+	float ggx1  = geometrySchlickGGX(NdotL, roughness);
+	
+	return ggx1 * ggx2;
+}
+
+vec3 calcDirectReflectance(vec3 toLight, vec3 toEyeN, vec3 fresnel, MaterialData data, vec3 lightColor)
+{
+	float NdotL = dot(data.normal, toLight);
+	if (NdotL < 0)
+		return vec3(0.0);
+	
+	float distToLight = length(toLight);
+	toLight /= distToLight;
+	NdotL /= distToLight;
+	
+	float attenuation = 1.0 / (distToLight * distToLight + 1.0);
+	vec3 radiance = lightColor * attenuation;
+	
+	float NDF = distributionGGX(data.normal, normalize(toEyeN + toLight), data.roughness);
+	float geometry = geometrySmith(data.normal, toEyeN, toLight, data.roughness);
+	
+	float denominator = 4 * max(dot(toEyeN, data.normal), 0.0) * max(dot(toLight, data.normal), 0.0) + 0.001; 
+	vec3 brdf = (NDF * geometry * fresnel) / denominator;
+	
+	vec3 kD = (vec3(1.0) - fresnel) * (1.0 - data.metallic);
+	
+	return (kD * data.albedo / PI + brdf) * radiance * NdotL;
+}
+
+vec3 calcDirLightReflectance(DirLight light, vec3 toEye, vec3 fresnel, MaterialData data)
+{
+	return calcDirectReflectance(-light.direction, toEye, fresnel, data, light.radiance);
+}
+
+#endif

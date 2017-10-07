@@ -28,17 +28,43 @@ namespace MCR
 	
 	void RegisterDescriptorSetLayout(std::string name, gsl::span<const DSLayoutBinding> bindings)
 	{
-		std::vector<VkDescriptorSetLayoutBinding> vkBindings(bindings.size());
+		//Counts the number of immutable samplers.
+		uint32_t numImmutableSamplers = 0;
+		for (const DSLayoutBinding& layoutBinding : bindings)
+		{
+			if (layoutBinding.m_immutableSamplers != nullptr)
+			{
+				numImmutableSamplers += layoutBinding.m_descriptorCount;
+			}
+		}
 		
-		uint32_t bindingCount = gsl::narrow<uint32_t>(bindings.size());
+		std::vector<VkSampler> immutableSamplers(numImmutableSamplers);
+		VkSampler* nextImmutableSampler = immutableSamplers.data();
+		
+		std::vector<VkDescriptorSetLayoutBinding> vkBindings(bindings.size());
+		const uint32_t bindingCount = gsl::narrow<uint32_t>(bindings.size());
 		
 		for (uint32_t i = 0; i < bindingCount; i++)
 		{
 			vkBindings[i].binding = i;
-			vkBindings[i].descriptorType = bindings[i].descriptorType;
-			vkBindings[i].descriptorCount = bindings[i].descriptorCount;
-			vkBindings[i].stageFlags = bindings[i].stageFlags;
-			vkBindings[i].pImmutableSamplers = nullptr;
+			vkBindings[i].descriptorType = bindings[i].m_descriptorType;
+			vkBindings[i].descriptorCount = bindings[i].m_descriptorCount;
+			vkBindings[i].stageFlags = bindings[i].m_stageFlags;
+			
+			if (bindings[i].m_immutableSamplers != nullptr)
+			{
+				vkBindings[i].pImmutableSamplers = nextImmutableSampler;
+				
+				//Copies immutable samplers.
+				for (uint32_t j = 0; j < bindings[i].m_descriptorCount; j++)
+				{
+					*(nextImmutableSampler++) = GetSampler(bindings[i].m_immutableSamplers[j]);
+				}
+			}
+			else
+			{
+				vkBindings[i].pImmutableSamplers = nullptr;;
+			}
 		}
 		
 		const VkDescriptorSetLayoutCreateInfo layoutCreateInfo =
@@ -57,7 +83,7 @@ namespace MCR
 		
 		for (const DSLayoutBinding& binding : bindings)
 		{
-			layouts.back().m_descriptorCounts[static_cast<int>(binding.descriptorType)] += binding.descriptorCount;
+			layouts.back().m_descriptorCounts[static_cast<int>(binding.m_descriptorType)] += binding.m_descriptorCount;
 		}
 	}
 	

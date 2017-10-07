@@ -187,7 +187,8 @@ namespace MCR
 			labelStream << "\n";
 		});
 		
-		labelStream << "Frame Time: " << profilingData.GetFrameTime().count() << "ms";
+		labelStream << "Frame Time: " << profilingData.GetFrameTime().count() << "ms\n";
+		labelStream << "FPS: " << (1000.0f / profilingData.GetFrameTime().count()) << "Hz";
 		
 		std::string labelString = labelStream.str();
 		devControls.Label(labelString);

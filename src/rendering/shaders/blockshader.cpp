@@ -13,6 +13,7 @@ namespace MCR
 	const Shader::CreateInfo BlockShader::s_createInfo = 
 	{
 		/* vsName                */ "block.vs",
+		/* gsName                */ nullptr,
 		/* fsName                */ "block.fs",
 		/* setLayoutNames        */ setLayouts,
 		/* pushConstantRanges    */ { },

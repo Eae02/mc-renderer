@@ -51,7 +51,7 @@ namespace MCR
 			worldManager->Update(dt, inputState);
 		}
 		
-		timeManager.Update(dt);
+		timeManager.Update(dt, inputState);
 	}
 	
 	struct FrameQueueEntry
@@ -63,6 +63,8 @@ namespace MCR
 		FrameProfiler m_profiler;
 #endif
 	};
+	
+	const bool enableVSync = false;
 	
 	void RunGameLoop(SDL_Window* window)
 	{
@@ -77,7 +79,7 @@ namespace MCR
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 		}
 		
-		std::array<FrameQueueEntry, MaxQueuedFrames> frames;
+		std::vector<FrameQueueEntry> frames(SwapChain::GetImageCount());
 		
 		for (FrameQueueEntry& frame : frames)
 		{
@@ -99,13 +101,11 @@ namespace MCR
 		Initialize();
 		
 		Renderer renderer;
-		PostProcessor postProcessor;
+		PostProcessor postProcessor(renderer.GetRenderSettingsBufferInfo());
 		UIGraphicsContext uiGraphicsContext;
 		Framebuffer framebuffer;
 		
 		UIDrawList uiDrawList;
-		
-		postProcessor.SetRenderSettings(renderer.GetRenderSettingsBufferInfo());
 		
 		worldManager = std::make_unique<WorldManager>();
 		renderer.SetWorldManager(worldManager.get());
@@ -175,6 +175,27 @@ namespace MCR
 			if (shouldQuit)
 				break;
 			
+			//Checks if the drawable size has changed.
+			int drawableWidth, drawableHeight;
+			SDL_Vulkan_GetDrawableSize(window, &drawableWidth, &drawableHeight);
+			if (drawableWidth != currentDrawableWidth || drawableHeight != currentDrawableHeight)
+			{
+				vkDeviceWaitIdle(vulkan.device);
+				
+				SwapChain::Create(enableVSync);
+				
+				framebuffer.Create(renderer, uiGraphicsContext, SwapChain::GetImages(), drawableWidth, drawableHeight);
+				
+				renderer.FramebufferChanged(framebuffer);
+				postProcessor.FramebufferChanged(framebuffer);
+				
+				currentDrawableWidth = drawableWidth;
+				currentDrawableHeight = drawableHeight;
+			}
+			
+			VkSemaphore aquireSemaphore;
+			frameQueueIndex = SwapChain::AquireImage(aquireSemaphore);
+			
 			uiDrawList.Reset();
 			
 			FrameQueueEntry& frame = frames[frameQueueIndex];
@@ -186,7 +207,7 @@ namespace MCR
 			
 			UpdateGame(lastFrameTime.count() * 1E-9f, inputState);
 			
-			if (frameIndex >= MaxQueuedFrames)
+			if (frameIndex >= SwapChain::GetImageCount())
 			{
 				{
 					MCR_SCOPED_TIMER(0, "GPU sync")
@@ -197,28 +218,6 @@ namespace MCR
 				profilingData = frame.m_profiler.GetData(lastFrameTime);
 				currentFrameProfiler->NewFrame();
 #endif
-			}
-			
-			//Checks if the drawable size has changed.
-			int drawableWidth, drawableHeight;
-			SDL_Vulkan_GetDrawableSize(window, &drawableWidth, &drawableHeight);
-			if (drawableWidth != currentDrawableWidth || drawableHeight != currentDrawableHeight)
-			{
-				vkDeviceWaitIdle(vulkan.device);
-				
-				SwapChain::Create(true);
-				
-				framebuffer.Create(renderer, uiGraphicsContext, drawableWidth, drawableHeight);
-				
-				renderer.FramebufferChanged(framebuffer);
-				postProcessor.FramebufferChanged(framebuffer);
-				
-				SwapChain::PresentImage presentImage;
-				framebuffer.GetPresentImage(presentImage);
-				SwapChain::SetPresentImage(presentImage);
-				
-				currentDrawableWidth = drawableWidth;
-				currentDrawableHeight = drawableHeight;
 			}
 			
 			ProcessVulkanDestroyList();
@@ -244,13 +243,15 @@ namespace MCR
 				uiGraphicsContext.GetCommandBuffer()
 			};
 			
+			const VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			
 			const VkSubmitInfo submitInfo = 
 			{
 				/* sType                */ VK_STRUCTURE_TYPE_SUBMIT_INFO,
 				/* pNext                */ nullptr,
-				/* waitSemaphoreCount   */ 0,
-				/* pWaitSemaphores      */ nullptr,
-				/* pWaitDstStageMask    */ nullptr,
+				/* waitSemaphoreCount   */ 1,
+				/* pWaitSemaphores      */ &aquireSemaphore,
+				/* pWaitDstStageMask    */ &waitStages,
 				/* commandBufferCount   */ ArrayLength(commandBuffers),
 				/* pCommandBuffers      */ commandBuffers,
 				/* signalSemaphoreCount */ 1,
@@ -264,7 +265,7 @@ namespace MCR
 			
 			{
 				MCR_SCOPED_TIMER(0, "Present");
-				SwapChain::Present(*frame.m_signalSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+				SwapChain::Present(*frame.m_signalSemaphore, frameQueueIndex);
 			}
 			
 			IncrementFrameIndex();

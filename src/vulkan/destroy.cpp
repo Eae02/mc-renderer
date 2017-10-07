@@ -19,9 +19,9 @@ namespace MCR
 	
 	void ProcessVulkanDestroyList()
 	{
-		if (frameIndex < MaxQueuedFrames)
+		if (frameIndex < SwapChain::GetImageCount())
 			return;
-		uint32_t targetFrameIndex = frameIndex - MaxQueuedFrames;
+		uint32_t targetFrameIndex = frameIndex - SwapChain::GetImageCount();
 		
 		for (size_t i = 0; i < destroyList.size();)
 		{

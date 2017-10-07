@@ -319,7 +319,7 @@ namespace MCR
 		// ** Generates ores **
 		for (size_t i = 0; i < ArrayLength(oreIDs); i++)
 		{
-			int maxY = static_cast<int>(oreMaxY[i] * averageSurfaceLevel);
+			int maxY = static_cast<int>(oreMaxY[i] * static_cast<double>(averageSurfaceLevel));
 			
 			std::uniform_int_distribution<int> yPositionDist(1, maxY - 2);
 			

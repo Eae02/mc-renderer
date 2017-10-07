@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <cstdint>
+#include <gsl/span>
 
 namespace MCR
 {
@@ -18,9 +19,14 @@ namespace SwapChain
 	
 	void Create(bool enableVSync, bool force = false);
 	
-	void Present(VkSemaphore waitSemaphore, VkPipelineStageFlags waitStage);
+	uint32_t AquireImage(VkSemaphore& aquireSemaphoreOut);
 	
-	void SetPresentImage(const PresentImage& presentImage);
+	void Present(VkSemaphore waitSemaphore, uint32_t imageIndex);
+	
+	uint32_t GetImageCount();
+	VkFormat GetImageFormat();
+	
+	gsl::span<const VkImage> GetImages();
 	
 	void Destroy();
 }

@@ -21,9 +21,13 @@ namespace MCR
 	{
 		"block.vs",
 		"block.fs",
+		"block-shadow.vs",
+		"block-shadow.gs",
+		"block-shadow.fs",
 		"debug.vs",
 		"debug.fs",
-		"post.cs",
+		"sky.vs",
+		"sky.fs",
 		"ui.vs",
 		"ui.fs"
 	};

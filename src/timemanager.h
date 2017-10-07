@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "rendering/dirlight.h"
+
 namespace MCR
 {
 	class TimeManager
@@ -9,22 +11,27 @@ namespace MCR
 	public:
 		TimeManager();
 		
-		void Update(float dt);
+		void Update(float dt, const class InputState& inputState);
 		
 		void SetTimeScale(float timeScale);
 		
-		inline const glm::vec3& GetDLDirection() const
-		{ return m_dlDirection; }
-		inline const glm::vec3& GetDLRadiance() const
-		{ return m_dlRadiance; }
-		
 		float GetMoonIntensity() const;
+		
+		inline const DirLight& GetSunDescription() const
+		{
+			return m_sun;
+		}
+		
+		inline const DirLight& GetMoonDescription() const
+		{
+			return m_moon;
+		}
 		
 	private:
 		float m_time = 0;
 		float m_timeScale = 0;
 		
-		glm::vec3 m_dlDirection;
-		glm::vec3 m_dlRadiance;
+		DirLight m_sun;
+		DirLight m_moon;
 	};
 }

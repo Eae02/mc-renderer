@@ -4,14 +4,20 @@
 #include "inc/rendersettings.glh"
 #include "inc/depth.glh"
 
-layout (local_size_x = 32, local_size_y = 32) in;
+layout(location=0) in vec2 texCoord_in;
+layout(location=1) in vec3 eyeVector_in;
+
+layout(location=0) out vec3 color_out;
 
 layout(binding=0) uniform RenderSettingsUB
 {
 	RenderSettings renderSettings;
 };
 
-const float rayleighBrightness = 1.5;
+layout(binding=1) uniform sampler2D colorImage;
+layout(binding=2) uniform sampler2D depthImage;
+
+const float rayleighBrightness = 0.7;
 const float rayleighStrength = 2000;
 const float rayleighCollectionPower = 1.0005;
 const float rayleighCollectionScale = 0.002;
@@ -28,28 +34,12 @@ const float scatterStrength = 1000;
 const float atmosphereRadius = 100000;
 const float surfaceLevelPercentage = 0.995;
 const float occlusionSmoothness = 0.1;
-const float blockDepthScale = 0.1;
-const float exposure = 1.0f;
+const float blockDepthScale = 0.05;
+const float exposure = 0.8f;
 
 const vec3 absorbtionProfile = vec3(0.18867780436772762, 0.4978442963618773, 0.6616065586417131);
 
 const int sampleCount = 16;
-
-layout(binding=1, rgba8) uniform image2D colorImage;
-layout(binding=2) uniform sampler2D depthImage;
-
-vec3 getEyeVector()
-{
-	vec2 position = vec2(gl_GlobalInvocationID.xy * 2) / vec2(imageSize(colorImage)) - vec2(1.0);
-	
-	vec4 nearFrustumVertexWS = renderSettings.invViewProj * vec4(position, 0, 1);
-	vec4 farFrustumVertexWS = renderSettings.invViewProj * vec4(position, 1, 1);
-	
-	nearFrustumVertexWS.xyz /= nearFrustumVertexWS.w;
-	farFrustumVertexWS.xyz /= farFrustumVertexWS.w;
-	
-	return normalize(farFrustumVertexWS.xyz - nearFrustumVertexWS.xyz);
-}
 
 float getAtmosphericTravelDistance(vec3 position, vec3 dir)
 {
@@ -97,17 +87,15 @@ vec3 calcAbsorbtion(float dist, vec3 initialColor, float factor)
 
 void main()
 {
-	vec4 color = imageLoad(colorImage, ivec2(gl_GlobalInvocationID.xy));
-	float depth = texture(depthImage, gl_GlobalInvocationID.xy).r;
+	vec4 color = texture(colorImage, texCoord_in);
+	float depth = texture(depthImage, texCoord_in).r;
 	float linDepth = linearizeDepth(depth);
 	
-	vec3 eyeVector = getEyeVector();
+	vec3 eyeVector = normalize(eyeVector_in);
 	
 	vec3 cameraPosition = vec3(0.0, atmosphereRadius * surfaceLevelPercentage, 0.0);
 	
-	vec3 lightDir = -renderSettings.dlDirection;
-	
-	float alpha = dot(eyeVector, lightDir);
+	float alpha = dot(eyeVector, -renderSettings.sun.direction);
 	
 	const bool sky = depth >= (1.0 - 1E-9);
 	
@@ -124,20 +112,17 @@ void main()
 	vec3 mieLight = vec3(0.0);
 	float occSum = 0.0;
 	
-	const vec3 moonLightDir = normalize(vec3(1, 1, 1));
-	const vec3 moonLightRadiance = vec3(0.8, 0.8, 1.0) * 0.2 * renderSettings.moonIntensity;
-	
 	for(int i = 0; i < sampleCount; i++)
 	{
 		float sampleDistance = sampleStep * float(i);
 		vec3 position = cameraPosition + eyeVector * sampleDistance;
-		float occlusion = mix(0.1, 1.0, getRayOcclusionAmount(position, lightDir, 0.8));
-		float sunSampleDepth = getAtmosphericTravelDistance(position, lightDir);
-		float moonSampleDepth = getAtmosphericTravelDistance(position, moonLightDir);
+		float occlusion = mix(0.1, 1.0, getRayOcclusionAmount(position, -renderSettings.sun.direction, 0.8));
+		float sunSampleDepth = getAtmosphericTravelDistance(position, -renderSettings.sun.direction);
+		float moonSampleDepth = getAtmosphericTravelDistance(position, renderSettings.moon.direction);
 		
-		vec3 influx = calcAbsorbtion(sunSampleDepth, renderSettings.dlRadiance, scatterStrength) * occlusion;
+		vec3 influx = calcAbsorbtion(sunSampleDepth, renderSettings.sun.radiance, scatterStrength) * occlusion;
 		
-		influx += calcAbsorbtion(moonSampleDepth, moonLightRadiance, scatterStrength) * renderSettings.moonIntensity;
+		influx += calcAbsorbtion(moonSampleDepth, renderSettings.moon.radiance, scatterStrength);
 		
 		rayleighLight += calcAbsorbtion(sampleDistance, absorbtionProfile * influx, rayleighStrength);
 		mieLight += calcAbsorbtion(sampleDistance, influx, mieStrength);
@@ -147,8 +132,6 @@ void main()
 	rayleighLight = (rayleighLight * eyeRayOcc * (pow(eyeDepth * rayleighCollectionScale, rayleighCollectionPower))) / float(sampleCount);
 	mieLight = (mieLight * eyeRayOcc * (pow(eyeDepth * mieCollectionScale, mieCollectionPower))) / float(sampleCount);
 	
-	color.rgb += mieLight * (spotFactor + mieFactor) + rayleighFactor * rayleighLight;
-	color.rgb = vec3(1.0) - exp(-exposure * color.rgb);
-	
-	imageStore(colorImage, ivec2(gl_GlobalInvocationID.xy), color);
+	color_out = color.rgb + mieLight * (spotFactor + mieFactor) + rayleighFactor * rayleighLight;
+	color_out = vec3(1.0) - exp(-exposure * color_out);
 }

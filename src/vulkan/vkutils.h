@@ -4,13 +4,12 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 
+#include "swapchain.h"
 #include "vkhandle.h"
 #include "instance.h"
 
 namespace MCR
 {
-	constexpr size_t MaxQueuedFrames = 3;
-	
 	extern uint64_t frameIndex;
 	extern uint64_t frameQueueIndex;
 	
@@ -19,7 +18,6 @@ namespace MCR
 	inline void IncrementFrameIndex()
 	{
 		frameIndex++;
-		frameQueueIndex = frameIndex % MaxQueuedFrames;
 	}
 	
 	bool CanUseFormat(VkFormat format, VkFormatFeatureFlags requiredFeatures, VkImageTiling tiling);

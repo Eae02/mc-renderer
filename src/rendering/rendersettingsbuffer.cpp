@@ -27,7 +27,8 @@ namespace MCR
 		};
 		
 		VkBufferCreateInfo hostBufferCreateInfo;
-		InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(Data) * MaxQueuedFrames);
+		InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		                     sizeof(Data) * SwapChain::GetImageCount());
 		
 		VmaAllocationInfo hostAllocationInfo;
 		
@@ -65,9 +66,8 @@ namespace MCR
 		m_data[frameQueueIndex].m_invViewProj = invViewProj;
 		m_data[frameQueueIndex].m_cameraPos = cameraPosition;
 		m_data[frameQueueIndex].m_time = time;
-		m_data[frameQueueIndex].m_dlDirection = timeManager.GetDLDirection();
-		m_data[frameQueueIndex].m_moonIntensity = timeManager.GetMoonIntensity();
-		m_data[frameQueueIndex].m_dlRadiance = timeManager.GetDLRadiance();
+		m_data[frameQueueIndex].m_sun = timeManager.GetSunDescription();
+		m_data[frameQueueIndex].m_moon = timeManager.GetMoonDescription();
 		
 		cb.CopyBuffer(*m_hostBuffer, *m_deviceBuffer, { sizeof(Data) * frameQueueIndex, 0, sizeof(Data) });
 		

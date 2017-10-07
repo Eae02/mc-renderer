@@ -24,13 +24,21 @@ namespace MCR
 		CheckResult(vkCreatePipelineLayout(vulkan.device, &pipelineLayoutCreateInfo, nullptr,
 		                                   m_pipelineLayout.GetCreateAddress()));
 		
-		VkPipelineShaderStageCreateInfo stageCreateInfos[2];
+		VkPipelineShaderStageCreateInfo stageCreateInfos[3];
 		
 		InitShaderStageCreateInfo(stageCreateInfos[0], VK_SHADER_STAGE_VERTEX_BIT, GetShaderModule(createInfo.vsName));
 		
+		uint32_t numStageCreateInfos = 1;
+		
+		if (!createInfo.gsName.empty())
+		{
+			InitShaderStageCreateInfo(stageCreateInfos[numStageCreateInfos++], VK_SHADER_STAGE_GEOMETRY_BIT,
+			                          GetShaderModule(createInfo.gsName));
+		}
+		
 		if (!createInfo.fsName.empty())
 		{
-			InitShaderStageCreateInfo(stageCreateInfos[1], VK_SHADER_STAGE_FRAGMENT_BIT,
+			InitShaderStageCreateInfo(stageCreateInfos[numStageCreateInfos++], VK_SHADER_STAGE_FRAGMENT_BIT,
 			                          GetShaderModule(createInfo.fsName));
 		}
 		
@@ -133,7 +141,7 @@ namespace MCR
 			/* sType               */ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			/* pNext               */ nullptr,
 			/* flags               */ 0,
-			/* stageCount          */ createInfo.fsName.empty() ? 1u : 2u,
+			/* stageCount          */ numStageCreateInfos,
 			/* pStages             */ stageCreateInfos,
 			/* pVertexInputState   */ createInfo.vertexInputState,
 			/* pInputAssemblyState */ &inputAssemblyState,

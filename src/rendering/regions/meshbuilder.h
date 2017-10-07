@@ -41,10 +41,11 @@ namespace MCR
 			return static_cast<uint32_t>(m_vertices.size());
 		}
 		
-		inline void AddVertex(glm::vec3 position, glm::vec2 texCoord, int texLayer)
+		inline void AddVertex(glm::vec3 position, glm::vec3 normal, glm::vec2 texCoord, int texLayer)
 		{
 			m_vertices.emplace_back();
 			m_vertices.back().m_position = position;
+			m_vertices.back().m_normal = normal;
 			m_vertices.back().m_texCoord = glm::vec3(texCoord, texLayer);
 		}
 		

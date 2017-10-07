@@ -10,14 +10,14 @@ namespace MCR
 		const VkAttachmentDescription attachment = 
 		{
 			/* flags          */ 0,
-			/* format         */ VK_FORMAT_R8G8B8A8_UNORM,
+			/* format         */ SwapChain::GetImageFormat(),
 			/* samples        */ VK_SAMPLE_COUNT_1_BIT,
 			/* loadOp         */ VK_ATTACHMENT_LOAD_OP_LOAD,
 			/* storeOp        */ VK_ATTACHMENT_STORE_OP_STORE,
 			/* stencilLoadOp  */ VK_ATTACHMENT_LOAD_OP_LOAD,
 			/* stencilStoreOp */ VK_ATTACHMENT_STORE_OP_STORE,
 			/* initialLayout  */ VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			/* finalLayout    */ VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			/* finalLayout    */ VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		};
 		
 		VkAttachmentReference attachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -26,14 +26,20 @@ namespace MCR
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &attachmentRef;
 		
-		std::array<VkSubpassDependency, 1> subpassDependencies = { };
+		std::array<VkSubpassDependency, 2> subpassDependencies = { };
 		
-		subpassDependencies[0].srcSubpass = 0;
-		subpassDependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
+		subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		subpassDependencies[0].dstSubpass = 0;
 		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		subpassDependencies[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		
+		subpassDependencies[1].srcSubpass = 0;
+		subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+		subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		
 		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 		renderPassCreateInfo.attachmentCount = 1;
@@ -51,9 +57,10 @@ namespace MCR
 	UIGraphicsContext::UIGraphicsContext()
 	    : m_renderPass(CreateRenderPass()), m_samplerDescriptorSet("UI_Sampler"), m_shader(*m_renderPass)
 	{
-		for (CommandBuffer& cb : m_commandBuffers)
+		m_commandBuffers.reserve(SwapChain::GetImageCount());
+		for (uint32_t i = 0; i < SwapChain::GetImageCount(); i++)
 		{
-			cb = CommandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
+			m_commandBuffers.emplace_back(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
 		}
 		
 		const VkSamplerCreateInfo samplerCreateInfo = 
@@ -108,7 +115,7 @@ namespace MCR
 				// ** Allocates the host buffer **
 				VkBufferCreateInfo hostBufferCreateInfo;
 				InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				                     minBufferSize * MaxQueuedFrames);
+				                     minBufferSize * SwapChain::GetImageCount());
 				
 				const VmaMemoryRequirements hostBufferMemRequirements = 
 				{
@@ -122,7 +129,7 @@ namespace MCR
 				                            m_hostBuffer.GetCreateAddress(), m_hostBufferAllocation.GetCreateAddress(),
 				                            &hostAllocationInfo));
 				
-				for (size_t i = 0; i < MaxQueuedFrames; i++)
+				for (uint32_t i = 0; i < SwapChain::GetImageCount(); i++)
 				{
 					m_hostBufferMemory[i] = reinterpret_cast<char*>(hostAllocationInfo.pMappedData) + i * minBufferSize;
 				}
@@ -177,7 +184,7 @@ namespace MCR
 			/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			/* pNext           */ nullptr,
 			/* renderPass      */ *m_renderPass,
-			/* framebuffer     */ framebuffer.GetUIFramebuffer(),
+			/* framebuffer     */ framebuffer.GetOutputFramebuffer(frameQueueIndex),
 			/* renderArea      */ renderArea,
 			/* clearValueCount */ 0,
 			/* pClearValues    */ nullptr

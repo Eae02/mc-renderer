@@ -64,7 +64,7 @@ namespace MCR
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
-		if (allocation.m_data.m_lastUsedFrameIndex + MaxQueuedFrames > frameIndex)
+		if (allocation.m_data.m_lastUsedFrameIndex + SwapChain::GetImageCount() > frameIndex)
 		{
 			m_freedAllocationsInUse.push_back(allocation.m_data);
 		}
@@ -85,7 +85,7 @@ namespace MCR
 		
 		for (long i = static_cast<long>(m_freedAllocationsInUse.size()) - 1; i >= 0; i--)
 		{
-			if (m_freedAllocationsInUse[i].m_lastUsedFrameIndex + MaxQueuedFrames <= frameIndex)
+			if (m_freedAllocationsInUse[i].m_lastUsedFrameIndex + SwapChain::GetImageCount() <= frameIndex)
 			{
 				if (m_freedAllocationsInUse[i].m_aquiredByGraphicsQueue && !TransferQueueIsGraphicsQueue())
 				{

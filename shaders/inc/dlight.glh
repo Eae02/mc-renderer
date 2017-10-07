@@ -1,0 +1,10 @@
+#ifndef DLIGHT_H
+#define DLIGHT_H
+
+struct DirLight
+{
+	vec3 direction;
+	vec3 radiance;
+};
+
+#endif

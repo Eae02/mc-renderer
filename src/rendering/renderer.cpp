@@ -23,7 +23,7 @@ namespace MCR
 		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		
 		attachments[1].format = vulkan.depthFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -32,7 +32,7 @@ namespace MCR
 		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[1].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 		
 		VkAttachmentReference colorAttachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 		VkAttachmentReference depthStencilAttachmentRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
@@ -42,11 +42,22 @@ namespace MCR
 		subpassDescriptions[0].pColorAttachments = &colorAttachmentRef;
 		subpassDescriptions[0].pDepthStencilAttachment = &depthStencilAttachmentRef;
 		
+		std::array<VkSubpassDependency, 1> dependencies;
+		dependencies[0].srcSubpass = 0;
+		dependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		
 		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 		renderPassCreateInfo.attachmentCount = attachments.size();
 		renderPassCreateInfo.pAttachments = attachments.data();
 		renderPassCreateInfo.subpassCount = subpassDescriptions.size();
 		renderPassCreateInfo.pSubpasses = subpassDescriptions.data();
+		renderPassCreateInfo.dependencyCount = dependencies.size();
+		renderPassCreateInfo.pDependencies = dependencies.data();
 		
 		VkRenderPass renderPass;
 		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));
@@ -54,12 +65,14 @@ namespace MCR
 	}
 	
 	Renderer::Renderer()
-	    : m_renderPass(CreateRenderPass()), m_blockShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo()),
+	    : m_renderPass(CreateRenderPass()),
+	      m_blockShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo()),
 	      m_debugShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo())
 	{
-		for (CommandBuffer& cb : m_commandBuffers)
+		m_commandBuffers.reserve(SwapChain::GetImageCount());
+		for (uint32_t i = 0; i < SwapChain::GetImageCount(); i++)
 		{
-			cb = CommandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
+			m_commandBuffers.emplace_back(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
 		}
 	}
 	

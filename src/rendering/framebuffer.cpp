@@ -1,11 +1,11 @@
-#include "framebuffer.h"
+﻿#include "framebuffer.h"
 #include "renderer.h"
 #include "../ui/uigraphicscontext.h"
 
 namespace MCR
 {
 	void Framebuffer::Create(const Renderer& renderer, const UIGraphicsContext& uiGraphicsContext,
-	                                 uint32_t width, uint32_t height)
+	                         gsl::span<const VkImage> outputImages, uint32_t width, uint32_t height)
 	{
 		m_rendererFramebuffer.Reset();
 		
@@ -16,7 +16,7 @@ namespace MCR
 		VkImageCreateInfo colorImageCreateInfo;
 		InitImageCreateInfo(colorImageCreateInfo, VK_IMAGE_TYPE_2D, Renderer::ColorAttachmentFormat, width, height);
 		colorImageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-		                             VK_IMAGE_USAGE_STORAGE_BIT;
+		                             VK_IMAGE_USAGE_SAMPLED_BIT;
 		
 		CheckResult(vmaCreateImage(vulkan.allocator, &colorImageCreateInfo, &memoryRequirements,
 		                           m_colorAttachment.m_image.GetCreateAddress(),
@@ -45,20 +45,24 @@ namespace MCR
 		CheckResult(vkCreateImageView(vulkan.device, &depthImageViewCreateInfo, nullptr,
 		                              m_depthAttachment.m_imageView.GetCreateAddress()));
 		
+		m_outputs.resize(outputImages.size());
+		for (int i = 0; i < outputImages.size(); i++)
+		{
+			// ** Creates the output image view **
+			VkImageViewCreateInfo outputImageViewCreateInfo;
+			InitImageViewCreateInfo(outputImageViewCreateInfo, outputImages[i], VK_IMAGE_VIEW_TYPE_2D,
+			                        SwapChain::GetImageFormat(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+			CheckResult(vkCreateImageView(vulkan.device, &outputImageViewCreateInfo, nullptr,
+			                              m_outputs[i].m_imageView.GetCreateAddress()));
+			
+			m_outputs[i].m_framebuffer = CreateFramebuffer(uiGraphicsContext.GetRenderPass(),
+			                                               SingleElementSpan(*m_outputs[i].m_imageView), width, height);
+		}
+		
 		std::array<VkImageView, 2> rendererAttachments = { *m_colorAttachment.m_imageView, *m_depthAttachment.m_imageView };
 		m_rendererFramebuffer = CreateFramebuffer(renderer.GetRenderPass(), rendererAttachments, width, height);
 		
-		std::array<VkImageView, 1> uiAttachments = { *m_colorAttachment.m_imageView };
-		m_uiFramebuffer = CreateFramebuffer(uiGraphicsContext.GetRenderPass(), uiAttachments, width, height);
-		
 		m_width = width;
 		m_height = height;
-	}
-	
-	void Framebuffer::GetPresentImage(SwapChain::PresentImage& presentImageOut) const
-	{
-		presentImageOut.m_width = m_width;
-		presentImageOut.m_height = m_height;
-		presentImageOut.m_image = *m_colorAttachment.m_image;
 	}
 }

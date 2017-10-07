@@ -1,15 +1,16 @@
 #ifndef RENDER_SETTINGS_GLH
 #define RENDER_SETTINGS_GLH
 
+#include "dlight.glh"
+
 struct RenderSettings
 {
 	mat4 viewProj;
 	mat4 invViewProj;
 	vec3 cameraPos;
 	float time;
-	vec3 dlDirection;
-	float moonIntensity;
-	vec3 dlRadiance;
+	DirLight sun;
+	DirLight moon;
 };
 
 const float ZNear = 0.1;

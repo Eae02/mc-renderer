@@ -9,6 +9,7 @@
 #include "shaders/debugshader.h"
 #include "postprocessor.h"
 #include "chunkvisibilitycalculator.h"
+#include "shadows/cascadedshadowmapper.h"
 
 namespace MCR
 {
@@ -95,7 +96,7 @@ namespace MCR
 		
 		RenderSettingsBuffer m_renderSettingsBuffer;
 		
-		PostProcessor m_postProcessor;
+		CascadedShadowMapper m_shadowMapper;
 		
 		BlockShader m_blockShader;
 		DebugShader m_debugShader;
@@ -107,7 +108,7 @@ namespace MCR
 		
 		const Framebuffer* m_framebuffer;
 		
-		std::array<CommandBuffer, MaxQueuedFrames> m_commandBuffers;
+		std::vector<CommandBuffer> m_commandBuffers;
 		
 		bool m_enableOcclusionCulling = true;
 		

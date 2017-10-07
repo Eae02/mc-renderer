@@ -32,7 +32,7 @@ namespace MCR
 		
 		UIShader m_shader;
 		
-		std::array<CommandBuffer, MaxQueuedFrames> m_commandBuffers;
+		std::vector<CommandBuffer> m_commandBuffers;
 		
 		uint64_t m_bufferSize = 0;
 		

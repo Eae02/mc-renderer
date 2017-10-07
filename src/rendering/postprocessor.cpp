@@ -4,120 +4,84 @@
 
 namespace MCR
 {
-	const VkSamplerCreateInfo depthSamplerCreateInfo = 
+	static VkRenderPass CreateRenderPass()
 	{
-		/* sType                   */ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		/* pNext                   */ nullptr,
-		/* flags                   */ 0,
-		/* magFilter               */ VK_FILTER_NEAREST,
-		/* minFilter               */ VK_FILTER_NEAREST,
-		/* mipmapMode              */ VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		/* addressModeU            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-		/* addressModeV            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-		/* addressModeW            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-		/* mipLodBias              */ 0.0f,
-		/* anisotropyEnable        */ VK_FALSE,
-		/* maxAnisotropy           */ 0,
-		/* compareEnable           */ VK_FALSE,
-		/* compareOp               */ VK_COMPARE_OP_ALWAYS,
-		/* minLod                  */ 0.0f,
-		/* maxLod                  */ 0,
-		/* borderColor             */ VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-		/* unnormalizedCoordinates */ VK_TRUE
-	};
-	
-	PostProcessor::PostProcessor()
-	    : m_commandBuffer(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]),
-	      m_descriptorSet("PostProcess")
-	{
-		const VkDescriptorSetLayout dsLayouts[] = 
+		const VkAttachmentDescription attachment = 
 		{
-			GetDescriptorSetLayout("PostProcess")
+			/* flags          */ 0,
+			/* format         */ SwapChain::GetImageFormat(),
+			/* samples        */ VK_SAMPLE_COUNT_1_BIT,
+			/* loadOp         */ VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			/* storeOp        */ VK_ATTACHMENT_STORE_OP_STORE,
+			/* stencilLoadOp  */ VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			/* stencilStoreOp */ VK_ATTACHMENT_STORE_OP_STORE,
+			/* initialLayout  */ VK_IMAGE_LAYOUT_UNDEFINED,
+			/* finalLayout    */ VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		};
 		
-		const VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = 
-		{
-			/* sType                  */ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-			/* pNext                  */ nullptr,
-			/* flags                  */ 0,
-			/* setLayoutCount         */ gsl::narrow<uint32_t>(ArrayLength(dsLayouts)),
-			/* pSetLayouts            */ dsLayouts,
-			/* pushConstantRangeCount */ 0,
-			/* pPushConstantRanges    */ nullptr
-		};
+		VkAttachmentReference attachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 		
-		VkPipelineLayout pipelineLayout;
-		CheckResult(vkCreatePipelineLayout(vulkan.device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
-		m_pipelineLayout = pipelineLayout;
+		VkSubpassDescription subpass = { };
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &attachmentRef;
 		
-		VkComputePipelineCreateInfo pipelineCreateInfo =
-		{
-			/* sType              */ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-			/* pNext              */ nullptr,
-			/* flags              */ 0,
-			/* stage              */ { },
-			/* layout             */ pipelineLayout,
-			/* basePipelineHandle */ VK_NULL_HANDLE,
-			/* basePipelineIndex  */ -1
-		};
+		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+		renderPassCreateInfo.attachmentCount = 1;
+		renderPassCreateInfo.pAttachments = &attachment;
+		renderPassCreateInfo.subpassCount = 1;
+		renderPassCreateInfo.pSubpasses = &subpass;
 		
-		InitShaderStageCreateInfo(pipelineCreateInfo.stage, VK_SHADER_STAGE_COMPUTE_BIT, GetShaderModule("post.cs"));
-		
-		// ** Creates the depth sampler **
-		CheckResult(vkCreateSampler(vulkan.device, &depthSamplerCreateInfo, nullptr,
-		                            m_depthSampler.GetCreateAddress()));
-		
-		VkPipeline pipeline;
-		CheckResult(vkCreateComputePipelines(vulkan.device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline));
-		m_pipeline = pipeline;
+		VkRenderPass renderPass;
+		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));
+		return renderPass;
 	}
 	
-	void PostProcessor::SetRenderSettings(const VkDescriptorBufferInfo& renderSettingsBufferInfo)
+	PostProcessor::PostProcessor(const VkDescriptorBufferInfo& renderSettingsBufferInfo)
+	    : m_renderPass(CreateRenderPass()), m_skyShader(*m_renderPass, renderSettingsBufferInfo)
 	{
-		VkWriteDescriptorSet dsWrite;
-		m_descriptorSet.InitWriteDescriptorSet(dsWrite, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, renderSettingsBufferInfo);
-		UpdateDescriptorSets(SingleElementSpan(dsWrite));
+		m_commandBuffers.reserve(SwapChain::GetImageCount());
+		for (uint32_t i = 0; i < SwapChain::GetImageCount(); i++)
+		{
+			m_commandBuffers.emplace_back(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
+		}
 	}
 	
 	void PostProcessor::FramebufferChanged(const Framebuffer& framebuffer)
 	{
-		VkWriteDescriptorSet dsWrites[2];
+		m_skyShader.FramebufferChanged(framebuffer);
 		
-		VkDescriptorImageInfo colorImageInfo = { VK_NULL_HANDLE, framebuffer.GetColorImageView(), VK_IMAGE_LAYOUT_GENERAL };
-		m_descriptorSet.InitWriteDescriptorSet(dsWrites[0], 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, colorImageInfo);
+		VkRect2D renderArea;
+		VkViewport viewport;
+		framebuffer.GetViewportAndRenderArea(renderArea, viewport);
 		
-		VkDescriptorImageInfo depthImageInfo = { *m_depthSampler, framebuffer.GetDepthImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
-		m_descriptorSet.InitWriteDescriptorSet(dsWrites[1], 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, depthImageInfo);
-		
-		UpdateDescriptorSets(dsWrites);
-		
-		m_commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-		
-		VkImageMemoryBarrier barrier;
-		InitImageMemoryBarrier(barrier, framebuffer.GetColorImage());
-		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-		
-		m_commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-		                                0, { }, { }, SingleElementSpan(barrier));
-		
-		m_commandBuffer.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *m_pipeline);
-		
-		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet };
-		m_commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *m_pipelineLayout, 0, descriptorSets);
-		
-		m_commandBuffer.Dispatch(DivRoundUp(framebuffer.GetWidth(), 32u), DivRoundUp(framebuffer.GetHeight(), 32u), 1);
-		
-		barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		
-		m_commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		                                0, { }, { }, SingleElementSpan(barrier));
-		
-		m_commandBuffer.End();
+		for (size_t i = 0; i < m_commandBuffers.size(); i++)
+		{
+			CommandBuffer& commandBuffer = m_commandBuffers[i];
+			
+			commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+			
+			const VkRenderPassBeginInfo renderPassBeginInfo = 
+			{
+				/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+				/* pNext           */ nullptr,
+				/* renderPass      */ *m_renderPass,
+				/* framebuffer     */ framebuffer.GetOutputFramebuffer(i),
+				/* renderArea      */ renderArea,
+				/* clearValueCount */ 0,
+				/* pClearValues    */ nullptr
+			};
+			commandBuffer.BeginRenderPass(&renderPassBeginInfo);
+			
+			commandBuffer.SetViewport(0, SingleElementSpan(viewport));
+			commandBuffer.SetScissor(0, SingleElementSpan(renderArea));
+			
+			m_skyShader.Bind(commandBuffer);
+			
+			commandBuffer.Draw(3, 1, 0, 0);
+			
+			commandBuffer.EndRenderPass();
+			
+			commandBuffer.End();
+		}
 	}
 }

@@ -87,7 +87,8 @@ namespace MCR
 		vkGetPhysicalDeviceFeatures(device, &features);
 		
 		return features.fullDrawIndexUint32 == VK_TRUE && features.samplerAnisotropy == VK_TRUE &&
-		       features.drawIndirectFirstInstance == VK_TRUE && features.depthClamp == VK_TRUE;
+		       features.drawIndirectFirstInstance == VK_TRUE && features.depthClamp == VK_TRUE &&
+		       features.geometryShader == VK_TRUE;
 	}
 	
 	inline bool GetQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface, uint32_t* queueFamiliesOut)
@@ -354,6 +355,7 @@ namespace MCR
 		enabledFeatures.samplerAnisotropy = VK_TRUE;
 		enabledFeatures.depthClamp = VK_TRUE;
 		enabledFeatures.fillModeNonSolid = VK_TRUE;
+		enabledFeatures.geometryShader = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
 		
 		vulkan.limits.hasMultiDrawIndirect = enabledFeatures.multiDrawIndirect == VK_TRUE;

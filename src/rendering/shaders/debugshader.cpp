@@ -37,6 +37,7 @@ namespace MCR
 	const Shader::CreateInfo DebugShader::s_createInfo = 
 	{
 		/* vsName                */ "debug.vs",
+		/* gsName                */ nullptr,
 		/* fsName                */ "debug.fs",
 		/* setLayoutNames        */ setLayouts,
 		/* pushConstantRanges    */ SingleElementSpan(pushConstantRange),

@@ -65,7 +65,8 @@ namespace MCR
 			};
 			
 			VkBufferCreateInfo hostBufferCreateInfo;
-			InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, bufferSize * MaxQueuedFrames);
+			InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			                     bufferSize * SwapChain::GetImageCount());
 			
 			VmaAllocationInfo hostAllocationInfo;
 			

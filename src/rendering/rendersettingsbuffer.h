@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vulkan/vk.h"
+#include "dirlight.h"
 
 #include <glm/glm.hpp>
 
@@ -27,10 +28,8 @@ namespace MCR
 			glm::mat4 m_invViewProj;
 			glm::vec3 m_cameraPos;
 			float m_time;
-			glm::vec3 m_dlDirection;
-			float m_moonIntensity;
-			glm::vec3 m_dlRadiance;
-			float m_padding1;
+			DirLight m_sun;
+			DirLight m_moon;
 		};
 #pragma pack(pop)
 		

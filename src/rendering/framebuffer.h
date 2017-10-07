@@ -12,13 +12,13 @@ namespace MCR
 		Framebuffer() = default;
 		
 		void Create(const class Renderer& renderer, const class UIGraphicsContext& uiGraphicsContext,
-		            uint32_t width, uint32_t height);
+		            gsl::span<const VkImage> outputImages, uint32_t width, uint32_t height);
 		
 		inline VkFramebuffer GetRendererFramebuffer() const
 		{ return *m_rendererFramebuffer; }
 		
-		inline VkFramebuffer GetUIFramebuffer() const
-		{ return *m_uiFramebuffer; }
+		inline VkFramebuffer GetOutputFramebuffer(size_t index) const
+		{ return *m_outputs[index].m_framebuffer; }
 		
 		inline void GetViewportAndRenderArea(VkRect2D& renderArea, VkViewport& viewport) const
 		{
@@ -59,8 +59,6 @@ namespace MCR
 			return *m_depthAttachment.m_imageView;
 		}
 		
-		void GetPresentImage(SwapChain::PresentImage& presentImageOut) const;
-		
 	private:
 		struct Attachment
 		{
@@ -72,8 +70,15 @@ namespace MCR
 		Attachment m_colorAttachment;
 		Attachment m_depthAttachment;
 		
+		struct OutputEntry
+		{
+			VkHandle<VkImageView> m_imageView;
+			VkHandle<VkFramebuffer> m_framebuffer;
+		};
+		
+		std::vector<OutputEntry> m_outputs;
+		
 		VkHandle<VkFramebuffer> m_rendererFramebuffer;
-		VkHandle<VkFramebuffer> m_uiFramebuffer;
 		
 		uint32_t m_width;
 		uint32_t m_height;
