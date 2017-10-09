@@ -15,7 +15,10 @@ namespace MCR
 		
 		void SetTimeScale(float timeScale);
 		
-		float GetMoonIntensity() const;
+		inline const glm::vec3& GetShadowDirection() const
+		{
+			return m_shadowDirection;
+		}
 		
 		inline const DirLight& GetSunDescription() const
 		{
@@ -30,6 +33,8 @@ namespace MCR
 	private:
 		float m_time = 0;
 		float m_timeScale = 0;
+		
+		glm::vec3 m_shadowDirection;
 		
 		DirLight m_sun;
 		DirLight m_moon;

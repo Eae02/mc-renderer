@@ -1,6 +1,8 @@
 #version 440 core
 #extension GL_GOOGLE_include_directive : enable
 
+#define DLS_SET_INDEX 1
+
 #include "inc/rendersettings.glh"
 #include "inc/light.glh"
 
@@ -8,6 +10,8 @@ layout(set=0, binding=0) uniform RenderSettingsUB
 {
 	RenderSettings renderSettings;
 };
+
+#include "inc/dlshadow.glh"
 
 layout(set=0, binding=1) uniform sampler2DArray blocksTexture;
 
@@ -35,8 +39,14 @@ void main()
 	
 	color_out = vec3(0);
 	
-	color_out += calcDirLightReflectance(renderSettings.sun, toEye, F, materialData);
-	color_out += calcDirLightReflectance(renderSettings.moon, toEye, F, materialData);
+	float shadowFactor = getShadowFactor(worldPos_in);
 	
-	color_out += vec3(0.1) * materialData.albedo;
+	if (shadowFactor > 0)
+	{
+		color_out += calcDirLightReflectance(renderSettings.sun, toEye, F, materialData);
+		color_out += calcDirLightReflectance(renderSettings.moon, toEye, F, materialData);
+		color_out *= shadowFactor;
+	}
+	
+	color_out += vec3(0.06) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 }

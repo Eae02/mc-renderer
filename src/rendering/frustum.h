@@ -35,7 +35,12 @@ namespace MCR
 		inline const Plane& GetPlane(Planes p) const
 		{ return m_planes[static_cast<int>(p)]; }
 		
+		inline const glm::vec3& GetCorner(size_t n) const
+		{ return m_corners[n]; }
+		
 	private:
+		glm::vec3 m_corners[8];
+		
 		Plane m_planes[6];
 		bool m_enableZCheck = true;
 	};

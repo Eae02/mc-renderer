@@ -1,10 +1,12 @@
 ﻿#include "renderer.h"
 #include "frustum.h"
 #include "framebuffer.h"
+#include "constants.h"
 #include "regions/chunkbufferallocator.h"
 #include "../profiling/profiling.h"
 #include "../world/worldmanager.h"
 #include "../profiling/frameprofiler.h"
+#include "../timemanager.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
@@ -84,48 +86,37 @@ namespace MCR
 		
 		const Camera& camera = m_worldManager->GetCamera();
 		
-		const glm::mat4 viewProj = m_projectionMatrix * camera.GetViewMatrix();
-		const glm::mat4 invViewProj = camera.GetInverseViewMatrix() * m_invProjectionMatrix;
+		ViewProjection viewProj;
+		viewProj.m_proj = m_projectionMatrix;
+		viewProj.m_invProj = m_invProjectionMatrix;
+		viewProj.m_view = camera.GetViewMatrix();
+		viewProj.m_invView = camera.GetInverseViewMatrix();
+		viewProj.m_viewProj = viewProj.m_proj * viewProj.m_view;
+		viewProj.m_invViewProj = viewProj.m_invView * viewProj.m_invProj;
 		
 #ifdef MCR_DEBUG
 		currentFrameProfiler->Reset(cb);
 #endif
 		
-		m_renderSettingsBuffer.SetData(cb, viewProj, invViewProj, camera.GetPosition(), params.m_time,
-		                               *params.m_timeManager);
+		m_renderSettingsBuffer.SetData(cb, viewProj, camera.GetPosition(), params.m_time, *params.m_timeManager);
 		
 		if (!m_isFrustumFrozen)
 		{
-			m_frustum = Frustum(invViewProj);
+			m_frustum = Frustum(viewProj.m_invViewProj);
 		}
 		
-		VkRect2D renderArea;
-		VkViewport viewport;
-		m_framebuffer->GetViewportAndRenderArea(renderArea, viewport);
-		
-		std::array<VkClearValue, 2> clearValues;
-		SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
-		SetDepthStencilClearValue(clearValues[1], 1.0f, 0);
-		
-		VkRenderPassBeginInfo renderPassBeginInfo = 
-		{
-			/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-			/* pNext           */ nullptr,
-			/* renderPass      */ *m_renderPass,
-			/* framebuffer     */ m_framebuffer->GetRendererFramebuffer(),
-			/* renderArea      */ renderArea,
-			/* clearValueCount */ clearValues.size(),
-			/* pClearValues    */ clearValues.data()
-		};
+		m_shadowMapper.CalculateSlices(params.m_timeManager->GetShadowDirection(), viewProj, *m_worldManager);
 		
 		m_chunkRenderList.Begin();
+		m_shadowRenderList.Begin();
 		
 		{
 			MCR_SCOPED_TIMER(0, "Render List Fill")
 			
 			if (m_enableOcclusionCulling)
 			{
-				m_visibilityCalculator.FillRenderList(m_chunkRenderList, *m_worldManager, camera, m_frustum);
+				m_visibilityCalculator.FillRenderList(m_chunkRenderList, m_shadowRenderList, *m_worldManager, camera,
+				                                      m_frustum, m_shadowMapper.GetShadowVolume());
 				
 				if (m_shouldCaptureVisibilityGraph)
 				{
@@ -142,14 +133,40 @@ namespace MCR
 		{
 			MCR_SCOPED_TIMER(0, "Render List End")
 			m_chunkRenderList.End(cb);
+			m_shadowRenderList.End(cb);
+		}
+		
+		{
+			MCR_SCOPED_TIMER(0, "Shadow record")
+			m_shadowMapper.Render(cb, m_shadowRenderList);
 		}
 		
 		{
 			MCR_SCOPED_TIMER(0, "Render pass record")
 			
+			VkRect2D renderArea;
+			VkViewport viewport;
+			m_framebuffer->GetViewportAndRenderArea(renderArea, viewport);
+			
+			std::array<VkClearValue, 2> clearValues;
+			SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+			SetDepthStencilClearValue(clearValues[1], 1.0f, 0);
+			
+			const VkRenderPassBeginInfo renderPassBeginInfo = 
+			{
+				/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+				/* pNext           */ nullptr,
+				/* renderPass      */ *m_renderPass,
+				/* framebuffer     */ m_framebuffer->GetRendererFramebuffer(),
+				/* renderArea      */ renderArea,
+				/* clearValueCount */ clearValues.size(),
+				/* pClearValues    */ clearValues.data()
+			};
+			
 			cb.BeginRenderPass(&renderPassBeginInfo);
 			
-			m_blockShader.Bind(cb, m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
+			m_blockShader.Bind(cb, m_shadowMapper.GetDescriptorSet(),
+			                   m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
 			
 			cb.SetViewport(0, SingleElementSpan(viewport));
 			cb.SetScissor(0, SingleElementSpan(renderArea));
@@ -179,8 +196,8 @@ namespace MCR
 	{
 		m_framebuffer = &framebuffer;
 		
-		m_projectionMatrix = glm::perspectiveFov<float>(glm::half_pi<float>(), framebuffer.GetWidth(),
-		                                                framebuffer.GetHeight(), 0.1f, 1000.0f);
+		m_projectionMatrix = glm::perspectiveFov<float>(glm::radians(FieldOfView), framebuffer.GetWidth(),
+		                                                framebuffer.GetHeight(), ZNear, ZFar);
 		
 		m_invProjectionMatrix = glm::inverse(m_projectionMatrix);
 	}

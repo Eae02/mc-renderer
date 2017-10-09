@@ -46,8 +46,8 @@ namespace MCR
 		renderPassCreateInfo.pAttachments = &attachment;
 		renderPassCreateInfo.subpassCount = 1;
 		renderPassCreateInfo.pSubpasses = &subpass;
-		renderPassCreateInfo.dependencyCount = subpassDependencies.size();
-		renderPassCreateInfo.pDependencies = subpassDependencies.data();
+		//renderPassCreateInfo.dependencyCount = subpassDependencies.size();
+		//renderPassCreateInfo.pDependencies = subpassDependencies.data();
 		
 		VkRenderPass renderPass;
 		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));

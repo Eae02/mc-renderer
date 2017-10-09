@@ -12,6 +12,17 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
 	};
 	
+	const Samplers shadowMapSamplers[] = { Samplers::ShadowMap };
+	
+	static DSLayoutBinding ShadowSample[] = 
+	{
+		//Shadow map
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, shadowMapSamplers },
+		
+		//Shadow info buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT }
+	};
+	
 	static DSLayoutBinding BlockShaderShadow_Global[] = 
 	{
 		//Light matrices buffer
@@ -56,6 +67,7 @@ namespace MCR
 	void RegisterSetLayouts()
 	{
 		RegisterDescriptorSetLayout("BlockShader_Global", BlockShader_Global);
+		RegisterDescriptorSetLayout("ShadowSample", ShadowSample);
 		RegisterDescriptorSetLayout("BlockShaderShadow_Global", BlockShaderShadow_Global);
 		RegisterDescriptorSetLayout("DebugShader_Global", DebugShader_Global);
 		RegisterDescriptorSetLayout("Sky", Sky);

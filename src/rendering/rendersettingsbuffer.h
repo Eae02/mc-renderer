@@ -17,7 +17,7 @@ namespace MCR
 			return m_descriptorBufferInfo;
 		}
 		
-		void SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::mat4& invViewProj,
+		void SetData(CommandBuffer& cb, const struct ViewProjection& viewProj,
 		             const glm::vec3& cameraPosition, float time, const class TimeManager& timeManager);
 		
 	private:

@@ -6,7 +6,8 @@ namespace MCR
 {
 	enum class Samplers
 	{
-		Framebuffer
+		Framebuffer,
+		ShadowMap
 	};
 	
 	void CreateSamplers();

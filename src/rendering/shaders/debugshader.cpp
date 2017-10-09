@@ -36,24 +36,28 @@ namespace MCR
 	
 	const Shader::CreateInfo DebugShader::s_createInfo = 
 	{
-		/* vsName                */ "debug.vs",
-		/* gsName                */ nullptr,
-		/* fsName                */ "debug.fs",
-		/* setLayoutNames        */ setLayouts,
-		/* pushConstantRanges    */ SingleElementSpan(pushConstantRange),
-		/* vertexInputState      */ &blockVertexInputState,
-		/* topology              */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport              */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor               */ { 0, 0, 1, 1 },
-		/* enableDepthClamp      */ true,
-		/* cullMode              */ VK_CULL_MODE_NONE,
-		/* frontFace             */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest       */ true,
-		/* enableDepthWrite      */ false,
-		/* hasWireframeVariant   */ false,
-		/* depthCompareOp        */ VK_COMPARE_OP_LESS,
-		/* attachmentBlendStates */ SingleElementSpan(BlendStates::alphaBlend),
-		/* dynamicState          */ dynamicState
+		/* vsName                  */ "debug.vs",
+		/* gsName                  */ nullptr,
+		/* fsName                  */ "debug.fs",
+		/* setLayoutNames          */ setLayouts,
+		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
+		/* vertexInputState        */ &blockVertexInputState,
+		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
+		/* scissor                 */ { 0, 0, 1, 1 },
+		/* enableDepthClamp        */ true,
+		/* cullMode                */ VK_CULL_MODE_NONE,
+		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
+		/* enableDepthTest         */ true,
+		/* enableDepthWrite        */ false,
+		/* hasWireframeVariant     */ false,
+		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
+		/* enableDepthBias         */ false,
+		/* depthBiasConstantFactor */ 0.0f,
+		/* depthBiasClamp          */ 0.0f,
+		/* depthBiasSlopeFactor    */ 0.0f,
+		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::alphaBlend),
+		/* dynamicState            */ dynamicState
 	};
 	
 	DebugShader::DebugShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo)

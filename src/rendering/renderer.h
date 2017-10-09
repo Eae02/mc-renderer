@@ -105,6 +105,7 @@ namespace MCR
 		bool m_shouldCaptureVisibilityGraph = false;
 		
 		ChunkRenderList m_chunkRenderList;
+		ChunkRenderList m_shadowRenderList;
 		
 		const Framebuffer* m_framebuffer;
 		

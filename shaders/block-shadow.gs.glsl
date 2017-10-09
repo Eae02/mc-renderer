@@ -27,6 +27,7 @@ void main()
 		textureCoord_out = textureCoord_in[i];
 		
 		gl_Position = lightMatrices[gl_InvocationID] * vec4(worldPos_in[i], 1.0);
+		gl_Position.z = clamp(gl_Position.z, 0.0, 1.0);
 		
 		EmitVertex();
 	}

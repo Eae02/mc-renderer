@@ -1,4 +1,5 @@
 #include "rendersettingsbuffer.h"
+#include "viewprojection.h"
 #include "../timemanager.h"
 
 namespace MCR
@@ -59,11 +60,11 @@ namespace MCR
 		};
 	}
 	
-	void RenderSettingsBuffer::SetData(CommandBuffer& cb, const glm::mat4& viewProj, const glm::mat4& invViewProj,
+	void RenderSettingsBuffer::SetData(CommandBuffer& cb, const ViewProjection& viewProj,
 	                                   const glm::vec3& cameraPosition, float time, const TimeManager& timeManager)
 	{
-		m_data[frameQueueIndex].m_viewProj = viewProj;
-		m_data[frameQueueIndex].m_invViewProj = invViewProj;
+		m_data[frameQueueIndex].m_viewProj = viewProj.m_viewProj;
+		m_data[frameQueueIndex].m_invViewProj = viewProj.m_invViewProj;
 		m_data[frameQueueIndex].m_cameraPos = cameraPosition;
 		m_data[frameQueueIndex].m_time = time;
 		m_data[frameQueueIndex].m_sun = timeManager.GetSunDescription();

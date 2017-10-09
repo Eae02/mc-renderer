@@ -25,6 +25,10 @@ namespace MCR
 			bool                                                 enableDepthWrite;
 			bool                                                 hasWireframeVariant;
 			VkCompareOp                                          depthCompareOp;
+			bool                                                 enableDepthBias;
+			float                                                depthBiasConstantFactor;
+			float                                                depthBiasClamp;
+			float                                                depthBiasSlopeFactor;
 			gsl::span<const VkPipelineColorBlendAttachmentState> attachmentBlendStates;
 			gsl::span<const VkDynamicState>                      dynamicState;
 		};

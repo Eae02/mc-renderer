@@ -1,12 +1,12 @@
-#include "chunkvisibilitycalculator.h"
+﻿#include "chunkvisibilitycalculator.h"
 #include "chunkrenderlist.h"
 #include "frustum.h"
+#include "shadows/directionalshadowvolume.h"
 #include "../blocks/sides.h"
 #include "../world/worldmanager.h"
 
 namespace MCR
 {
-	
 	ChunkVisibilityCalculator::ChunkVisibilityCalculator()
 	{
 		
@@ -40,50 +40,18 @@ namespace MCR
 		return frustum.Intersects(boundingBox);
 	}
 	
-	void ChunkVisibilityCalculator::FillRenderList(ChunkRenderList& renderList, const WorldManager& worldManager,
-	                                               const Camera& camera, const Frustum& frustum)
+	template <typename GetWalkDirectionCallback, typename BoundingVolumeType>
+	void ChunkVisibilityCalculator::ProcessFillQueue(ChunkRenderList& renderList, const WorldManager& worldManager,
+	                                                 FillQueueEntry*& fillQueueBack,
+	                                                 const BoundingVolumeType& boundingVolume,
+	                                                 GetWalkDirectionCallback getWalkDirection)
 	{
-		const int64_t cameraChunkX = std::floor(camera.GetPosition().x / Region::Size);
-		const int     cameraChunkY = std::floor(camera.GetPosition().y / Region::Size);
-		const int64_t cameraChunkZ = std::floor(camera.GetPosition().z / Region::Size);
-		
-		ChunkMesh* currentChunkMesh = worldManager.GetChunkMeshForRendering(cameraChunkX, cameraChunkY, cameraChunkZ);
-		if (currentChunkMesh == nullptr)
-			return;
-		
-		Prepare(worldManager);
-		
-		//Adds the current chunk to the render list and marks it visited.
-		if (currentChunkMesh->HasData())
-		{
-			renderList.Add(*currentChunkMesh);
-		}
-		GetVisited(worldManager.m_loadDistance, cameraChunkY, worldManager.m_loadDistance) = true;
-		
 		FillQueueEntry* fillQueueFront = m_fillQueue.get();
-		FillQueueEntry* fillQueueBack = m_fillQueue.get();
-		
-		//Adds the current chunk's neighbors to the traversal queue.
-		for (uint8_t n = 0; n < 6; n++)
-		{
-			const int64_t nx = cameraChunkX + BlockNormals[n].x;
-			const int     ny = cameraChunkY + BlockNormals[n].y;
-			const int64_t nz = cameraChunkZ + BlockNormals[n].z;
-			
-			if (ny < 0 || ny >= Region::ChunkCount || !ChunkIntersectsFrustum(frustum, nx, ny, nz))
-				continue;
-			
-			const int nlx = worldManager.m_loadDistance + BlockNormals[n].x;
-			const int nlz = worldManager.m_loadDistance + BlockNormals[n].z;
-			GetVisited(nlx, ny, nlz) = true;
-			
-			*(fillQueueBack++) = { nlx, nlz, static_cast<uint8_t>(ny), OpposingSides[n] };
-		}
 		
 		while (fillQueueBack != fillQueueFront)
 		{
 			//Dequeues an item from the traversal queue.
-			const FillQueueEntry& stackEntry = *(fillQueueFront++);
+			const ChunkVisibilityCalculator::FillQueueEntry& stackEntry = *(fillQueueFront++);
 			
 			const RegionCoordinate regionCoord = worldManager.GetWorldRegionCoord(stackEntry.m_lx, stackEntry.m_lz);
 			
@@ -100,9 +68,9 @@ namespace MCR
 			if (worldManager.GetRegion(regionCoord)->IsChunkOpaque(stackEntry.m_y))
 				continue;
 			
-			glm::vec3 centerChunk((static_cast<float>(regionCoord.x) + 0.5f) * Region::Size,
-			                      (static_cast<float>(stackEntry.m_y) + 0.5f) * Region::Size,
-			                      (static_cast<float>(regionCoord.z) + 0.5f) * Region::Size);
+			const glm::vec3 centerChunk((static_cast<float>(regionCoord.x) + 0.5f) * Region::Size,
+			                            (static_cast<float>(stackEntry.m_y) + 0.5f) * Region::Size,
+			                            (static_cast<float>(regionCoord.z) + 0.5f) * Region::Size);
 			
 			for (uint8_t n = 0; n < 6; n++)
 			{
@@ -126,13 +94,17 @@ namespace MCR
 				if (visited)
 					continue;
 				
-				glm::vec3 edgeToCamera = camera.GetPosition() - (centerChunk + glm::vec3(BlockNormals[n] * (Region::Size / 2)));
+				glm::vec3 walkDir = getWalkDirection(centerChunk + glm::vec3(BlockNormals[n] * (Region::Size / 2)));
 				
-				if (glm::dot(edgeToCamera, glm::vec3(BlockNormals[n])) > 0)
+				if (glm::dot(walkDir, glm::vec3(BlockNormals[n])) < 0)
 					continue;
 				
-				if (!ChunkIntersectsFrustum(frustum, regionCoord.x + BlockNormals[n].x, ny,
-				                            regionCoord.z + BlockNormals[n].z))
+				const glm::vec3 boundingBoxMin((regionCoord.x + BlockNormals[n].x) * Region::Size, ny * Region::Size,
+				                               (regionCoord.z + BlockNormals[n].z) * Region::Size);
+				
+				const AABoundingBox boundingBox(boundingBoxMin, boundingBoxMin + glm::vec3(Region::Size));
+				
+				if (!boundingVolume.Intersects(boundingBox))
 				{
 					continue;
 				}
@@ -141,6 +113,58 @@ namespace MCR
 				*(fillQueueBack++) = { nlx, nlz, static_cast<uint8_t>(ny), OpposingSides[n] };
 			}
 		}
+	}
+	
+	void ChunkVisibilityCalculator::FillRenderList(ChunkRenderList& renderList, ChunkRenderList& shadowRenderList,
+	                                               const WorldManager& worldManager, const Camera& camera,
+	                                               const Frustum& frustum, const DirectionalShadowVolume& shadowVolume)
+	{
+		const int64_t cameraChunkX = std::floor(camera.GetPosition().x / Region::Size);
+		const int     cameraChunkY = std::floor(camera.GetPosition().y / Region::Size);
+		const int64_t cameraChunkZ = std::floor(camera.GetPosition().z / Region::Size);
+		
+		ChunkMesh* currentChunkMesh = worldManager.GetChunkMeshForRendering(cameraChunkX, cameraChunkY, cameraChunkZ);
+		if (currentChunkMesh == nullptr)
+			return;
+		
+		Prepare(worldManager);
+		
+		//Adds the current chunk to the render list and marks it visited.
+		if (currentChunkMesh->HasData())
+		{
+			renderList.Add(*currentChunkMesh);
+			shadowRenderList.Add(*currentChunkMesh);
+		}
+		GetVisited(worldManager.m_loadDistance, cameraChunkY, worldManager.m_loadDistance) = true;
+		
+		FillQueueEntry* fillQueueBack = m_fillQueue.get();
+		
+		//Adds the current chunk's neighbors to the traversal queue.
+		for (uint8_t n = 0; n < 6; n++)
+		{
+			const int64_t nx = cameraChunkX + BlockNormals[n].x;
+			const int     ny = cameraChunkY + BlockNormals[n].y;
+			const int64_t nz = cameraChunkZ + BlockNormals[n].z;
+			
+			if (ny < 0 || ny >= Region::ChunkCount || !ChunkIntersectsFrustum(frustum, nx, ny, nz))
+				continue;
+			
+			const int nlx = worldManager.m_loadDistance + BlockNormals[n].x;
+			const int nlz = worldManager.m_loadDistance + BlockNormals[n].z;
+			GetVisited(nlx, ny, nlz) = true;
+			
+			*(fillQueueBack++) = { nlx, nlz, static_cast<uint8_t>(ny), OpposingSides[n] };
+		}
+		
+		ProcessFillQueue(renderList, worldManager, fillQueueBack, frustum, [&] (const glm::vec3& faceCenter)
+		{
+			return faceCenter - camera.GetPosition();
+		});
+		
+		ProcessFillQueue(shadowRenderList, worldManager, fillQueueBack, shadowVolume, [&] (const glm::vec3&)
+		{
+			return -shadowVolume.GetLightDirection();
+		});
 	}
 	
 	ChunkVisibilityGraph ChunkVisibilityCalculator::GetVisibilityGraph(CommandBuffer& commandBuffer) const

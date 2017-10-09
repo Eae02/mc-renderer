@@ -1,5 +1,7 @@
 #include "frustum.h"
 
+#include <iterator>
+
 namespace MCR
 {
 	static Plane CreateFrustumPlane(const glm::vec3& p1, const glm::vec3& p2,
@@ -40,6 +42,8 @@ namespace MCR
 			
 			frustumCenter += corner;
 		}
+		
+		std::copy(std::begin(corners), std::end(corners), m_corners);
 		
 		frustumCenter /= 8;
 		

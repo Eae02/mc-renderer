@@ -12,24 +12,28 @@ namespace MCR
 	
 	const Shader::CreateInfo SkyShader::s_createInfo = 
 	{
-		/* vsName                */ "sky.vs",
-		/* gsName                */ nullptr,
-		/* fsName                */ "sky.fs",
-		/* setLayoutNames        */ setLayouts,
-		/* pushConstantRanges    */ { },
-		/* vertexInputState      */ &vertexInputState,
-		/* topology              */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport              */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor               */ { 0, 0, 1, 1 },
-		/* enableDepthClamp      */ false,
-		/* cullMode              */ VK_CULL_MODE_NONE,
-		/* frontFace             */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest       */ false,
-		/* enableDepthWrite      */ false,
-		/* hasWireframeVariant   */ false,
-		/* depthCompareOp        */ VK_COMPARE_OP_LESS,
-		/* attachmentBlendStates */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState          */ dynamicState
+		/* vsName                  */ "sky.vs",
+		/* gsName                  */ nullptr,
+		/* fsName                  */ "sky.fs",
+		/* setLayoutNames          */ setLayouts,
+		/* pushConstantRanges      */ { },
+		/* vertexInputState        */ &vertexInputState,
+		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
+		/* scissor                 */ { 0, 0, 1, 1 },
+		/* enableDepthClamp        */ false,
+		/* cullMode                */ VK_CULL_MODE_NONE,
+		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
+		/* enableDepthTest         */ false,
+		/* enableDepthWrite        */ false,
+		/* hasWireframeVariant     */ false,
+		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
+		/* enableDepthBias         */ false,
+		/* depthBiasConstantFactor */ 0.0f,
+		/* depthBiasClamp          */ 0.0f,
+		/* depthBiasSlopeFactor    */ 0.0f,
+		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
+		/* dynamicState            */ dynamicState
 	};
 	
 	SkyShader::SkyShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
@@ -71,7 +75,7 @@ namespace MCR
 	void SkyShader::Bind(CommandBuffer& commandBuffer)
 	{
 		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet };
-		commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, GetLayout(), 0, descriptorSets);
+		commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, GetLayout(), 0, descriptorSets);
 		
 		Shader::Bind(commandBuffer);
 	}
