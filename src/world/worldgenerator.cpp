@@ -156,11 +156,27 @@ namespace MCR
 	//Slope for the transition between terraces.
 	const double terraceSlope = 10;
 	
+	std::uniform_int_distribution<int> spruceRadDist(2, 4);
+	std::uniform_int_distribution<int> spruceHeightDist(8, 16);
+	const double spruceLeafBeginHeight = 0.25;
+	const int spruceAdditionalSpacing = 3;
+	
 	//Progresses a single cave worm (and carves out blocks) until it escapes the region or reaches it's target length.
 	void WorldGenerator::ProcessCaveWorm(WorldGenerator::CaveWorm worm, Region& region)
 	{
 		const int64_t regionMinX = region.GetX() * Region::Size;
 		const int64_t regionMinZ = region.GetZ() * Region::Size;
+		
+		const uint8_t removableBlocks[] = 
+		{
+			BlockIDs::Grass,
+			BlockIDs::Stone,
+			BlockIDs::Dirt,
+			BlockIDs::CoalOre,
+			BlockIDs::IronOre,
+			BlockIDs::GoldOre,
+			BlockIDs::DiamondOre,
+		};
 		
 		while (worm.m_distLeft > 0)
 		{
@@ -202,7 +218,9 @@ namespace MCR
 						    blockRegPos.x < Region::Size && blockRegPos.y < Region::Height &&
 						    blockRegPos.z < Region::Size)
 						{
-							if (region.Get(blockRegPos).m_id != BlockIDs::Bedrock)
+							auto removableIt = std::find(MAKE_RANGE(removableBlocks), region.Get(blockRegPos).m_id);
+							
+							if (removableIt != std::end(removableBlocks))
 							{
 								region.Set(blockRegPos, { BlockIDs::Air });
 							}
@@ -214,7 +232,8 @@ namespace MCR
 			glm::dvec3 delta;
 			for (int i = 0; i < 3; i++)
 			{
-				delta[i] = m_caveDirectionPerlin[i].GetValue(worm.m_dirPerlinPos.x, worm.m_dirPerlinPos.y, worm.m_dirPerlinPos.z);
+				delta[i] = m_caveDirectionPerlin[i].GetValue(worm.m_dirPerlinPos.x, worm.m_dirPerlinPos.y,
+				                                             worm.m_dirPerlinPos.z);
 			}
 			worm.m_worldPos += glm::normalize(delta) * glm::dvec3(1.7, 0.7, 1.7);
 			
@@ -240,12 +259,24 @@ namespace MCR
 	
 	void WorldGenerator::Generate(Region& region)
 	{
+		struct NeighborBlockPlacement
+		{
+			int64_t m_x;
+			uint8_t m_y;
+			int64_t m_z;
+			Region::BlockEntry m_block;
+		};
+		
+		std::vector<NeighborBlockPlacement> nBlockPlacements;
+		
 		std::subtract_with_carry_engine<uint64_t, 48, 5, 12> randEngine(region.GetX() ^ bswap_64(region.GetZ()));
 		
 		double PerlinDiv = 25;
 		
 		const int64_t regionMinX = region.GetX() * Region::Size;
 		const int64_t regionMinZ = region.GetZ() * Region::Size;
+		
+		int surfaceHeights[Region::Size][Region::Size];
 		
 		// ** Generates basic terrain **
 		for (int lz = 0; lz < Region::Size; lz++)
@@ -268,6 +299,8 @@ namespace MCR
 				
 				double terraceOffset = (glm::floor(terraceVal) + heightCurrentTerrace - (terraceCount / 2.0)) * terraceHeight;
 				
+				surfaceHeights[lx][lz] = 0;
+				
 				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y > 0; y--)
 				{
 					Region::BlockEntry block;
@@ -287,6 +320,11 @@ namespace MCR
 					{
 						if (blocksSinceAir == 0)
 						{
+							if (surfaceHeights[lx][lz] == 0)
+							{
+								surfaceHeights[lx][lz] = y;
+							}
+							
 							block.m_id = BlockIDs::Grass;
 							
 							if (y < Region::Height - 1)
@@ -367,9 +405,97 @@ namespace MCR
 			ProcessCaveWorm(worm, region);
 		}
 		
+		// ** Spawns spruce trees **
+		const int gridSize = spruceRadDist.max() * 2 + 1 + spruceAdditionalSpacing;
+		int64_t treeMinX = std::floor(regionMinX / static_cast<double>(gridSize));
+		int64_t treeMaxX = std::floor((regionMinX + Region::Size) / static_cast<double>(gridSize));
+		int64_t treeMinZ = std::floor(regionMinZ / static_cast<double>(gridSize));
+		int64_t treeMaxZ = std::floor((regionMinZ + Region::Size) / static_cast<double>(gridSize));
 		
+		for (int64_t tx = treeMinX; tx < treeMaxX; tx++)
+		{
+			for (int64_t tz = treeMinZ; tz < treeMaxZ; tz++)
+			{
+				const int rad = spruceRadDist(randEngine);
+				
+				std::uniform_int_distribution<int> offsetDist(rad, gridSize - rad - 1);
+				int offsetX = offsetDist(randEngine);
+				int offsetZ = offsetDist(randEngine);
+				
+			calculateLocalOrigin:
+				int originX = tx * gridSize - regionMinX + offsetX;
+				int originZ = tz * gridSize - regionMinZ + offsetZ;
+				
+				//If the local origin is outside the region, pushes the tree so that it is within the region.
+				if (originX < 0 || originZ < 0)
+				{
+					offsetX -= std::min(originX, 0);
+					offsetZ -= std::min(originZ, 0);
+					goto calculateLocalOrigin;
+				}
+				
+				if (region.Get(originX, surfaceHeights[originX][originZ], originZ).m_id != BlockIDs::Grass)
+					continue;
+				
+				const int height = spruceHeightDist(randEngine);
+				const int leafBeginY = std::round(height * spruceLeafBeginHeight);
+				
+				for (int y = 1; y <= height; y++)
+				{
+					int regionY = surfaceHeights[originX][originZ] + y;
+					
+					region.Set(originX, regionY, originZ, { BlockIDs::SpruceWood });
+					
+					if (y >= leafBeginY)
+					{
+						double leafRad = 1.0 - (y - leafBeginY) / static_cast<double>(height - leafBeginY + 1);
+						
+						if (y % 2 == 0)
+						{
+							leafRad *= 0.5;
+						}
+						
+						const int leafRadI = std::round(leafRad * rad);
+						
+						for (int dx = -leafRadI; dx <= leafRadI; dx++)
+						{
+							for (int dz = -leafRadI; dz <= leafRadI; dz++)
+							{
+								if (dx * dx + dz * dz > leafRadI * leafRadI)
+									continue;
+								if (dx == 0 && dz == 0 && leafRadI > 0)
+									continue;
+								
+								int lx = originX + dx;
+								int lz = originZ + dz;
+								
+								if (lx >= 0 && lz >= 0 && lx < Region::Size && lz < Region::Size)
+								{
+									region.Set(lx, regionY, lz, { BlockIDs::SpruceLeaves });
+								}
+								else
+								{
+									nBlockPlacements.push_back({ regionMinX + lx, regionY, regionMinZ + lz, { BlockIDs::SpruceLeaves } });
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 		
 		std::unique_lock<std::mutex> futureRegionsLock(m_futureRegionsMutex);
+		
+		for (const NeighborBlockPlacement& blockPlacement : nBlockPlacements)
+		{
+			uint64_t rx = std::floor(blockPlacement.m_x / static_cast<double>(Region::Size));
+			uint64_t rz = std::floor(blockPlacement.m_z / static_cast<double>(Region::Size));
+			
+			uint8_t lx = blockPlacement.m_x - rx * Region::Size;
+			uint8_t lz = blockPlacement.m_z - rz * Region::Size;
+			
+			FindFutureRegion({ rx, rz }).m_blockPlacements.push_back({ lx, blockPlacement.m_y, lz, blockPlacement.m_block });
+		}
 		
 		auto futureRegionIt = std::find_if(MAKE_RANGE(m_futureRegions), [&] (const FutureRegion& futureRegion)
 		{

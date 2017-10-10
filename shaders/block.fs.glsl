@@ -59,5 +59,5 @@ void main()
 		color_out *= shadowFactor;
 	}
 	
-	color_out += vec3(0.06) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
+	color_out += vec3(0.05) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 }

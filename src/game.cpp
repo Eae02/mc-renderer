@@ -11,9 +11,9 @@
 #include "rendering/postprocessor.h"
 #include "rendering/renderer.h"
 #include "rendering/framebuffer.h"
+#include "rendering/windnoiseimage.h"
 #include "profiling/profiling.h"
 #include "ui/profilingpane.h"
-#include "settings.h"
 
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
@@ -37,6 +37,8 @@ namespace MCR
 		//Loads block textures
 		const fs::path texturePackPath = GetResourcePath() / "textures" / "chroma_hills.zip";
 		BlocksTextureManager::SetInstance(std::make_unique<BlocksTextureManager>(BlocksTextureManager::LoadTexturePack(texturePackPath, loadContext)));
+		
+		WindNoiseImage::SetInstance(std::make_unique<WindNoiseImage>(WindNoiseImage::Generate(256, loadContext)));
 		
 		Font::LoadStandard(loadContext);
 		
@@ -284,6 +286,7 @@ namespace MCR
 		
 		worldManager = nullptr;
 		BlocksTextureManager::SetInstance(nullptr);
+		WindNoiseImage::SetInstance(nullptr);
 		
 		ClearVulkanDestroyList();
 	}

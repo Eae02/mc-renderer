@@ -94,7 +94,8 @@ namespace MCR
 							{
 								const glm::vec3 pos = faceCenter + up * (vy - 0.5f) + left * (vx - 0.5f);
 								params.m_meshBuilder->AddVertex(pos, BlockNormals[s], left, { vx, 1 - vy },
-								                                albedoLayer, normalLayer, blockType.GetRoughness());
+								                                albedoLayer, normalLayer, blockType.GetRoughness(),
+								                                blockType.GetBendiness());
 							}
 						}
 					}

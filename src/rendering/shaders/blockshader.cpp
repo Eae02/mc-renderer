@@ -1,6 +1,7 @@
 #include "blockshader.h"
 #include "../blendstates.h"
 #include "../vertex.h"
+#include "../windnoiseimage.h"
 #include "../../blocks/blockstexturemanager.h"
 #include "../../vulkan/setlayoutsmanager.h"
 
@@ -39,14 +40,21 @@ namespace MCR
 	BlockShader::BlockShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : Shader(renderPass, s_createInfo), m_globalDescriptorSet("BlockShader_Global")
 	{
-		VkWriteDescriptorSet globalDescriptorWrites[2];
+		VkWriteDescriptorSet globalDescriptorWrites[3];
 		
+		//Render settings buffer
 		m_globalDescriptorSet.InitWriteDescriptorSet(globalDescriptorWrites[0], 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		                                             renderSettingsBufferInfo);
 		
+		//Blocks texture array
 		const VkDescriptorImageInfo blocksTextureInfo = BlocksTextureManager::GetInstance().GetImageInfo();
 		m_globalDescriptorSet.InitWriteDescriptorSet(globalDescriptorWrites[1], 1,
 		                                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, blocksTextureInfo);
+		
+		//Wind noise texture
+		const VkDescriptorImageInfo windNoiseTextureInfo = WindNoiseImage::GetInstance().GetImageInfo();
+		m_globalDescriptorSet.InitWriteDescriptorSet(globalDescriptorWrites[2], 2,
+		                                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, windNoiseTextureInfo);
 		
 		UpdateDescriptorSets(globalDescriptorWrites);
 	}

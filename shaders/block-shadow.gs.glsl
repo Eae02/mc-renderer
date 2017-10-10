@@ -13,7 +13,7 @@ layout(location=0) out vec3 textureCoord_out;
 layout(location=0) in vec3 textureCoord_in[];
 layout(location=1) in vec3 worldPos_in[];
 
-layout(set=0, binding=0) uniform LightMatricesUB
+layout(set=0, binding=1) uniform LightMatricesUB
 {
 	mat4 lightMatrices[NumCascades];
 };

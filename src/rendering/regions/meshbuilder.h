@@ -41,12 +41,13 @@ namespace MCR
 			return static_cast<uint32_t>(m_vertices.size());
 		}
 		
-		inline void AddVertex(glm::vec3 position, glm::vec3 normal, glm::vec3 tangent,
-		                      glm::vec2 texCoord, int albedoLayer, int normalLayer, float roughness)
+		inline void AddVertex(glm::vec3 position, glm::vec3 normal, glm::vec3 tangent, glm::vec2 texCoord,
+		                      int albedoLayer, int normalLayer, float roughness, float bendiness = 0.0f)
 		{
 			m_vertices.emplace_back();
 			m_vertices.back().m_position = position;
 			m_vertices.back().m_roughness = roughness;
+			m_vertices.back().m_bendiness = bendiness;
 			m_vertices.back().m_normal = normal;
 			m_vertices.back().m_tangent = tangent;
 			m_vertices.back().m_texCoord = glm::vec4(texCoord, albedoLayer, normalLayer);

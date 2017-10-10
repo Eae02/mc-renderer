@@ -12,7 +12,7 @@ namespace MCR
 	const VkVertexInputAttributeDescription blockVertexAttributes[] = 
 	{
 		{ 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, m_position) },
-		{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, m_normal) },
+		{ 1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, m_normal) },
 		{ 2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, m_tangent) },
 		{ 3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, m_texCoord) }
 	};
@@ -31,7 +31,8 @@ namespace MCR
 	const VkVertexInputAttributeDescription blockVertexShadowAttributes[] = 
 	{
 		{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, m_position) },
-		{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, m_texCoord) }
+		{ 1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, m_normal) },
+		{ 2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, m_texCoord) }
 	};
 	
 	const VkPipelineVertexInputStateCreateInfo blockVertexShadowInputState = 

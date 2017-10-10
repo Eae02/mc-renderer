@@ -23,6 +23,8 @@ namespace MCR
 			glm::vec2(-1, 1)
 		};
 		
+		const float topBendiness = 0.2f;
+		
 		for (const glm::vec2& sideDir : sideDirections)
 		{
 			for (int a = 0; a < 2; a++)
@@ -33,7 +35,8 @@ namespace MCR
 				for (int b = 0; b < 2; b++)
 				{
 					meshBuilder.AddVertex(centerBtm + offset + glm::vec3(0, b * height, 0), glm::vec3(0, 1, 0),
-					                      glm::vec3(1, 0, 0), glm::vec2(a, 1 - b), m_texLayer, -1, 1.0f);
+					                      glm::vec3(1, 0, 0), glm::vec2(a, 1 - b), m_texLayer, -1, 1.0f,
+					                      topBendiness * b);
 				}
 			}
 		}

@@ -3,13 +3,18 @@
 
 namespace MCR
 {
+	const Samplers windNoiseSamplers[] = { Samplers::WindNoise };
+	
 	static DSLayoutBinding BlockShader_Global[] = 
 	{
 		//Render settings buffer
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },
 		
 		//Blocks texture array
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT },
+		
+		//Wind noise texture
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT, 1, windNoiseSamplers }
 	};
 	
 	const Samplers shadowMapSamplers[] = { Samplers::ShadowMap };
@@ -20,16 +25,25 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, shadowMapSamplers },
 		
 		//Shadow info buffer
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT }
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT },
+		
+		//Wind noise texture
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT, 1, windNoiseSamplers }
 	};
 	
 	static DSLayoutBinding BlockShaderShadow_Global[] = 
 	{
+		//Render settings buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },
+		
 		//Light matrices buffer
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_GEOMETRY_BIT },
 		
 		//Blocks texture array
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT },
+		
+		//Wind noise texture
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_VERTEX_BIT, 1, windNoiseSamplers }
 	};
 	
 	static DSLayoutBinding DebugShader_Global[] = 

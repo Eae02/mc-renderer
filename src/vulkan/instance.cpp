@@ -153,7 +153,7 @@ namespace MCR
 			return false;
 		}
 		
-		//if (!familiesFound[QUEUE_FAMILY_TRANSFER])
+		if (!familiesFound[QUEUE_FAMILY_TRANSFER])
 		{
 			queueFamiliesOut[QUEUE_FAMILY_TRANSFER] = queueFamiliesOut[QUEUE_FAMILY_GRAPHICS];
 		}

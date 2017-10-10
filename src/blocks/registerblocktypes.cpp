@@ -22,5 +22,11 @@ namespace MCR
 		BlockType::RegisterCustomMesh(BlockIDs::YellowFlower, "Yellow Flower", std::make_unique<FlowerMeshProvider>("flower_oxeye_daisy"));
 		BlockType::RegisterCustomMesh(BlockIDs::OrangeFlower, "Orange Flower", std::make_unique<FlowerMeshProvider>("flower_tulip_orange"));
 		BlockType::RegisterCustomMesh(BlockIDs::WhiteFlower, "White Flower", std::make_unique<FlowerMeshProvider>("flower_dandelion"));
+		
+		BlockType::Register(BlockIDs::OakWood, "Oak Wood", BlockTexConfig::UniformSideTop("log_oak_top", "log_oak"), 0.7f);
+		BlockType::Register(BlockIDs::OakLeaves, "Oak Leaves", BlockTexConfig::Uniform("leaves_oak"), 0.7f, false);
+		
+		BlockType::Register(BlockIDs::SpruceWood, "Spruce Wood", BlockTexConfig::UniformSideTop("log_spruce_top", "log_spruce"), 0.7f);
+		BlockType::Register(BlockIDs::SpruceLeaves, "Spruce Leaves", BlockTexConfig::Uniform("leaves_spruce"), 0.7f, false, 0.3f);
 	}
 }

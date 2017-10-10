@@ -13,7 +13,7 @@ namespace MCR
 	class CascadedShadowMapper
 	{
 	public:
-		CascadedShadowMapper();
+		CascadedShadowMapper(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void SetResolution(uint32_t resolution);
 		

@@ -2,7 +2,7 @@
 
 layout(location=0) in vec3 textureCoord_in;
 
-layout(set=0, binding=1) uniform sampler2DArray blocksTexture;
+layout(set=0, binding=2) uniform sampler2DArray blocksTexture;
 
 void main()
 {

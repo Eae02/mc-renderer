@@ -12,7 +12,7 @@ namespace MCR
 		glm::vec3 m_position;
 		float m_roughness;
 		glm::vec3 m_normal;
-		float _1;
+		float m_bendiness;
 		glm::vec3 m_tangent;
 		float _2;
 		glm::vec4 m_texCoord;

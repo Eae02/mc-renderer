@@ -17,7 +17,13 @@ namespace MCR
 		{ "coal_ore" },
 		{ "iron_ore" },
 		{ "gold_ore" },
-		{ "diamond_ore" }
+		{ "diamond_ore" },
+		{ "log_oak" },
+		{ "log_oak_top" },
+		{ "log_spruce" },
+		{ "log_spruce_top" },
+		{ "leaves_oak", true },
+		{ "leaves_spruce", true }
 	};
 	
 	const gsl::span<const BlockTextureDesc> GetBlockTexturesList()

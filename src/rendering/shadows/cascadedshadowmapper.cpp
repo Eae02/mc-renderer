@@ -1,5 +1,6 @@
 #include "cascadedshadowmapper.h"
 #include "directionalshadowvolume.h"
+#include "../windnoiseimage.h"
 #include "../frustum.h"
 #include "../constants.h"
 #include "../vertex.h"
@@ -103,7 +104,7 @@ namespace MCR
 		/* dynamicState            */ dynamicState
 	};
 	
-	CascadedShadowMapper::CascadedShadowMapper()
+	CascadedShadowMapper::CascadedShadowMapper(const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : m_renderPass(CreateRenderPass()), m_shader(*m_renderPass, shaderCreateInfo),
 	      m_renderDescriptorSet("BlockShaderShadow_Global"), m_sampleDescriptorSet("ShadowSample")
 	{
@@ -142,15 +143,26 @@ namespace MCR
 		
 		// ** Updates the shadow render descriptor set **
 		
-		VkWriteDescriptorSet descriptorWrites[4];
+		VkWriteDescriptorSet descriptorWrites[6];
 		
-		const VkDescriptorBufferInfo infoBufferInfoR = { *m_infoDeviceBuffer, 0, sizeof(glm::mat4) * DirLightCascades };
+		//Render settings buffer
 		m_renderDescriptorSet.InitWriteDescriptorSet(descriptorWrites[0], 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		                                             renderSettingsBufferInfo);
+		
+		//Light matrices buffer
+		const VkDescriptorBufferInfo infoBufferInfoR = { *m_infoDeviceBuffer, 0, sizeof(glm::mat4) * DirLightCascades };
+		m_renderDescriptorSet.InitWriteDescriptorSet(descriptorWrites[1], 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		                                             infoBufferInfoR);
 		
+		//Blocks texture array
 		const VkDescriptorImageInfo blocksTextureInfo = BlocksTextureManager::GetInstance().GetImageInfo();
-		m_renderDescriptorSet.InitWriteDescriptorSet(descriptorWrites[1], 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		m_renderDescriptorSet.InitWriteDescriptorSet(descriptorWrites[2], 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		                                             blocksTextureInfo);
+		
+		//Wind noise texture
+		const VkDescriptorImageInfo windNoiseTextureInfo = WindNoiseImage::GetInstance().GetImageInfo();
+		m_renderDescriptorSet.InitWriteDescriptorSet(descriptorWrites[3], 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		                                             windNoiseTextureInfo);
 		
 		// ** Updates the shadow sample descriptor set **
 		
@@ -160,11 +172,11 @@ namespace MCR
 			/* imageView   */ *m_shadowMapView,
 			/* imageLayout */ VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
 		};
-		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[2], 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[4], 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		                                             shadowMapInfo);
 		
 		const VkDescriptorBufferInfo infoBufferInfoS = { *m_infoDeviceBuffer, 0, sizeof(ShadowInfo) };
-		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[3], 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[5], 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		                                             infoBufferInfoS);
 		
 		UpdateDescriptorSets(descriptorWrites);

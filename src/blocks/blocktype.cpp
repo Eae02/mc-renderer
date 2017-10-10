@@ -23,14 +23,17 @@ namespace MCR
 		}
 	}
 	
-	void BlockType::Register(uint8_t id, std::string name, const BlockTexConfig& texConfig, float roughness)
+	void BlockType::Register(uint8_t id, std::string name, const BlockTexConfig& texConfig, float roughness,
+	                         bool opaque, float bendiness)
 	{
 		ThrowIfInitialized(id);
 		
 		BlockType& blockType = s_blockTypes[id];
 		
 		blockType.m_initialized = true;
+		blockType.m_opaque = opaque;
 		blockType.m_roughness = roughness;
+		blockType.m_bendiness = bendiness;
 		
 		blockType.m_name = std::move(name);
 		

@@ -16,7 +16,7 @@ namespace MCR
 		BlockType();
 		
 		static void Register(uint8_t id, std::string name, const BlockTexConfig& texturesConfig,
-		                     float roughness = 1.0f);
+		                     float roughness, bool opaque = true, float bendiness = 0.0f);
 		
 		static void RegisterCustomMesh(uint8_t id, std::string name, std::unique_ptr<ICustomMeshProvider> meshProvider);
 		
@@ -55,6 +55,11 @@ namespace MCR
 			return m_roughness;
 		}
 		
+		inline float GetBendiness() const
+		{
+			return m_bendiness;
+		}
+		
 		inline const ICustomMeshProvider* GetCustomMeshProvider() const
 		{
 			return m_customMeshProvider.get();
@@ -71,6 +76,8 @@ namespace MCR
 		static BlockType s_blockTypes[256];
 		
 		std::unique_ptr<ICustomMeshProvider> m_customMeshProvider;
+		
+		float m_bendiness = 0.0f;
 		
 		bool m_initialized;
 		std::string m_name;

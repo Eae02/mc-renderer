@@ -7,6 +7,7 @@ namespace MCR
 	enum class Samplers
 	{
 		Framebuffer,
+		WindNoise,
 		ShadowMap
 	};
 	
