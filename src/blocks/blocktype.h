@@ -15,7 +15,8 @@ namespace MCR
 	public:
 		BlockType();
 		
-		static void Register(uint8_t id, std::string name, const BlockTexConfig& texturesConfig);
+		static void Register(uint8_t id, std::string name, const BlockTexConfig& texturesConfig,
+		                     float roughness = 1.0f);
 		
 		static void RegisterCustomMesh(uint8_t id, std::string name, std::unique_ptr<ICustomMeshProvider> meshProvider);
 		
@@ -39,9 +40,19 @@ namespace MCR
 			return m_name;
 		}
 		
-		inline int GetTextureLayer(int side) const
+		inline int GetAlbedoTextureLayer(int side) const
 		{
-			return m_textureIndices[side];
+			return m_albedoTextureIndices[side];
+		}
+		
+		inline int GetNormalTextureLayer(int side) const
+		{
+			return m_normalTextureIndices[side];
+		}
+		
+		inline float GetRoughness() const
+		{
+			return m_roughness;
 		}
 		
 		inline const ICustomMeshProvider* GetCustomMeshProvider() const
@@ -63,7 +74,9 @@ namespace MCR
 		
 		bool m_initialized;
 		std::string m_name;
-		int m_textureIndices[6];
+		int m_albedoTextureIndices[6];
+		int m_normalTextureIndices[6];
+		float m_roughness;
 		bool m_opaque;
 	};
 }

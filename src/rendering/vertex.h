@@ -10,11 +10,12 @@ namespace MCR
 	struct Vertex
 	{
 		glm::vec3 m_position;
-		float _0;
+		float m_roughness;
 		glm::vec3 m_normal;
 		float _1;
-		glm::vec3 m_texCoord;
+		glm::vec3 m_tangent;
 		float _2;
+		glm::vec4 m_texCoord;
 	};
 #pragma pack(pop)
 	

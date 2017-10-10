@@ -1,0 +1,27 @@
+#include "blocktextures.h"
+
+namespace MCR
+{
+	const BlockTextureDesc blockTextures[] = 
+	{
+		{ "dirt" },
+		{ "grass_side" },
+		{ "grass_top", true },
+		{ "stone" },
+		{ "bedrock" },
+		{ "flower_blue_orchid" },
+		{ "flower_rose" },
+		{ "flower_oxeye_daisy" },
+		{ "flower_tulip_orange" },
+		{ "flower_dandelion" },
+		{ "coal_ore" },
+		{ "iron_ore" },
+		{ "gold_ore" },
+		{ "diamond_ore" }
+	};
+	
+	const gsl::span<const BlockTextureDesc> GetBlockTexturesList()
+	{
+		return blockTextures;
+	}
+}

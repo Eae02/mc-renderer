@@ -10,9 +10,9 @@ namespace MCR
 	BlockType BlockType::s_blockTypes[256];
 	
 	BlockType::BlockType()
-	    : m_initialized(false), m_opaque(true)
+	    : m_initialized(false), m_opaque(true), m_roughness(1.0f)
 	{
-		std::fill(MAKE_RANGE(m_textureIndices), -1);
+		std::fill(MAKE_RANGE(m_albedoTextureIndices), -1);
 	}
 	
 	void BlockType::ThrowIfInitialized(uint8_t id)
@@ -23,20 +23,23 @@ namespace MCR
 		}
 	}
 	
-	void BlockType::Register(uint8_t id, std::string name, const BlockTexConfig& texConfig)
+	void BlockType::Register(uint8_t id, std::string name, const BlockTexConfig& texConfig, float roughness)
 	{
 		ThrowIfInitialized(id);
 		
 		BlockType& blockType = s_blockTypes[id];
 		
 		blockType.m_initialized = true;
+		blockType.m_roughness = roughness;
 		
 		blockType.m_name = std::move(name);
 		
-		std::transform(MAKE_RANGE(texConfig.m_textures), blockType.m_textureIndices, [] (std::string_view texName)
+		for (int i = 0; i < 6; i++)
 		{
-			return BlocksTextureManager::GetInstance().FindTextureIndex(texName);
-		});
+			BlocksTextureManager::GetInstance().GetTextureIndices(texConfig.m_textures[i],
+			                                                      blockType.m_albedoTextureIndices[i],
+			                                                      blockType.m_normalTextureIndices[i]);
+		}
 	}
 	
 	void BlockType::RegisterCustomMesh(uint8_t id, std::string name, std::unique_ptr<ICustomMeshProvider> meshProvider)

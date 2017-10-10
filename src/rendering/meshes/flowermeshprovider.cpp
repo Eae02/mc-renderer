@@ -5,7 +5,7 @@
 namespace MCR
 {
 	FlowerMeshProvider::FlowerMeshProvider(std::string_view textureName)
-	    : m_texLayer(BlocksTextureManager::GetInstance().FindTextureIndex(textureName)) { }
+	    : m_texLayer(BlocksTextureManager::GetInstance().GetAlbedoTextureIndex(textureName)) { }
 	
 	void FlowerMeshProvider::BuildBlockMesh(MeshBuilder& meshBuilder, int64_t x, int64_t y, int64_t z,
 	                                        uint8_t blockData) const
@@ -32,8 +32,8 @@ namespace MCR
 				
 				for (int b = 0; b < 2; b++)
 				{
-					meshBuilder.AddVertex(centerBtm + offset + glm::vec3(0, b * height, 0),
-					                      glm::vec3(0, 1, 0), glm::vec2(a, 1 - b), m_texLayer);
+					meshBuilder.AddVertex(centerBtm + offset + glm::vec3(0, b * height, 0), glm::vec3(0, 1, 0),
+					                      glm::vec3(1, 0, 0), glm::vec2(a, 1 - b), m_texLayer, -1, 1.0f);
 				}
 			}
 		}

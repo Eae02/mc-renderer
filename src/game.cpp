@@ -13,6 +13,7 @@
 #include "rendering/framebuffer.h"
 #include "profiling/profiling.h"
 #include "ui/profilingpane.h"
+#include "settings.h"
 
 #include <SDL2/SDL_vulkan.h>
 #include <cstdint>
@@ -34,8 +35,8 @@ namespace MCR
 		loadContext.Begin();
 		
 		//Loads block textures
-		const fs::path blocksTxtPath = GetResourcePath() / "textures" / "blocks" / "blocks.txt";
-		BlocksTextureManager::SetInstance(std::make_unique<BlocksTextureManager>(BlocksTextureManager::LoadTextures(blocksTxtPath, loadContext)));
+		const fs::path texturePackPath = GetResourcePath() / "textures" / "chroma_hills.zip";
+		BlocksTextureManager::SetInstance(std::make_unique<BlocksTextureManager>(BlocksTextureManager::LoadTexturePack(texturePackPath, loadContext)));
 		
 		Font::LoadStandard(loadContext);
 		

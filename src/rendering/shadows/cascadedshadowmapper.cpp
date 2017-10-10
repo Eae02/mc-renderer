@@ -107,7 +107,7 @@ namespace MCR
 	    : m_renderPass(CreateRenderPass()), m_shader(*m_renderPass, shaderCreateInfo),
 	      m_renderDescriptorSet("BlockShaderShadow_Global"), m_sampleDescriptorSet("ShadowSample")
 	{
-		SetResolution(2048);
+		SetResolution(1024);
 		
 		// ** Creates the light matrices host buffer **
 		

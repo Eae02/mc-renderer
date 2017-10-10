@@ -25,6 +25,7 @@ find_package(Freetype REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libnoise REQUIRED)
+find_package(LibZip REQUIRED)
 
 find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h PATHS ${HEADER_SEARCH_PATH} "$ENV{VK_SDK_PATH}/Include")
 
@@ -48,6 +49,7 @@ link_libraries(
 	${FREETYPE_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${NOISE_LIBRARY}
+	${LIBZIP_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT}
 )
 
@@ -57,6 +59,7 @@ include_directories(SYSTEM
 	${VULKAN_INCLUDE_DIR}
 	${GLM_INCLUDE_DIRS}
 	${FREETYPE_INCLUDE_DIRS}
+	${LIBZIP_INCLUDE_DIR_ZIP}
 	${ZLIB_INCLUDE_DIRS}
 	${NOISE_INCLUDE_DIR}
 	${CMAKE_SOURCE_DIR}/inc

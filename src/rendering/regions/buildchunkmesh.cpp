@@ -78,7 +78,8 @@ namespace MCR
 						
 						const glm::vec3 faceCenter = blockWorldCenter + glm::vec3(BlockNormals[s]) * 0.5f;
 						
-						const int layer = blockType.GetTextureLayer(s);
+						const int albedoLayer = blockType.GetAlbedoTextureLayer(s);
+						const int normalLayer = blockType.GetNormalTextureLayer(s);
 						
 						const uint32_t baseIndex = params.m_meshBuilder->GetNextVertexIndex();
 						params.m_meshBuilder->AddTriangle(baseIndex + 0, baseIndex + 1, baseIndex + 2);
@@ -92,7 +93,8 @@ namespace MCR
 							for (int vy = 0; vy < 2; vy++)
 							{
 								const glm::vec3 pos = faceCenter + up * (vy - 0.5f) + left * (vx - 0.5f);
-								params.m_meshBuilder->AddVertex(pos, BlockNormals[s], { vx, 1 - vy }, layer);
+								params.m_meshBuilder->AddVertex(pos, BlockNormals[s], left, { vx, 1 - vy },
+								                                albedoLayer, normalLayer, blockType.GetRoughness());
 							}
 						}
 					}

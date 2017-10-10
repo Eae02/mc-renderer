@@ -15,31 +15,42 @@ layout(set=0, binding=0) uniform RenderSettingsUB
 
 layout(set=0, binding=1) uniform sampler2DArray blocksTexture;
 
-layout(location=0) in vec3 textureCoord_in;
-layout(location=1) in vec3 normal_in;
-layout(location=2) in vec3 worldPos_in;
+layout(location=0) in vec4 worldPosAndRoughness_in;
+layout(location=1) in vec4 textureCoord_in;
+layout(location=2) in mat3 tbnMatrix_in;
 
 layout(location=0) out vec3 color_out;
 
 void main()
 {
-	vec4 texColor = texture(blocksTexture, textureCoord_in);
+	vec4 texColor = texture(blocksTexture, textureCoord_in.xyz);
 	if (texColor.a < 0.5)
 		discard;
 	
-	vec3 toEye = normalize(renderSettings.cameraPos - worldPos_in);
+	vec3 worldPos = worldPosAndRoughness_in.xyz;
+	vec3 toEye = normalize(renderSettings.cameraPos - worldPos);
 	
 	MaterialData materialData;
 	materialData.albedo = texColor.rgb;
-	materialData.roughness = 1;
+	materialData.roughness = worldPosAndRoughness_in.w;
 	materialData.metallic = 0;
-	materialData.normal = normalize(normal_in);
+	
+	if (textureCoord_in.w < 0)
+	{
+		materialData.normal = tbnMatrix_in[2];
+	}
+	else
+	{
+		vec3 nmNormal = (texture(blocksTexture, textureCoord_in.xyw).rgb * (255.0 / 128.0)) - vec3(1.0);
+		//vec3 nmNormal = vec3(nmNormalXY, sqrt(1.0 - nmNormalXY.x * nmNormalXY.x - nmNormalXY.y * nmNormalXY.y));
+		materialData.normal = normalize(tbnMatrix_in * nmNormal);
+	}
 	
 	vec3 F = calcFresnel(materialData, toEye);
 	
 	color_out = vec3(0);
 	
-	float shadowFactor = getShadowFactor(worldPos_in);
+	float shadowFactor = getShadowFactor(worldPos);
 	
 	if (shadowFactor > 0)
 	{
