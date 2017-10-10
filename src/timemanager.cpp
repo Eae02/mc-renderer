@@ -38,7 +38,7 @@ namespace MCR
 		float sunIntensity = std::max(-m_sun.m_direction.y, 0.0f);
 		
 		m_sun.m_direction = rotationMatrix[2];
-		m_sun.m_radiance = glm::vec3(5.0f) * std::min(sunIntensity * 2.5f, 1.0f);
+		m_sun.m_radiance = glm::vec3(7.5f) * std::min(sunIntensity * 2.5f, 1.0f);
 		
 		m_moon.m_radiance = glm::vec3(0.7f, 0.7f, 1.0f) * 2.0f * (1.0f - sunIntensity);
 		m_moon.m_direction = -glm::normalize(glm::vec3(1, 1, 1));

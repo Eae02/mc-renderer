@@ -17,25 +17,25 @@ layout(binding=0) uniform RenderSettingsUB
 layout(binding=1) uniform sampler2D colorImage;
 layout(binding=2) uniform sampler2D depthImage;
 
-const float rayleighBrightness = 0.7;
-const float rayleighStrength = 2000;
+const float rayleighBrightness = 0.4;
+const float rayleighStrength = 5000;
 const float rayleighCollectionPower = 1.0005;
 const float rayleighCollectionScale = 0.002;
 
 const float mieDistribution = 10;
-const float mieBrightness = 0.1;
+const float mieBrightness = 0.3;
 const float mieStrength = 1000;
 const float mieCollectionScale = 0.05;
 const float mieCollectionPower = 1.1;
 
-const float spotBrightness = 100;
+const float spotBrightness = 50;
 const float scatterStrength = 1000;
 
 const float atmosphereRadius = 100000;
-const float surfaceLevelPercentage = 0.995;
-const float occlusionSmoothness = 0.1;
+const float surfaceLevelPercentage = 0.997;
+const float occlusionSmoothness = 0.01;
 const float blockDepthScale = 0.05;
-const float exposure = 0.8f;
+const float exposure = 0.9f;
 
 const vec3 absorbtionProfile = vec3(0.18867780436772762, 0.4978442963618773, 0.6616065586417131);
 

@@ -367,6 +367,8 @@ namespace MCR
 			ProcessCaveWorm(worm, region);
 		}
 		
+		
+		
 		std::unique_lock<std::mutex> futureRegionsLock(m_futureRegionsMutex);
 		
 		auto futureRegionIt = std::find_if(MAKE_RANGE(m_futureRegions), [&] (const FutureRegion& futureRegion)
