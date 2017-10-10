@@ -22,19 +22,9 @@ uint32_t __inline ctz(uint32_t value)
 #define ctz __builtin_ctz
 #endif
 
-using namespace std::string_literals;
-
 namespace MCR
 {
 	std::unique_ptr<BlocksTextureManager> BlocksTextureManager::s_instance;
-	
-	struct STBIDeleter
-	{
-		inline void operator()(void* data) const
-		{
-			stbi_image_free(data);
-		}
-	};
 	
 	BlocksTextureManager BlocksTextureManager::LoadTexturePack(const fs::path& texturePackPath,
 	                                                           LoadContext& loadContext)

@@ -97,7 +97,7 @@ namespace MCR
 		/* hasWireframeVariant     */ false,
 		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
 		/* enableDepthBias         */ true,
-		/* depthBiasConstantFactor */ 1.25f,
+		/* depthBiasConstantFactor */ 2.25f,
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 1.75f,
 		/* attachmentBlendStates   */ { },
