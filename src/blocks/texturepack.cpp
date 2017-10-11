@@ -6,7 +6,7 @@ namespace MCR
 {
 	inline zip* OpenArchive(const fs::path& path)
 	{
-		std::string pathString = path.c_str();
+		std::string pathString = path.string();
 		zip* archive = zip_open(pathString.c_str(), ZIP_RDONLY, nullptr);
 		
 		if (archive == nullptr)

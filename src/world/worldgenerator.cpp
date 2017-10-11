@@ -475,7 +475,8 @@ namespace MCR
 								}
 								else
 								{
-									nBlockPlacements.push_back({ regionMinX + lx, regionY, regionMinZ + lz, { BlockIDs::SpruceLeaves } });
+									nBlockPlacements.push_back({ regionMinX + lx, static_cast<uint8_t>(regionY),
+									                             regionMinZ + lz, { BlockIDs::SpruceLeaves } });
 								}
 							}
 						}
@@ -488,8 +489,8 @@ namespace MCR
 		
 		for (const NeighborBlockPlacement& blockPlacement : nBlockPlacements)
 		{
-			uint64_t rx = std::floor(blockPlacement.m_x / static_cast<double>(Region::Size));
-			uint64_t rz = std::floor(blockPlacement.m_z / static_cast<double>(Region::Size));
+			int64_t rx = std::floor(blockPlacement.m_x / static_cast<double>(Region::Size));
+			int64_t rz = std::floor(blockPlacement.m_z / static_cast<double>(Region::Size));
 			
 			uint8_t lx = blockPlacement.m_x - rx * Region::Size;
 			uint8_t lz = blockPlacement.m_z - rz * Region::Size;

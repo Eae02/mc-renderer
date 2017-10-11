@@ -43,7 +43,7 @@ namespace MCR
 	const Shader::CreateInfo UIShader::s_createInfo = 
 	{
 		/* vsName                  */ "ui.vs",
-		/* gsName                  */ nullptr,
+		/* gsName                  */ "",
 		/* fsName                  */ "ui.fs",
 		/* setLayoutNames          */ setLayouts,
 		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),

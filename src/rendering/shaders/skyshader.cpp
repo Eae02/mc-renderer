@@ -13,7 +13,7 @@ namespace MCR
 	const Shader::CreateInfo SkyShader::s_createInfo = 
 	{
 		/* vsName                  */ "sky.vs",
-		/* gsName                  */ nullptr,
+		/* gsName                  */ "",
 		/* fsName                  */ "sky.fs",
 		/* setLayoutNames          */ setLayouts,
 		/* pushConstantRanges      */ { },
