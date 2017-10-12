@@ -10,7 +10,7 @@ namespace MCR
 	WorldManager::WorldManager()
 	    : m_generateThread(4)
 	{
-		SetRenderDistance(15);
+		SetRenderDistance(8);
 	}
 	
 	constexpr bool enableIO = false;

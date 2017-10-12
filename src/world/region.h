@@ -98,7 +98,7 @@ namespace MCR
 		void Deserialize(const char* data);
 		void Serialize(char* data) const;
 		
-		static constexpr int Size = 16;
+		static constexpr int Size = 32;
 		static constexpr int Height = 256;
 		static constexpr int ChunkCount = Height / Size;
 		static constexpr int BlockCount = Size * Size * Height;

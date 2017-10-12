@@ -142,10 +142,10 @@ namespace MCR
 	const double caveMaxRadius = 3.0;
 	
 	//Distribution for the length of caves (in blocks)
-	std::uniform_int_distribution<int> caveWormLengthDist(150, 250);
+	std::uniform_int_distribution<int> caveWormLengthDist(200, 350);
 	
 	//The chance for a region to spawn a cave.
-	const double caveGenerateProbability = 0.3;
+	const double caveGenerateProbability = 0.4;
 	
 	//Determines how quickly caves change direction.
 	const double caveDirectionProgressRate = 0.01;
@@ -241,7 +241,7 @@ namespace MCR
 				delta[i] = m_caveDirectionPerlin[i].GetValue(worm.m_dirPerlinPos.x, worm.m_dirPerlinPos.y,
 				                                             worm.m_dirPerlinPos.z);
 			}
-			worm.m_worldPos += glm::normalize(delta) * glm::dvec3(1.7, 0.7, 1.7);
+			worm.m_worldPos += glm::normalize(delta) * glm::dvec3(1.7, 1.0, 1.7);
 			
 			worm.m_distLeft--;
 			
@@ -463,14 +463,14 @@ namespace MCR
 					
 					if (y >= leafBeginY)
 					{
-						double leafRad = 1.0 - (y - leafBeginY) / static_cast<double>(height - leafBeginY + 1);
+						double leafRad = (1.0 - (y - leafBeginY) / static_cast<double>(height - leafBeginY)) * rad;
 						
-						if (y % 2 == 0)
+						if (y % 2 == 0 && leafRad > 1.0)
 						{
 							leafRad *= 0.5;
 						}
 						
-						const int leafRadI = std::round(leafRad * rad);
+						const int leafRadI = std::round(leafRad);
 						
 						for (int dx = -leafRadI; dx <= leafRadI; dx++)
 						{
