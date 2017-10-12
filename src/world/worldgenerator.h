@@ -56,6 +56,7 @@ namespace MCR
 		noise::module::Perlin m_heightPerlin;
 		noise::module::Perlin m_terracePerlin;
 		noise::module::Perlin m_flowerPerlin;
+		noise::module::Perlin m_fernPerlin;
 		noise::module::Perlin m_caveDirectionPerlin[3];
 		noise::module::Perlin m_caveRadiusPerlin;
 	};

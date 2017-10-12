@@ -4,13 +4,13 @@
 
 namespace MCR
 {
-	FlowerMeshProvider::FlowerMeshProvider(std::string_view textureName)
-	    : m_texLayer(BlocksTextureManager::GetInstance().GetAlbedoTextureIndex(textureName)) { }
+	FlowerMeshProvider::FlowerMeshProvider(std::string_view textureName, float size)
+	    : m_texLayer(BlocksTextureManager::GetInstance().GetAlbedoTextureIndex(textureName)), m_size(size) { }
 	
 	void FlowerMeshProvider::BuildBlockMesh(MeshBuilder& meshBuilder, int64_t x, int64_t y, int64_t z,
 	                                        uint8_t blockData) const
 	{
-		const float distFromCenter = 0.4f;
+		const float distFromCenter = 0.5f * m_size;
 		const float height = distFromCenter * 2;
 		
 		const glm::vec3 centerBtm(x + 0.5f, y, z + 0.5f);

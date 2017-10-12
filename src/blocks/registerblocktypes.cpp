@@ -17,11 +17,12 @@ namespace MCR
 		BlockType::Register(BlockIDs::GoldOre, "Gold Ore", BlockTexConfig::Uniform("gold_ore"), 0.5f);
 		BlockType::Register(BlockIDs::DiamondOre, "Diamond Ore", BlockTexConfig::Uniform("diamond_ore"), 0.5f);
 		
-		BlockType::RegisterCustomMesh(BlockIDs::BlueFlower, "Blue Flower", std::make_unique<FlowerMeshProvider>("flower_blue_orchid"));
-		BlockType::RegisterCustomMesh(BlockIDs::RedFlower, "Red Flower", std::make_unique<FlowerMeshProvider>("flower_rose"));
-		BlockType::RegisterCustomMesh(BlockIDs::YellowFlower, "Yellow Flower", std::make_unique<FlowerMeshProvider>("flower_oxeye_daisy"));
-		BlockType::RegisterCustomMesh(BlockIDs::OrangeFlower, "Orange Flower", std::make_unique<FlowerMeshProvider>("flower_tulip_orange"));
-		BlockType::RegisterCustomMesh(BlockIDs::WhiteFlower, "White Flower", std::make_unique<FlowerMeshProvider>("flower_dandelion"));
+		BlockType::RegisterCustomMesh(BlockIDs::Fern, "Fern", std::make_unique<FlowerMeshProvider>("fern", 1.0f));
+		BlockType::RegisterCustomMesh(BlockIDs::BlueFlower, "Blue Flower", std::make_unique<FlowerMeshProvider>("flower_blue_orchid", 0.8f));
+		BlockType::RegisterCustomMesh(BlockIDs::RedFlower, "Red Flower", std::make_unique<FlowerMeshProvider>("flower_rose", 0.8f));
+		BlockType::RegisterCustomMesh(BlockIDs::YellowFlower, "Yellow Flower", std::make_unique<FlowerMeshProvider>("flower_oxeye_daisy", 0.8f));
+		BlockType::RegisterCustomMesh(BlockIDs::OrangeFlower, "Orange Flower", std::make_unique<FlowerMeshProvider>("flower_tulip_orange", 0.8f));
+		BlockType::RegisterCustomMesh(BlockIDs::WhiteFlower, "White Flower", std::make_unique<FlowerMeshProvider>("flower_dandelion", 0.8f));
 		
 		BlockType::Register(BlockIDs::OakWood, "Oak Wood", BlockTexConfig::UniformSideTop("log_oak_top", "log_oak"), 0.7f);
 		BlockType::Register(BlockIDs::OakLeaves, "Oak Leaves", BlockTexConfig::Uniform("leaves_oak"), 0.7f, false);

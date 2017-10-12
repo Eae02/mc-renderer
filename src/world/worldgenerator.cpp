@@ -33,6 +33,12 @@ namespace MCR
 		m_flowerPerlin.SetOctaveCount(2);
 		m_flowerPerlin.SetNoiseQuality(noise::QUALITY_FAST);
 		
+		m_fernPerlin.SetFrequency(16);
+		m_fernPerlin.SetLacunarity(2.0);
+		m_fernPerlin.SetPersistence(0.5);
+		m_fernPerlin.SetOctaveCount(2);
+		m_fernPerlin.SetNoiseQuality(noise::QUALITY_FAST);
+		
 		for (noise::module::Perlin& cavePerlin : m_caveDirectionPerlin)
 		{
 			cavePerlin.SetFrequency(16);
@@ -299,6 +305,8 @@ namespace MCR
 				
 				double terraceOffset = (glm::floor(terraceVal) + heightCurrentTerrace - (terraceCount / 2.0)) * terraceHeight;
 				
+				bool hasFern = m_fernPerlin.GetValue(px, 0, pz) > 0.0;
+				
 				surfaceHeights[lx][lz] = 0;
 				
 				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y > 0; y--)
@@ -329,13 +337,20 @@ namespace MCR
 							
 							if (y < Region::Height - 1)
 							{
-								double flowerVal = m_flowerPerlin.GetValue(px, py, pz) * 0.5 + 0.5;
-								
-								if (flowerVal < flowerFrequency)
+								if (hasFern)
 								{
-									double flowerIndexD = std::floor(flowerVal / flowerFrequency * ArrayLength(flowerIDs));
+									region.Set(lx, y + 1, lz, { BlockIDs::Fern });
+								}
+								else
+								{
+									double flowerVal = m_flowerPerlin.GetValue(px, py, pz) * 0.5 + 0.5;
 									
-									region.Set(lx, y + 1, lz, { flowerIDs[static_cast<int>(flowerIndexD)] });
+									if (flowerVal < flowerFrequency)
+									{
+										double flowerIndexD = std::floor(flowerVal / flowerFrequency * ArrayLength(flowerIDs));
+										
+										region.Set(lx, y + 1, lz, { flowerIDs[static_cast<int>(flowerIndexD)] });
+									}
 								}
 							}
 						}
