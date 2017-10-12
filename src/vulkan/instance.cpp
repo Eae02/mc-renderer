@@ -39,11 +39,6 @@ namespace MCR
 	                                             uint64_t srcObject, size_t location, int32_t msgCode,
 	                                             const char* pLayerPrefix, const char* pMsg, void* pUserData)
 	{
-		const int32_t ignoredMessages[] = { 0, 49, 13, 10 };
-		
-		if (std::find(MAKE_RANGE(ignoredMessages), msgCode) != std::end(ignoredMessages))
-			return VK_FALSE;
-		
 		if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT || msgCode == 1)
 		{
 			Log(pLayerPrefix, "[", msgCode, "]: ", pMsg);
@@ -202,9 +197,7 @@ namespace MCR
 		
 		const char* validationLayers[] = 
 		{
-			"VK_LAYER_LUNARG_core_validation",
-			"VK_LAYER_LUNARG_parameter_validation",
-			"VK_LAYER_GOOGLE_unique_objects"
+			"VK_LAYER_LUNARG_standard_validation"
 		};
 		
 		// ** Checks that all validation layers are supported **

@@ -240,7 +240,7 @@ namespace MCR
 			/* sType                   */ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
 			/* pNext                   */ nullptr,
 			/* flags                   */ 0,
-			/* magFilter               */ VK_FILTER_LINEAR,
+			/* magFilter               */ VK_FILTER_NEAREST,
 			/* minFilter               */ VK_FILTER_LINEAR,
 			/* mipmapMode              */ VK_SAMPLER_MIPMAP_MODE_LINEAR,
 			/* addressModeU            */ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,

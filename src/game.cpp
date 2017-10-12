@@ -59,6 +59,7 @@ namespace MCR
 	
 	struct FrameQueueEntry
 	{
+		bool m_hasSubmittedOnce;
 		VkHandle<VkFence> m_fence;
 		VkHandle<VkSemaphore> m_signalSemaphore;
 		
@@ -86,6 +87,7 @@ namespace MCR
 		
 		for (FrameQueueEntry& frame : frames)
 		{
+			frame.m_hasSubmittedOnce = false;
 			frame.m_fence = CreateVkFence();
 			frame.m_signalSemaphore = CreateVkSemaphore();
 		}
@@ -210,17 +212,22 @@ namespace MCR
 			
 			UpdateGame(lastFrameTime.count() * 1E-9f, inputState);
 			
-			if (frameIndex >= SwapChain::GetImageCount())
+			if (frame.m_hasSubmittedOnce)
 			{
 				{
 					MCR_SCOPED_TIMER(0, "GPU sync")
 					CheckResult(vkWaitForFences(vulkan.device, 1, &*frame.m_fence, true, UINT64_MAX));
+					vkResetFences(vulkan.device, 1, &*frame.m_fence);
 				}
 				
 #ifdef MCR_DEBUG
 				profilingData = frame.m_profiler.GetData(lastFrameTime);
 				currentFrameProfiler->NewFrame();
 #endif
+			}
+			else
+			{
+				frame.m_hasSubmittedOnce = true;
 			}
 			
 			ProcessVulkanDestroyList();
