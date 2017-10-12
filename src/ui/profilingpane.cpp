@@ -40,9 +40,22 @@ namespace MCR
 		
 		glm::vec2 pos = m_position + glm::vec2(0, titleHeight);
 		
-		RenderPane(pos, "Current Frame", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
+		std::ostringstream topTextStream;
+		topTextStream << "Frame Time: " << profilingData.GetFrameTime().count() << "ms\n";
+		topTextStream << "FPS: " << (1000.0f / profilingData.GetFrameTime().count()) << "Hz";
+		const std::string topText = topTextStream.str();
+		
+		pos.y += m_contentsList.AddText(Font::GetStandardDev(), topText, pos + glm::vec2(5.0f), glm::vec4(1.0f),
+		                                TextPosX::Right, TextPosY::Below).y + 10.0f;
+		
+		RenderPane(pos, "Current Frame (CPU)", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
 		{
-			RenderPane_CurrentFrame(devControls, profilingData);
+			RenderPane_CurrentFrame(devControls, profilingData, TimerTypes::CPU);
+		});
+		
+		RenderPane(pos, "Current Frame (GPU)", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
+		{
+			RenderPane_CurrentFrame(devControls, profilingData, TimerTypes::GPU);
 		});
 		
 		RenderPane(pos, "Graphs", inputState, m_graphsPaneOpen, [&] (DevControls& devControls)
@@ -169,7 +182,8 @@ namespace MCR
 		pos.y += headerHeight + margin;
 	}
 	
-	void ProfilingPane::RenderPane_CurrentFrame(DevControls& devControls, const ProfilingData& profilingData)
+	void ProfilingPane::RenderPane_CurrentFrame(DevControls& devControls, const ProfilingData& profilingData,
+	                                            TimerTypes timerType)
 	{
 		std::ostringstream labelStream;
 		labelStream << std::fixed << std::setprecision(4);
@@ -177,18 +191,11 @@ namespace MCR
 		std::for_each(profilingData.DurationsBegin(), profilingData.DurationsEnd(),
 		              [&] (const ProfilingData::Duration& duration)
 		{
-			labelStream << duration.m_name << ": " << duration.m_duration.count() << "ms";
-			
-			if (duration.m_type == TimerTypes::CPU)
-				labelStream << " [CPU]";
-			else
-				labelStream << " [GPU]";
-			
-			labelStream << "\n";
+			if (duration.m_type == timerType)
+			{
+				labelStream << duration.m_name << ": " << duration.m_duration.count() << "ms\n";
+			}
 		});
-		
-		labelStream << "Frame Time: " << profilingData.GetFrameTime().count() << "ms\n";
-		labelStream << "FPS: " << (1000.0f / profilingData.GetFrameTime().count()) << "Hz";
 		
 		std::string labelString = labelStream.str();
 		devControls.Label(labelString);

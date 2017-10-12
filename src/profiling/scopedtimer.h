@@ -7,7 +7,7 @@
 
 #include "frameprofiler.h"
 
-#define MCR_SCOPED_TIMER(id, desc) ScopedTimer _t ## id(desc);
+#define MCR_SCOPED_TIMER(id, desc) ScopedTimer _t ## id(desc)
 
 namespace MCR
 {

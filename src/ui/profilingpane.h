@@ -52,7 +52,7 @@ namespace MCR
 		
 		void RenderPaneHeader(UIDrawList& drawList, const MCR::InputState& inputState, glm::vec2& pos, std::string_view name, bool& open);
 		
-		void RenderPane_CurrentFrame(class DevControls& devControls, const ProfilingData& profilingData);
+		void RenderPane_CurrentFrame(class DevControls& devControls, const ProfilingData& profilingData, TimerTypes timerType);
 		void RenderPane_Graphs(class DevControls& devControls);
 		
 		static constexpr size_t NumFramesToKeep = 200;

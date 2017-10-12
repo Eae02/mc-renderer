@@ -111,7 +111,7 @@ namespace MCR
 		m_shadowRenderList.Begin();
 		
 		{
-			MCR_SCOPED_TIMER(0, "Render List Fill")
+			MCR_SCOPED_TIMER(0, "Render List Fill");
 			
 			if (m_enableOcclusionCulling)
 			{
@@ -131,18 +131,25 @@ namespace MCR
 		}
 		
 		{
-			MCR_SCOPED_TIMER(0, "Render List End")
+			MCR_SCOPED_TIMER(0, "Render List End");
 			m_chunkRenderList.End(cb);
 			m_shadowRenderList.End(cb);
 		}
 		
 		{
-			MCR_SCOPED_TIMER(0, "Shadow record")
+			MCR_SCOPED_TIMER(0, "Shadow record");
+			
+			uint32_t gpuTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, "Shadow Render");
+			
 			m_shadowMapper.Render(cb, m_shadowRenderList);
+			
+			EndGPUTimer(cb, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, gpuTimer);
 		}
 		
 		{
-			MCR_SCOPED_TIMER(0, "Render pass record")
+			MCR_SCOPED_TIMER(0, "Render pass record");
+			
+			uint32_t gpuTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, "Main Render");
 			
 			VkRect2D renderArea;
 			VkViewport viewport;
@@ -182,6 +189,8 @@ namespace MCR
 			}
 			
 			cb.EndRenderPass();
+			
+			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, gpuTimer);
 		}
 		
 		if (frameIndex % 16 == 0)

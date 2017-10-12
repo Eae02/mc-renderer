@@ -50,7 +50,7 @@ namespace MCR
 	void UpdateGame(float dt, const InputState& inputState)
 	{
 		{
-			MCR_SCOPED_TIMER(0, "World Update")
+			MCR_SCOPED_TIMER(0, "World Update");
 			worldManager->Update(dt, inputState);
 		}
 		
@@ -215,7 +215,7 @@ namespace MCR
 			if (frame.m_hasSubmittedOnce)
 			{
 				{
-					MCR_SCOPED_TIMER(0, "GPU sync")
+					MCR_SCOPED_TIMER(0, "GPU sync");
 					CheckResult(vkWaitForFences(vulkan.device, 1, &*frame.m_fence, true, UINT64_MAX));
 					vkResetFences(vulkan.device, 1, &*frame.m_fence);
 				}
@@ -233,7 +233,7 @@ namespace MCR
 			ProcessVulkanDestroyList();
 			
 			{
-				MCR_SCOPED_TIMER(0, "Render")
+				MCR_SCOPED_TIMER(0, "Render");
 				renderer.Render({ timeF, &timeManager });
 			}
 			
@@ -242,7 +242,7 @@ namespace MCR
 #endif
 			
 			{
-				MCR_SCOPED_TIMER(0, "UI Render")
+				MCR_SCOPED_TIMER(0, "UI Render");
 				uiGraphicsContext.Draw(uiDrawList, framebuffer);
 			}
 			
@@ -269,7 +269,7 @@ namespace MCR
 			};
 			
 			{
-				MCR_SCOPED_TIMER(0, "Submit")
+				MCR_SCOPED_TIMER(0, "Submit");
 				vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, *frame.m_fence);
 			}
 			
