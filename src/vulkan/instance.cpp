@@ -3,6 +3,7 @@
 #include "vkutils.h"
 #include "swapchain.h"
 #include "../utils.h"
+#include "../arguments.h"
 
 #include <SDL2/SDL_vulkan.h>
 #include <gsl/span>
@@ -148,7 +149,7 @@ namespace MCR
 			return false;
 		}
 		
-		if (!familiesFound[QUEUE_FAMILY_TRANSFER])
+		if (!familiesFound[QUEUE_FAMILY_TRANSFER] || Arguments::noBackgroundTransfer)
 		{
 			queueFamiliesOut[QUEUE_FAMILY_TRANSFER] = queueFamiliesOut[QUEUE_FAMILY_GRAPHICS];
 		}
@@ -187,6 +188,9 @@ namespace MCR
 	inline std::vector<const char*> GetSupportedValidationLayers()
 	{
 		std::vector<const char*> supportedLayers;
+		
+		if (Arguments::noValidation)
+			return supportedLayers;
 		
 #ifdef MCR_DEBUG
 		// ** Enumerates validation layers **

@@ -42,7 +42,6 @@ void main()
 	else
 	{
 		vec3 nmNormal = (texture(blocksTexture, textureCoord_in.xyw).rgb * (255.0 / 128.0)) - vec3(1.0);
-		//vec3 nmNormal = vec3(nmNormalXY, sqrt(1.0 - nmNormalXY.x * nmNormalXY.x - nmNormalXY.y * nmNormalXY.y));
 		materialData.normal = normalize(tbnMatrix_in * nmNormal);
 	}
 	
@@ -59,5 +58,6 @@ void main()
 		color_out *= shadowFactor;
 	}
 	
+	//Ambient approximation
 	color_out += vec3(0.05) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 }

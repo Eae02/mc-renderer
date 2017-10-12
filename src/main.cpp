@@ -5,6 +5,7 @@
 
 #include "game.h"
 #include "utils.h"
+#include "arguments.h"
 #include "vulkan/instance.h"
 #include "rendering/shaders/shadermodules.h"
 #include "rendering/setlayouts.h"
@@ -20,8 +21,10 @@
 constexpr int WindowWidth = 1400;
 constexpr int WindowHeight = 800;
 
-int main()
+int main(int argc, char** argv)
 {
+	MCR::Arguments::Parse(argc, argv);
+	
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		std::cerr << SDL_GetError() << "\n";
