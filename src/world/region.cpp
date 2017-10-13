@@ -10,7 +10,7 @@ namespace MCR
 	constexpr int Region::BlockCount;
 	constexpr size_t Region::DataBufferBytes;
 	
-	void Region::Deserialize(const char* data)
+	void Region::Deserialize(const void* data)
 	{
 		const uint8_t* blockIds = reinterpret_cast<const uint8_t*>(data);
 		const uint8_t* blockData = reinterpret_cast<const uint8_t*>(data) + BlockCount;
@@ -22,7 +22,7 @@ namespace MCR
 		}
 	}
 	
-	void Region::Serialize(char* data) const
+	void Region::Serialize(void* data) const
 	{
 		uint8_t* blockIds = reinterpret_cast<uint8_t*>(data);
 		uint8_t* blockData = reinterpret_cast<uint8_t*>(data) + BlockCount;

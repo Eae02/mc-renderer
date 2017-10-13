@@ -44,13 +44,13 @@ namespace MCR
 		inline void AddVertex(glm::vec3 position, glm::vec3 normal, glm::vec3 tangent, glm::vec2 texCoord,
 		                      int albedoLayer, int normalLayer, float roughness, float bendiness = 0.0f)
 		{
-			m_vertices.emplace_back();
-			m_vertices.back().m_position = position;
-			m_vertices.back().m_roughness = roughness;
-			m_vertices.back().m_bendiness = bendiness;
-			m_vertices.back().m_normal = normal;
-			m_vertices.back().m_tangent = tangent;
-			m_vertices.back().m_texCoord = glm::vec4(texCoord, albedoLayer, normalLayer);
+			Vertex& vertex = m_vertices.emplace_back();
+			vertex.m_position = position;
+			vertex.m_roughness = roughness;
+			vertex.m_bendiness = bendiness;
+			vertex.m_normal = normal;
+			vertex.m_tangent = tangent;
+			vertex.m_texCoord = glm::vec4(texCoord, albedoLayer, normalLayer);
 		}
 		
 		void FillUploadBuffer(void* memory) const;

@@ -71,6 +71,13 @@ namespace MCR
 			}
 		}
 		
+		inline VkType Release()
+		{
+			VkType resource = m_resource;
+			m_resource = VK_NULL_HANDLE;
+			return resource;
+		}
+		
 		inline VkType* GetCreateAddress()
 		{
 			Reset();

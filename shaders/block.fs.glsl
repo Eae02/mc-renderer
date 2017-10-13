@@ -19,7 +19,7 @@ layout(location=0) in vec4 worldPosAndRoughness_in;
 layout(location=1) in vec4 textureCoord_in;
 layout(location=2) in mat3 tbnMatrix_in;
 
-layout(location=0) out vec3 color_out;
+layout(location=0) out vec4 color_out;
 
 void main()
 {
@@ -47,17 +47,17 @@ void main()
 	
 	vec3 F = calcFresnel(materialData, toEye);
 	
-	color_out = vec3(0);
+	color_out = vec4(0, 0, 0, 1);
 	
 	float shadowFactor = getShadowFactor(worldPos);
 	
 	if (shadowFactor > 0)
 	{
-		color_out += calcDirLightReflectance(renderSettings.sun, toEye, F, materialData);
-		color_out += calcDirLightReflectance(renderSettings.moon, toEye, F, materialData);
-		color_out *= shadowFactor;
+		color_out.rgb += calcDirLightReflectance(renderSettings.sun, toEye, F, materialData);
+		color_out.rgb += calcDirLightReflectance(renderSettings.moon, toEye, F, materialData);
+		color_out.rgb *= shadowFactor;
 	}
 	
 	//Ambient approximation
-	color_out += vec3(0.05) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
+	color_out.rgb += vec3(0.05) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 }

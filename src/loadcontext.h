@@ -11,27 +11,23 @@ namespace MCR
 {
 	class LoadContext
 	{
-		struct GenericResource
-		{
-			virtual ~GenericResource() { }
-		};
-		
-		template <typename ResourceTp>
-		struct Resource : public GenericResource
-		{
-			inline explicit Resource(ResourceTp resource)
-			    : m_resource(std::move(resource)) { }
-			
-			ResourceTp m_resource;
-		};
+		static constexpr size_t ResourceSize = 8;
 		
 	public:
 		LoadContext();
 		
 		template <typename ResourceTp>
-		inline void TakeResource(ResourceTp&& resource)
+		inline void TakeResource(VkHandle<ResourceTp> resource)
 		{
-			m_resources.push_back(std::make_unique<Resource<std::decay_t<ResourceTp>>>(std::move(resource)));
+			static_assert(sizeof(ResourceTp) <= ResourceSize, "LoadContext resource type is too large.");
+			
+			Resource& resourceEntry = m_resources.emplace_back();
+			
+			*reinterpret_cast<ResourceTp*>(resourceEntry.m_resource) = resource.Release();
+			resourceEntry.m_destroy = [] (const void* res)
+			{
+				DestroyVulkanObject(*reinterpret_cast<const ResourceTp*>(res));
+			};
 		}
 		
 		inline CommandBuffer& GetCB()
@@ -44,7 +40,13 @@ namespace MCR
 		void End();
 		
 	private:
-		std::vector<std::unique_ptr<GenericResource>> m_resources;
+		struct Resource
+		{
+			void(*m_destroy)(const void*);
+			std::byte m_resource[ResourceSize];
+		};
+		
+		std::vector<Resource> m_resources;
 		
 		VkHandle<VkCommandPool> m_commandPool;
 		

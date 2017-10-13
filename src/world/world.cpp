@@ -136,7 +136,7 @@ namespace MCR
 		RegionHeader header;
 		m_stream.read(reinterpret_cast<char*>(&header), sizeof(header));
 		
-		std::vector<char> inflatedRegionData(Region::DataBufferBytes);
+		std::vector<std::byte> inflatedRegionData(Region::DataBufferBytes);
 		
 		z_stream inflateStream = { };
 		inflateInit(&inflateStream);
@@ -256,7 +256,7 @@ namespace MCR
 			return m_numSections++;
 		};
 		
-		std::vector<char> inflatedData(Region::DataBufferBytes);
+		std::vector<std::byte> inflatedData(Region::DataBufferBytes);
 		region.Serialize(inflatedData.data());
 		
 		z_stream deflateStream = { };

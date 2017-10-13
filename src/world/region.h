@@ -95,8 +95,8 @@ namespace MCR
 		
 		ChunkConnectivity CalculateConnectivity(uint32_t chunkIndex) const;
 		
-		void Deserialize(const char* data);
-		void Serialize(char* data) const;
+		void Deserialize(const void* data);
+		void Serialize(void* data) const;
 		
 		static constexpr int Size = 32;
 		static constexpr int Height = 256;

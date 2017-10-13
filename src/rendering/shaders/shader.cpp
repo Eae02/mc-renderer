@@ -72,7 +72,7 @@ namespace MCR
 			/* polygonMode             */ VK_POLYGON_MODE_FILL,
 			/* cullMode                */ createInfo.cullMode,
 			/* frontFace               */ createInfo.frontFace,
-			/* depthBiasEnable         */ createInfo.enableDepthBias ? VK_TRUE : VK_FALSE,
+			/* depthBiasEnable         */ createInfo.enableDepthBias,
 			/* depthBiasConstantFactor */ createInfo.depthBiasConstantFactor,
 			/* depthBiasClamp          */ createInfo.depthBiasClamp,
 			/* depthBiasSlopeFactor    */ createInfo.depthBiasSlopeFactor,

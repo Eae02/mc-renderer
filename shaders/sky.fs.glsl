@@ -17,7 +17,7 @@ layout(binding=0) uniform RenderSettingsUB
 layout(binding=1) uniform sampler2D colorImage;
 layout(binding=2) uniform sampler2D depthImage;
 
-const float rayleighBrightness = 0.4;
+const float rayleighBrightness = 0.3;
 const float rayleighStrength = 5000;
 const float rayleighCollectionPower = 1.0005;
 const float rayleighCollectionScale = 0.002;
@@ -118,7 +118,7 @@ void main()
 		vec3 position = cameraPosition + eyeVector * sampleDistance;
 		float occlusion = mix(0.1, 1.0, getRayOcclusionAmount(position, -renderSettings.sun.direction, 0.8));
 		float sunSampleDepth = getAtmosphericTravelDistance(position, -renderSettings.sun.direction);
-		float moonSampleDepth = getAtmosphericTravelDistance(position, renderSettings.moon.direction);
+		float moonSampleDepth = getAtmosphericTravelDistance(position, -renderSettings.moon.direction);
 		
 		vec3 influx = calcAbsorbtion(sunSampleDepth, renderSettings.sun.radiance, scatterStrength) * occlusion;
 		

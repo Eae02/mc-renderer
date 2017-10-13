@@ -26,6 +26,10 @@ namespace MCR
 		
 		CheckResult(vkWaitForFences(vulkan.device, 1, &*fence, true, UINT64_MAX));
 		
+		for (const Resource& resource : m_resources)
+		{
+			resource.m_destroy(resource.m_resource);
+		}
 		m_resources.clear();
 	}
 }
