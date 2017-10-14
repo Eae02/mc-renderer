@@ -20,6 +20,9 @@ namespace MCR
 		inline const glm::vec3& GetLightDirection() const
 		{ return m_lightDirection; }
 		
+		inline const Frustum& GetFrustum(size_t cascade) const
+		{ return m_cascadeFrusta[cascade]; }
+		
 	private:
 		glm::vec3 m_lightDirection;
 		

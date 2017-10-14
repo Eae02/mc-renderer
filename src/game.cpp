@@ -151,7 +151,7 @@ namespace MCR
 					{
 						if (event.key.keysym.scancode == SDL_SCANCODE_F5)
 						{
-							renderer.CaptureVisibilityGraph();
+							renderer.CaptureShadowVolume();
 						}
 						else if (event.key.keysym.scancode == SDL_SCANCODE_F6)
 						{

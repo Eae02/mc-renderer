@@ -3,6 +3,9 @@
 #include <vector>
 #include <algorithm>
 #include <glm/glm.hpp>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 #include "swapchain.h"
 #include "vkhandle.h"
@@ -23,6 +26,19 @@ namespace MCR
 	bool CanUseFormat(VkFormat format, VkFormatFeatureFlags requiredFeatures, VkImageTiling tiling);
 	
 	void CheckResult(VkResult result);
+	
+	inline uint32_t CalculateMipLevels(uint32_t minResolution)
+	{
+#if defined(__GNUC__)
+		return 31 - __builtin_clz(minResolution);
+#elif defined(_MSC_VER)
+		unsigned long trailingZero;
+		_BitScanReverse(&trailingZero, value);
+		return 31 - trailingZero;
+#else
+#error "Unknown compiler"
+#endif
+	}
 	
 	inline void InitImageCreateInfo(VkImageCreateInfo& imageCreateInfo, VkImageType imageType, VkFormat format,
 	                                uint32_t width, uint32_t height, uint32_t depth = 1)
@@ -178,4 +194,6 @@ namespace MCR
 		
 		return semaphore;
 	}
+	
+	void CreateStagingBuffer(uint64_t size, VkBuffer* buffer, VmaAllocation* allocation, void** memory);
 }

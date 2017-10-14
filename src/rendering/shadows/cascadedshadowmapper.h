@@ -6,6 +6,7 @@
 #include "../constants.h"
 #include "../chunkvisibilitycalculator.h"
 #include "../chunkrenderlist.h"
+#include "shadowvolumemesh.h"
 #include "directionalshadowvolume.h"
 
 namespace MCR
@@ -24,6 +25,8 @@ namespace MCR
 		
 		inline VkDescriptorSet GetDescriptorSet() const
 		{ return *m_sampleDescriptorSet; }
+		
+		ShadowVolumeMesh GetSliceMesh(CommandBuffer& cb);
 		
 		inline const DirectionalShadowVolume& GetShadowVolume() const
 		{ return m_shadowVolume; }

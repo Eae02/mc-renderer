@@ -7,21 +7,6 @@
 #include <stb_image.h>
 #include <zip.h>
 
-#ifdef _MSC_VER
-#include <intrin.h>
-
-uint32_t __inline ctz(uint32_t value)
-{
-	unsigned long trailingZero;
-	_BitScanForward(&trailingZero, value);
-	return trailingZero;
-}
-#endif
-
-#ifdef __GNUC__
-#define ctz __builtin_ctz
-#endif
-
 namespace MCR
 {
 	std::unique_ptr<BlocksTextureManager> BlocksTextureManager::s_instance;
@@ -102,7 +87,7 @@ namespace MCR
 			}
 		}
 		
-		const uint32_t mipLevels = ctz(resolution);
+		const uint32_t mipLevels = CalculateMipLevels(resolution);
 		const uint64_t bytesPerLayer = resolution * resolution * 4;
 		
 		const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;

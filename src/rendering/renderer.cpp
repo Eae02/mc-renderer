@@ -107,6 +107,13 @@ namespace MCR
 		
 		m_shadowMapper.CalculateSlices(params.m_timeManager->GetShadowDirection(), viewProj, *m_worldManager);
 		
+		if (m_shouldCaptureShadowVolume)
+		{
+			m_shadowVolume = std::make_unique<ShadowVolumeMesh>(m_shadowMapper.GetShadowVolume(), cb);
+			m_frustumVolume = std::make_unique<ShadowVolumeMesh>(m_shadowMapper.GetSliceMesh(cb));
+			m_shouldCaptureShadowVolume = false;
+		}
+		
 		m_chunkRenderList.Begin();
 		m_shadowRenderList.Begin();
 		
@@ -182,11 +189,23 @@ namespace MCR
 			
 			if (m_visibilityGraph)
 			{
-				m_debugShader.Bind(cb);
+				m_debugShader.Bind(cb, Shader::BindModes::Default);
 				m_debugShader.SetColor(cb, glm::vec4(0.3f, 1.0f, 0.3f, 0.3f));
 				
 				m_visibilityGraph->Draw(cb);
 			}
+			
+			if (m_shadowVolume)
+			{
+				m_shadowVolume->Draw(cb, m_debugShader);
+			}
+			
+			if (m_frustumVolume)
+			{
+				m_frustumVolume->Draw(cb, m_debugShader);
+			}
+			
+			
 			
 			cb.EndRenderPass();
 			

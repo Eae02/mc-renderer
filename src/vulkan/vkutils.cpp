@@ -66,4 +66,23 @@ namespace MCR
 			throw std::runtime_error(errorMsg.str());
 		}
 	}
+	
+	void CreateStagingBuffer(uint64_t size, VkBuffer* buffer, VmaAllocation* allocation, void** memory)
+	{
+		const VmaMemoryRequirements memoryRequirements = 
+		{
+			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_MEMORY_USAGE_CPU_ONLY
+		};
+		
+		VkBufferCreateInfo bufferCreateInfo;
+		InitBufferCreateInfo(bufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, size);
+		
+		VmaAllocationInfo hostAllocationInfo;
+		
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &memoryRequirements,
+		                            buffer, allocation, &hostAllocationInfo));
+		
+		*memory = hostAllocationInfo.pMappedData;
+	}
 }

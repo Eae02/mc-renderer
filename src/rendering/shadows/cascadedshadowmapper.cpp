@@ -108,7 +108,7 @@ namespace MCR
 	    : m_renderPass(CreateRenderPass()), m_shader(*m_renderPass, shaderCreateInfo),
 	      m_renderDescriptorSet("BlockShaderShadow_Global"), m_sampleDescriptorSet("ShadowSample")
 	{
-		SetResolution(1024);
+		SetResolution(2048);
 		
 		// ** Creates the light matrices host buffer **
 		
@@ -225,15 +225,18 @@ namespace MCR
 		float nextSliceBeginES = -ZNear;
 		float nextSliceBeginPPS = 0;
 		
-		const float bias = 2;
+		const float bias = 25;
 		const float biasedN = bias * ZNear;
 		const float offset = ZNear - biasedN;
 		const float powBase = (shadowEndDist - offset) / biasedN;
+		const float linBias = 0.0f;
 		
 		for (uint32_t i = 0; i < DirLightCascades; i++)
 		{
 			float mul = (i + 1) / static_cast<float>(DirLightCascades);
-			float sliceEndES = -(biasedN * std::pow(powBase, mul) + offset);
+			float sliceEndESExp = -(biasedN * std::pow(powBase, mul) + offset);
+			float sliceEndESLin = -((shadowEndDist - offset) * mul + offset);
+			float sliceEndES = glm::mix(sliceEndESExp, sliceEndESLin, linBias);
 			
 			//Finds the slice end depth in post projection space
 			glm::vec4 sliceEndVecPPS = viewProj.m_proj * glm::vec4(0, 0, sliceEndES, 1);
@@ -244,15 +247,15 @@ namespace MCR
 			//The vertices which make up this slice, in post projection space
 			glm::vec3 verticesPostProj[] =
 			{
-				{ -1, -1, nextSliceBeginPPS },
-				{  1, -1, nextSliceBeginPPS },
 				{ -1,  1, nextSliceBeginPPS },
 				{  1,  1, nextSliceBeginPPS },
+				{  1, -1, nextSliceBeginPPS },
+				{ -1, -1, nextSliceBeginPPS },
 				
-				{ -1, -1, sliceEndPPS },
-				{  1, -1, sliceEndPPS },
 				{ -1,  1, sliceEndPPS },
-				{  1,  1, sliceEndPPS }
+				{  1,  1, sliceEndPPS },
+				{  1, -1, sliceEndPPS },
+				{ -1, -1, sliceEndPPS }
 			};
 			
 			//Transforms the frustum's vertices into world space
@@ -274,6 +277,10 @@ namespace MCR
 	glm::mat4 CascadedShadowMapper::GetCascadeProjectionMatrix(const glm::mat4& sliceMatrix,
 	                                                           const CascadedShadowMapper::FrustumSlice& slice)
 	{
+		float minX = std::numeric_limits<float>::infinity();
+		float minY = std::numeric_limits<float>::infinity();
+		float minZ = std::numeric_limits<float>::infinity();
+		
 		float maxX = -std::numeric_limits<float>::infinity();
 		float maxY = -std::numeric_limits<float>::infinity();
 		float maxZ = -std::numeric_limits<float>::infinity();
@@ -282,81 +289,27 @@ namespace MCR
 		{
 			glm::vec3 vertex(sliceMatrix * glm::vec4(slice.m_vertices[i], 1.0f));
 			
-			maxX = std::max(maxX, std::abs(vertex.x));
-			maxY = std::max(maxY, std::abs(vertex.y));
-			maxZ = std::max(maxZ, std::abs(vertex.z));
+			minX = std::min(minX, vertex.x);
+			minY = std::min(minY, vertex.y);
+			minZ = std::min(minZ, vertex.z);
+			
+			maxX = std::max(maxX, vertex.x);
+			maxY = std::max(maxY, vertex.y);
+			maxZ = std::max(maxZ, vertex.z);
 		}
-		
-		float volumeWidth = maxX * 2;
-		float volumeHeight = maxY * 2;
-		
-		glm::vec2 volumeMin(-maxX, -maxY);
-		glm::vec2 volumeMax(maxX, maxY);
-		
-		float texelSizeX = volumeWidth / static_cast<float>(m_resolution);
-		float texelSizeY = volumeHeight / static_cast<float>(m_resolution);
-		
-		volumeMin.x = std::floor(volumeMin.x / texelSizeX) * texelSizeX;
-		volumeMin.y = std::floor(volumeMin.y / texelSizeY) * texelSizeY;
-		
-		volumeMax.x = std::ceil(volumeMax.x / texelSizeX) * texelSizeX;
-		volumeMax.y = std::ceil(volumeMax.y / texelSizeY) * texelSizeY;
 		
 		return glm::translate(glm::mat4(1), { -1, -1, 0 }) *
-		       glm::scale(glm::mat4(1), { 2.0f / (volumeMax.x - volumeMin.x), 2.0f / (volumeMax.y - volumeMin.y), 0.5f / maxZ }) *
-		       glm::translate(glm::mat4(1), { -volumeMin.x, -volumeMin.y, maxZ }) * 
-		       glm::scale(glm::mat4(1), { 1, 1, 1 });
-	}
-	
-	glm::mat4 CascadedShadowMapper::GetTexelAlignMatrix(const glm::mat4& lightMatrix)
-	{
-		glm::mat4 inverse = glm::inverse(lightMatrix);
-		
-		//Three of the vertices of the near plane of the light volume, in post projection space.
-		glm::vec4 nearLightVolumeVerticesPPS[] =
-		{
-			{ -1, -1, 0, 1 },
-			{  1, -1, 0, 1 },
-			{ -1,  1, 0, 1 }
-		};
-		
-		//Transforms the near plane vertices to world space.
-		glm::vec3 nearLightVolumeVerticesWS[3];
-		for (int i = 0; i < 3; i++)
-		{
-			glm::vec4 vertexWS4 = inverse * nearLightVolumeVerticesPPS[i];
-			nearLightVolumeVerticesWS[i] = glm::vec3(vertexWS4) / vertexWS4.w;
-		}
-		
-		glm::vec3 a = nearLightVolumeVerticesWS[1] - nearLightVolumeVerticesWS[0];
-		glm::vec3 b = nearLightVolumeVerticesWS[2] - nearLightVolumeVerticesWS[0];
-		
-		float volumeWidthWS = glm::length(a);
-		float volumeHeightWS = glm::length(b);
-		
-		a /= volumeWidthWS;
-		b /= volumeHeightWS;
-		
-		//The dimensions of a shadowmap texel, in world space
-		float worldTexelSizeX = volumeWidthWS / static_cast<float>(m_resolution);
-		float worldTexelSizeY = volumeHeightWS / static_cast<float>(m_resolution);
-		
-		float volumeX = glm::dot(a, nearLightVolumeVerticesWS[0]);
-		float volumeY = glm::dot(b, nearLightVolumeVerticesWS[0]);
-		
-		float nextMultipleX = std::floor(volumeX / worldTexelSizeX) * worldTexelSizeX;
-		float nextMultipleY = std::floor(volumeY / worldTexelSizeY) * worldTexelSizeY;
-		
-		return glm::translate(glm::mat4(1), a * (volumeX - nextMultipleX) + b * (volumeY - nextMultipleY));
+		       glm::scale(glm::mat4(1), { 2.0f / (maxX - minX), 2.0f / (maxY - minY), 1.0f / (maxZ - minZ) }) *
+		       glm::translate(glm::mat4(1), { -minX, -minY, -minZ });
 	}
 	
 	void CascadedShadowMapper::CalculateSlices(const glm::vec3& lightDirection, const ViewProjection& viewProjection,
 	                                           const WorldManager& worldManager)
 	{
-		const float shadowEndDist = 100;
+		const float shadowEndDist = 80;
 		
-		const glm::vec3 lightDirectionL = glm::cross(lightDirection, worldManager.GetCamera().GetForward());
-		const glm::mat3 rotationMatrix(lightDirectionL, glm::cross(lightDirectionL, lightDirection), lightDirection);
+		const glm::vec3 lightDirLeft = glm::cross(worldManager.GetCamera().GetForward(), lightDirection);
+		const glm::mat3 rotationMatrix(lightDirLeft, glm::cross(lightDirLeft, lightDirection), lightDirection);
 		const glm::mat4 rotationMatrixInv = glm::transpose(rotationMatrix);
 		
 		CalcFrustumSlices(viewProjection, shadowEndDist);
@@ -368,9 +321,7 @@ namespace MCR
 		for (uint32_t i = 0; i < DirLightCascades; i++)
 		{
 			//Calculates the light-space matrix for this cascade
-			glm::mat4 sliceMatrix = rotationMatrixInv * glm::translate(glm::mat4(1.0f), -m_frustumSlices[i].m_center);
-			lightMatrices[i] = GetCascadeProjectionMatrix(sliceMatrix, m_frustumSlices[i]) * sliceMatrix;
-			lightMatrices[i] = lightMatrices[i] * GetTexelAlignMatrix(lightMatrices[i]);
+			lightMatrices[i] = GetCascadeProjectionMatrix(rotationMatrixInv, m_frustumSlices[i]) * rotationMatrixInv;
 			
 			m_shadowInfoMemory[frameQueueIndex].m_sliceEndDepths[i] = glm::vec4(m_frustumSlices[i].m_endDepth);
 			
@@ -435,5 +386,21 @@ namespace MCR
 		shadowRenderList.Render(commandBuffer);
 		
 		commandBuffer.EndRenderPass();
+	}
+	
+	ShadowVolumeMesh CascadedShadowMapper::GetSliceMesh(CommandBuffer& cb)
+	{
+		std::array<glm::vec3, DirLightCascades * 8> positions;
+		
+		glm::vec3* positionsOut = positions.data();
+		for (const FrustumSlice& slice : m_frustumSlices)
+		{
+			for (const glm::vec3& vPosition : slice.m_vertices)
+			{
+				*(positionsOut++) = vPosition;
+			}
+		}
+		
+		return ShadowVolumeMesh(positions.data(), cb);
 	}
 }

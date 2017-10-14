@@ -42,6 +42,8 @@ namespace MCR
 		RegionCoordinate m_centerRegion;
 		int m_lastRegionTableSize = 0;
 		
+		float m_maxDistToVisibleChunk;
+		
 		std::unique_ptr<FillQueueEntry[]> m_fillQueue;
 		size_t m_fillQueueSize;
 		

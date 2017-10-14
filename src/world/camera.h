@@ -16,9 +16,19 @@ namespace MCR
 			return m_position;
 		}
 		
-		inline const glm::vec3& GetForward() const
+		inline glm::vec3 GetForward() const
 		{
-			return m_forward;
+			return m_rotationMatrix[2];
+		}
+		
+		inline glm::vec3 GetLeft() const
+		{
+			return m_rotationMatrix[0];
+		}
+		
+		inline glm::vec3 GetUp() const
+		{
+			return m_rotationMatrix[1];
 		}
 		
 		inline const glm::mat4& GetViewMatrix() const
@@ -36,8 +46,6 @@ namespace MCR
 		glm::vec2 m_rotation;
 		
 		glm::vec3 m_velocity;
-		
-		glm::vec3 m_forward;
 		
 		glm::mat4 m_invRotationMatrix;
 		glm::mat4 m_rotationMatrix;

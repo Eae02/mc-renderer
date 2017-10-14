@@ -10,6 +10,7 @@
 #include "postprocessor.h"
 #include "chunkvisibilitycalculator.h"
 #include "shadows/cascadedshadowmapper.h"
+#include "shadows/shadowvolumemesh.h"
 
 namespace MCR
 {
@@ -68,6 +69,11 @@ namespace MCR
 			m_shouldCaptureVisibilityGraph = true;
 		}
 		
+		inline void CaptureShadowVolume()
+		{
+			m_shouldCaptureShadowVolume = true;
+		}
+		
 		inline VkRenderPass GetRenderPass() const
 		{
 			return *m_renderPass;
@@ -100,6 +106,11 @@ namespace MCR
 		
 		BlockShader m_blockShader;
 		DebugShader m_debugShader;
+		
+		bool m_shouldCaptureShadowVolume = false;
+		std::unique_ptr<ShadowVolumeMesh> m_shadowVolume;
+		
+		std::unique_ptr<ShadowVolumeMesh> m_frustumVolume;
 		
 		std::unique_ptr<ChunkVisibilityGraph> m_visibilityGraph;
 		bool m_shouldCaptureVisibilityGraph = false;

@@ -61,7 +61,7 @@ float getShadowFactor(vec3 worldPosition)
 	vec3 sampleCoords = vec3(coords.xy / 2.0 + vec2(0.5), cascade);
 	
 	//if (usePCF)
-		return sampleShadowmapPcf(sampleCoords, coords.z);
+		//return sampleShadowmapPcf(sampleCoords, coords.z);
 	//return sampleVarianceMap(sampleShadowmap(sampleCoords, vec2(0.0)), compare);
 	
 	return texture(shadowMap, vec4(sampleCoords, coords.z));

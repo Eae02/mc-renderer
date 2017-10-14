@@ -9,7 +9,7 @@ namespace MCR
 	public:
 		DebugShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
-		void Bind(CommandBuffer& cb) const;
+		void Bind(CommandBuffer& cb, BindModes mode) const;
 		
 		void SetColor(CommandBuffer& cb, const glm::vec4& color) const;
 		

@@ -10,7 +10,7 @@ namespace MCR
 	BlockType BlockType::s_blockTypes[256];
 	
 	BlockType::BlockType()
-	    : m_initialized(false), m_opaque(true), m_roughness(1.0f)
+	    : m_initialized(false), m_roughness(1.0f), m_opaque(true)
 	{
 		std::fill(MAKE_RANGE(m_albedoTextureIndices), -1);
 	}
