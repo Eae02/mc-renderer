@@ -29,7 +29,8 @@ namespace MCR
 		{ "log_spruce" },
 		{ "log_spruce_top" },
 		{ "leaves_oak", true },
-		{ "leaves_spruce", true }
+		{ "leaves_spruce", true },
+		{ "leaves_spruce_opaque", true }
 	};
 	
 	const gsl::span<const BlockTextureDesc> GetBlockTexturesList()

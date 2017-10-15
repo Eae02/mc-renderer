@@ -1,0 +1,10 @@
+{
+	"id": 25,
+	"name": "Spruce Leaves",
+	"roughness": 0.7,
+	"bendiness": 0.3,
+	"opaque": false,
+	"texture": {
+		"all": "leaves_spruce"
+	}
+}

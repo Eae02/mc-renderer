@@ -1,0 +1,11 @@
+{
+	"id": 1,
+	"name": "Grass",
+	"roughness": 0.8,
+	"texture": {
+		"+y": "grass_top",
+		"-y": "dirt",
+		"x": "grass_side",
+		"z": "grass_side"
+	}
+}

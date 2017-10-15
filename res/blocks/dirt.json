@@ -1,0 +1,8 @@
+{
+	"id": 2,
+	"name": "Dirt",
+	"roughness": 0.8,
+	"texture": {
+		"all": "dirt"
+	}
+}

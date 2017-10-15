@@ -1,0 +1,8 @@
+{
+	"id": 7,
+	"name": "Gold Ore",
+	"roughness": 0.5,
+	"texture": {
+		"all": "gold_ore"
+	}
+}

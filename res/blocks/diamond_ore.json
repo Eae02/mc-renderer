@@ -1,0 +1,8 @@
+{
+	"id": 8,
+	"name": "Diamond Ore",
+	"roughness": 0.5,
+	"texture": {
+		"all": "diamond_ore"
+	}
+}

@@ -13,12 +13,11 @@ namespace MCR
 	class BlockType
 	{
 	public:
-		BlockType();
+		BlockType() = default;
 		
-		static void Register(uint8_t id, std::string name, const BlockTexConfig& texturesConfig,
-		                     float roughness, bool opaque = true, float bendiness = 0.0f);
+		static void RegisterJSON(const nlohmann::json& json);
 		
-		static void RegisterCustomMesh(uint8_t id, std::string name, std::unique_ptr<ICustomMeshProvider> meshProvider);
+		static void SetCustomMesh(uint8_t id, std::unique_ptr<ICustomMeshProvider> meshProvider);
 		
 		inline static BlockType& GetByID(uint8_t id)
 		{
@@ -71,19 +70,21 @@ namespace MCR
 		}
 		
 	private:
+		void Parse(const nlohmann::json& json);
+		
 		static void ThrowIfInitialized(uint8_t id);
 		
 		static BlockType s_blockTypes[256];
 		
 		std::unique_ptr<ICustomMeshProvider> m_customMeshProvider;
 		
-		float m_bendiness = 0.0f;
-		
-		bool m_initialized;
+		bool m_initialized = false;
 		std::string m_name;
+		
 		int m_albedoTextureIndices[6];
 		int m_normalTextureIndices[6];
-		float m_roughness;
-		bool m_opaque;
+		bool m_opaque = true;
+		float m_bendiness = 0.0f;
+		float m_roughness = 1.0f;
 	};
 }

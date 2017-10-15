@@ -1,0 +1,8 @@
+{
+	"id": 5,
+	"name": "Coal Ore",
+	"roughness": 0.5,
+	"texture": {
+		"all": "coal_ore"
+	}
+}

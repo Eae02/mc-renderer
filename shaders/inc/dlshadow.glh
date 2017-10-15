@@ -6,7 +6,7 @@
 #endif
 
 const int numCascades = 3;
-//layout(constant_id=2) const bool usePCF = false;
+layout(constant_id=0) const bool usePCF = true;
 
 layout(set=DLS_SET_INDEX, binding=0) uniform sampler2DArrayShadow shadowMap;
 
@@ -43,7 +43,7 @@ float sampleShadowmapPcf(vec3 coord, float compare)
 		{
 			vec2 offset = vec2(x, y) / vec2(textureSize(shadowMap, 0));
 			
-			blur += texture(shadowMap, vec4(coord + vec3(offset, 0), compare));
+			blur += texture(shadowMap, vec4(coord + vec3(offset * 0.5, 0), compare));
 		}
 	}
 	
@@ -60,12 +60,12 @@ float getShadowFactor(vec3 worldPosition)
 	vec3 coords = coords4.xyz / coords4.w;
 	vec3 sampleCoords = vec3(coords.xy / 2.0 + vec2(0.5), cascade);
 	
-	//if (usePCF)
-		//return sampleShadowmapPcf(sampleCoords, coords.z);
-	//return sampleVarianceMap(sampleShadowmap(sampleCoords, vec2(0.0)), compare);
+	if (usePCF)
+	{
+		return sampleShadowmapPcf(sampleCoords, coords.z);
+	}
 	
 	return texture(shadowMap, vec4(sampleCoords, coords.z));
-	//return sampleShadowmap(sampleCoords, vec2(0.0)) < coords.z ? 0.0 : 1.0;
 }
 
 #endif

@@ -1,0 +1,10 @@
+{
+	"id": 23,
+	"name": "Spruce Wood",
+	"roughness": 0.7,
+	"texture": {
+		"x": "log_spruce",
+		"z": "log_spruce",
+		"y": "log_spruce_top"
+	}
+}
