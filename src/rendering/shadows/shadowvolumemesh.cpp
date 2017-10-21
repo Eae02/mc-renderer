@@ -47,12 +47,12 @@ namespace MCR
 		}
 		
 		// ** Allocates the device buffer **
-		VmaMemoryRequirements memoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		VkBufferCreateInfo bufferCreateInfo;
 		InitBufferCreateInfo(bufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
 		                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize);
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &allocationCI,
 		                            m_buffer.GetCreateAddress(), m_allocation.GetCreateAddress(), nullptr));
 		
 		// ** Copies data to the device buffer **
@@ -100,12 +100,12 @@ namespace MCR
 		}
 		
 		// ** Allocates the device buffer **
-		VmaMemoryRequirements memoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		VkBufferCreateInfo bufferCreateInfo;
 		InitBufferCreateInfo(bufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
 		                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize);
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &allocationCI,
 		                            m_buffer.GetCreateAddress(), m_allocation.GetCreateAddress(), nullptr));
 		
 		// ** Copies data to the device buffer **

@@ -10,25 +10,31 @@ namespace MCR
 	ChunkBufferAllocator::DataPage::DataPage()
 	    : m_indexAllocationTracker(IndicesPerPage), m_vertexAllocationTracker(VerticesPerPage)
 	{
-		const VmaMemoryRequirements memoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		const VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
 		VkBufferCreateInfo vertexBufferCreateInfo;
 		InitBufferCreateInfo(vertexBufferCreateInfo, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
 		                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, VerticesPerPage * sizeof(Vertex));
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &vertexBufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &vertexBufferCreateInfo, &allocationCI,
 		                            m_vertexBuffer.GetCreateAddress(), m_vertexAllocation.GetCreateAddress(), nullptr));
 		
 		VkBufferCreateInfo indexBufferCreateInfo;
 		InitBufferCreateInfo(indexBufferCreateInfo, VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
 		                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, IndicesPerPage * sizeof(uint32_t));
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &indexBufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &indexBufferCreateInfo, &allocationCI,
 		                            m_indexBuffer.GetCreateAddress(), m_indexAllocation.GetCreateAddress(), nullptr));
 	}
 	
 	ChunkBufferAllocator::Allocation ChunkBufferAllocator::Allocate(uint64_t numIndices, uint64_t numVertices)
 	{
+		if (numIndices > IndicesPerPage || numVertices > VerticesPerPage)
+		{
+			Log("Too many vertices / indices. I:", numIndices, ", V:", numVertices);
+			std::exit(1);
+		}
+		
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
 	begin:
@@ -57,6 +63,7 @@ namespace MCR
 		}
 		
 		m_pages.emplace_back();
+		Log("Creating new chunk buffer page");
 		goto begin;
 	}
 	
@@ -134,6 +141,13 @@ namespace MCR
 				m_freedAllocationsInUse.pop_back();
 			}
 		}
+	}
+	
+	void ChunkBufferAllocator::ReleaseMemory()
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		m_pages.clear();
+		m_freedAllocationsInUse.clear();
 	}
 	
 	void ChunkBufferAllocator::FreeAllocationData(const ChunkBufferAllocator::Allocation::Data& allocation)

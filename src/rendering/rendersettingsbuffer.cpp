@@ -7,7 +7,7 @@ namespace MCR
 	RenderSettingsBuffer::RenderSettingsBuffer()
 	{
 		// ** Creates the device buffer **
-		const VmaMemoryRequirements deviceMemoryRequirements = 
+		const VmaAllocationCreateInfo deviceMemoryAllocationCI = 
 		{
 			0,
 			VMA_MEMORY_USAGE_GPU_ONLY
@@ -17,13 +17,13 @@ namespace MCR
 		InitBufferCreateInfo(deviceBufferCreateInfo, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
 		                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, sizeof(Data));
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceMemoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceMemoryAllocationCI,
 		                            m_deviceBuffer.GetCreateAddress(), m_deviceAllocation.GetCreateAddress(), nullptr));
 		
 		// ** Creates the host buffer **
-		const VmaMemoryRequirements hostMemoryRequirements = 
+		const VmaAllocationCreateInfo hostMemoryAllocationCI = 
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
@@ -33,7 +33,7 @@ namespace MCR
 		
 		VmaAllocationInfo hostAllocationInfo;
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostMemoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostMemoryAllocationCI,
 		                            m_hostBuffer.GetCreateAddress(), m_hostAllocation.GetCreateAddress(),
 		                            &hostAllocationInfo));
 		

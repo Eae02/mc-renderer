@@ -216,7 +216,7 @@ namespace MCR
 			{
 				{
 					MCR_SCOPED_TIMER(0, "GPU sync");
-					CheckResult(vkWaitForFences(vulkan.device, 1, &*frame.m_fence, true, UINT64_MAX));
+					WaitForFence(*frame.m_fence);
 					vkResetFences(vulkan.device, 1, &*frame.m_fence);
 				}
 				
@@ -283,17 +283,18 @@ namespace MCR
 			lastFrameTime = std::chrono::high_resolution_clock::now() - frameBeginTime;
 		}
 		
-		worldManager->SaveAll(true);
+		worldManager->SaveAll();
+		worldManager->WaitIdle();
 		
 		vkDeviceWaitIdle(vulkan.device);
 		
 		Font::DestroyStandard();
 		
-		ChunkBufferAllocator::s_instance.ReleaseMemory();
-		
 		worldManager = nullptr;
 		BlocksTextureManager::SetInstance(nullptr);
 		WindNoiseImage::SetInstance(nullptr);
+		
+		ChunkBufferAllocator::s_instance.ReleaseMemory();
 		
 		ClearVulkanDestroyList();
 	}

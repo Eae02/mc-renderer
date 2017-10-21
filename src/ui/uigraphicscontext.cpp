@@ -117,15 +117,15 @@ namespace MCR
 				InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				                     minBufferSize * SwapChain::GetImageCount());
 				
-				const VmaMemoryRequirements hostBufferMemRequirements = 
+				const VmaAllocationCreateInfo hostBufferAllocationCI = 
 				{
-					VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+					VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 					VMA_MEMORY_USAGE_CPU_ONLY
 				};
 				
 				VmaAllocationInfo hostAllocationInfo;
 				
-				CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostBufferMemRequirements,
+				CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostBufferAllocationCI,
 				                            m_hostBuffer.GetCreateAddress(), m_hostBufferAllocation.GetCreateAddress(),
 				                            &hostAllocationInfo));
 				
@@ -139,9 +139,9 @@ namespace MCR
 				InitBufferCreateInfo(deviceBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 				                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, minBufferSize);
 				
-				const VmaMemoryRequirements deviceBufferMemRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+				const VmaAllocationCreateInfo deviceBufferAllocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 				
-				CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceBufferMemRequirements,
+				CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceBufferAllocationCI,
 				                            m_deviceBuffer.GetCreateAddress(),
 				                            m_deviceBufferAllocation.GetCreateAddress(), nullptr));
 				

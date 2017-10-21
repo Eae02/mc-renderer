@@ -108,7 +108,7 @@ namespace MCR
 	    : m_renderPass(CreateRenderPass()), m_shader(*m_renderPass, shaderCreateInfo),
 	      m_renderDescriptorSet("BlockShaderShadow_Global"), m_sampleDescriptorSet("ShadowSample")
 	{
-		SetResolution(2048);
+		SetResolution(1024);
 		
 		// ** Creates the light matrices host buffer **
 		
@@ -116,14 +116,14 @@ namespace MCR
 		InitBufferCreateInfo(hostBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		                     sizeof(ShadowInfo) * SwapChain::GetImageCount());
 		
-		const VmaMemoryRequirements hostMemoryRequirements =
+		const VmaAllocationCreateInfo hostAllocationCI =
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
 		VmaAllocationInfo hostAllocationInfo;
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostMemoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostAllocationCI,
 		                            m_infoHostBuffer.GetCreateAddress(), m_infoHostAllocation.GetCreateAddress(),
 		                            &hostAllocationInfo));
 		
@@ -135,9 +135,9 @@ namespace MCR
 		InitBufferCreateInfo(deviceBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 		                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(ShadowInfo));
 		
-		const VmaMemoryRequirements deviceMemoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		const VmaAllocationCreateInfo deviceAllocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceMemoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceAllocationCI,
 		                            m_infoDeviceBuffer.GetCreateAddress(), m_infoDeviceAllocation.GetCreateAddress(),
 		                            nullptr));
 		
@@ -189,10 +189,10 @@ namespace MCR
 		imageCreateInfo.arrayLayers = DirLightCascades;
 		imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		
-		const VmaMemoryRequirements memoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		const VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
-		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &memoryRequirements,
-		                           m_shadowMap.GetCreateAddress(), m_shadowMapAllocation.GetCreateAddress(), nullptr));
+		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &allocationCI, m_shadowMap.GetCreateAddress(),
+		                           m_shadowMapAllocation.GetCreateAddress(), nullptr));
 		
 		VkImageViewCreateInfo imageViewCreateInfo;
 		InitImageViewCreateInfo(imageViewCreateInfo, *m_shadowMap, VK_IMAGE_VIEW_TYPE_2D_ARRAY, vulkan.depthFormat,

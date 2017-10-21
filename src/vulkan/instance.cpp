@@ -23,11 +23,6 @@ namespace MCR
 	void LoadInstanceVulkanFunctions(VkInstance instance);
 	void LoadDeviceVulkanFunctions(VkDevice device);
 	
-	static const char* theDeviceExtensions[] = 
-	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
-	
 	VulkanInstance vulkan;
 	
 	static std::unique_ptr<Queue> queueInstances[QUEUE_FAMILY_COUNT];
@@ -40,6 +35,9 @@ namespace MCR
 	                                             uint64_t srcObject, size_t location, int32_t msgCode,
 	                                             const char* pLayerPrefix, const char* pMsg, void* pUserData)
 	{
+		if (msgCode == 11 || msgCode == 12) //False positive when using dedicated allocation extension
+			return VK_FALSE;
+		
 		if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT || msgCode == 1)
 		{
 			Log(pLayerPrefix, "[", msgCode, "]: ", pMsg);
@@ -62,22 +60,13 @@ namespace MCR
 		std::vector<VkExtensionProperties> availableExtensions(numExtensions);
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, availableExtensions.data());
 		
-		//Checks if all required extensions are supported
-		for (const char* extension : theDeviceExtensions)
+		//Checks that the swapchain extension is supported
+		bool hasSwapChainExt = std::any_of(MAKE_RANGE(availableExtensions), [] (const VkExtensionProperties& properties)
 		{
-			bool supported = false;
-			for (const VkExtensionProperties& avExtension : availableExtensions)
-			{
-				if (std::strcmp(avExtension.extensionName, extension) == 0)
-				{
-					supported = true;
-					break;
-				}
-			}
-			
-			if (!supported)
-				return false;
-		}
+			return std::strcmp(properties.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0;
+		});
+		if (!hasSwapChainExt)
+			return false;
 		
 		VkPhysicalDeviceFeatures features = { };
 		vkGetPhysicalDeviceFeatures(device, &features);
@@ -387,13 +376,43 @@ namespace MCR
 			throw std::runtime_error("No supported depth format was found.");
 		}
 		
+		// ** Selects which device extensions to enable **
+		uint32_t numAvailableDeviceExtensions;
+		CheckResult(vkEnumerateDeviceExtensionProperties(vulkan.physicalDevice, nullptr, &numAvailableDeviceExtensions,
+		                                                 nullptr));
+		std::vector<VkExtensionProperties> availableDeviceExtensions(numAvailableDeviceExtensions);
+		CheckResult(vkEnumerateDeviceExtensionProperties(vulkan.physicalDevice, nullptr, &numAvailableDeviceExtensions,
+		                                                 availableDeviceExtensions.data()));
+		
+		std::vector<const char*> deviceExtensions;
+		
+		auto MaybeEnableExtension = [&] (const char* name)
+		{
+			bool supported = std::any_of(MAKE_RANGE(availableDeviceExtensions),
+			                             [&] (const VkExtensionProperties& properties)
+			{
+				return std::strcmp(properties.extensionName, name) == 0;
+			});
+			
+			if (supported)
+			{
+				deviceExtensions.push_back(name);
+			}
+			
+			return supported;
+		};
+		
+		MaybeEnableExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		bool hasDedicatedAllocation = MaybeEnableExtension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) &&
+		                              MaybeEnableExtension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+		
 		// ** Creates the logical device **
 		VkDeviceCreateInfo deviceCI = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 		deviceCI.queueCreateInfoCount = numQueueCreateInfos;
 		deviceCI.pQueueCreateInfos = queueCreateInfos;
 		deviceCI.pEnabledFeatures = &enabledFeatures;
-		deviceCI.ppEnabledExtensionNames = theDeviceExtensions;
-		deviceCI.enabledExtensionCount = 1;
+		deviceCI.ppEnabledExtensionNames = deviceExtensions.data();
+		deviceCI.enabledExtensionCount = gsl::narrow<uint32_t>(deviceExtensions.size());
 		
 		if (vkCreateDevice(vulkan.physicalDevice, &deviceCI, nullptr, &vulkan.device) != VK_SUCCESS)
 		{
@@ -431,9 +450,36 @@ namespace MCR
 			}
 		}
 		
+		VmaVulkanFunctions allocatorVulkanFunctions = { };
+		allocatorVulkanFunctions.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+		allocatorVulkanFunctions.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+		allocatorVulkanFunctions.vkAllocateMemory = vkAllocateMemory;
+		allocatorVulkanFunctions.vkFreeMemory = vkFreeMemory;
+		allocatorVulkanFunctions.vkMapMemory = vkMapMemory;
+		allocatorVulkanFunctions.vkUnmapMemory = vkUnmapMemory;
+		allocatorVulkanFunctions.vkBindBufferMemory = vkBindBufferMemory;
+		allocatorVulkanFunctions.vkBindImageMemory = vkBindImageMemory;
+		allocatorVulkanFunctions.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+		allocatorVulkanFunctions.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+		allocatorVulkanFunctions.vkCreateBuffer = vkCreateBuffer;
+		allocatorVulkanFunctions.vkDestroyBuffer = vkDestroyBuffer;
+		allocatorVulkanFunctions.vkCreateImage = vkCreateImage;
+		allocatorVulkanFunctions.vkDestroyImage = vkDestroyImage;
+		
 		VmaAllocatorCreateInfo allocatorCreateInfo = { };
 		allocatorCreateInfo.physicalDevice = vulkan.physicalDevice;
 		allocatorCreateInfo.device = vulkan.device;
+		allocatorCreateInfo.pVulkanFunctions = &allocatorVulkanFunctions;
+		
+		if (hasDedicatedAllocation)
+		{
+			allocatorVulkanFunctions.vkGetBufferMemoryRequirements2KHR = VK_GET_DEVICE_FUNCTION(vkGetBufferMemoryRequirements2KHR);
+			
+			allocatorVulkanFunctions.vkGetImageMemoryRequirements2KHR =  VK_GET_DEVICE_FUNCTION(vkGetImageMemoryRequirements2KHR);
+			
+			allocatorCreateInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+		}
+		
 		CheckResult(vmaCreateAllocator(&allocatorCreateInfo, &vulkan.allocator));
 		
 		SwapChain::Initialize();
@@ -445,8 +491,6 @@ namespace MCR
 		
 		SwapChain::Destroy();
 		
-		vmaDestroyAllocator(vulkan.allocator);
-		
 		for (int i = 0; i < QUEUE_FAMILY_COUNT; i++)
 		{
 			vulkan.queues[i] = nullptr;
@@ -454,9 +498,17 @@ namespace MCR
 			stdCommandPoolInstances[i].Reset();
 		}
 		
+		vmaDestroyAllocator(vulkan.allocator);
+		
 		vkDestroyDevice(vulkan.device, nullptr);
 		
 		vkDestroySurfaceKHR(vulkan.instance, vulkan.surface, nullptr);
+		
+#ifdef MCR_DEBUG
+		auto vkDestroyDebugReportCallbackEXT = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(
+		        vkGetInstanceProcAddr(vulkan.instance, "vkDestroyDebugReportCallbackEXT"));
+		vkDestroyDebugReportCallbackEXT(vulkan.instance, messageCallback, nullptr);
+#endif
 		
 		vkDestroyInstance(vulkan.instance, nullptr);
 	}

@@ -12,6 +12,8 @@ namespace MCR
 	public:
 		ChunkUploader();
 		
+		void WaitForCompletion();
+		
 		void BeginUploading(int64_t x, int64_t y, int64_t z, Region::ChunkConnectivity connectivity,
 		                    const class MeshBuilder& meshBuilder);
 		

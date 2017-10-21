@@ -9,8 +9,7 @@ namespace MCR
 	{
 		m_rendererFramebuffer.Reset();
 		
-		VmaMemoryRequirements memoryRequirements = { };
-		memoryRequirements.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		const VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
 		// ** Creates the color attachment image **
 		VkImageCreateInfo colorImageCreateInfo;
@@ -18,7 +17,7 @@ namespace MCR
 		colorImageCreateInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
 		                             VK_IMAGE_USAGE_SAMPLED_BIT;
 		
-		CheckResult(vmaCreateImage(vulkan.allocator, &colorImageCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateImage(vulkan.allocator, &colorImageCreateInfo, &allocationCI,
 		                           m_colorAttachment.m_image.GetCreateAddress(),
 		                           m_colorAttachment.m_allocation.GetCreateAddress(), nullptr));
 		
@@ -34,7 +33,7 @@ namespace MCR
 		InitImageCreateInfo(depthImageCreateInfo, VK_IMAGE_TYPE_2D, vulkan.depthFormat, width, height);
 		depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		
-		CheckResult(vmaCreateImage(vulkan.allocator, &depthImageCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateImage(vulkan.allocator, &depthImageCreateInfo, &allocationCI,
 		                           m_depthAttachment.m_image.GetCreateAddress(),
 		                           m_depthAttachment.m_allocation.GetCreateAddress(), nullptr));
 		

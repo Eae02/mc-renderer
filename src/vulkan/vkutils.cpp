@@ -69,9 +69,9 @@ namespace MCR
 	
 	void CreateStagingBuffer(uint64_t size, VkBuffer* buffer, VmaAllocation* allocation, void** memory)
 	{
-		const VmaMemoryRequirements memoryRequirements = 
+		const VmaAllocationCreateInfo allocationCI = 
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
@@ -80,7 +80,7 @@ namespace MCR
 		
 		VmaAllocationInfo hostAllocationInfo;
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &allocationCI,
 		                            buffer, allocation, &hostAllocationInfo));
 		
 		*memory = hostAllocationInfo.pMappedData;

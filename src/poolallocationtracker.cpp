@@ -79,11 +79,11 @@ namespace MCR
 			//Both a next and previous block exist.
 			
 			//Increases the span of the previous block to cover the freed block and the next block.
-			m_availableBlocks[prevBlockIndex].m_elementCount +=
-			        elementCount + m_availableBlocks[nextBlockIndex].m_elementCount;
+			m_availableBlocks[static_cast<size_t>(prevBlockIndex)].m_elementCount +=
+			        elementCount + m_availableBlocks[static_cast<size_t>(nextBlockIndex)].m_elementCount;
 			
 			//Removes the next block.
-			m_availableBlocks[nextBlockIndex] = m_availableBlocks.back();
+			m_availableBlocks[static_cast<size_t>(nextBlockIndex)] = m_availableBlocks.back();
 			m_availableBlocks.pop_back();
 		}
 		else if (prevBlockIndex != -1)

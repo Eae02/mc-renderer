@@ -13,9 +13,14 @@ namespace MCR
 		SetRenderDistance(8);
 	}
 	
+	void WorldManager::WaitIdle()
+	{
+		m_ioThread->WaitIdle();
+	}
+	
 	constexpr bool enableIO = false;
 	
-	void WorldManager::SaveAll(bool wait)
+	void WorldManager::SaveAll()
 	{
 		if (!enableIO)
 			return;
@@ -32,11 +37,6 @@ namespace MCR
 		}
 		
 		m_ioThread->EndRegistering();
-		
-		if (wait)
-		{
-			m_ioThread->WaitIdle();
-		}
 	}
 	
 	void WorldManager::SetRenderDistance(int renderDist)

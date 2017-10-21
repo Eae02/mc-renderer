@@ -1,5 +1,7 @@
 #include "chunkrenderlist.h"
 
+#include <gsl/gsl>
+
 namespace MCR
 {
 	void ChunkRenderList::Begin()
@@ -58,9 +60,9 @@ namespace MCR
 			const uint64_t bufferSize = m_numAllocatedCommands * sizeof(VkDrawIndexedIndirectCommand);
 			
 			// ** Allocates the host buffer **
-			const VmaMemoryRequirements hostBufferMemRequirements =
+			const VmaAllocationCreateInfo hostBufferAllocationCI =
 			{
-				VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+				VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 				VMA_MEMORY_USAGE_CPU_ONLY
 			};
 			
@@ -70,20 +72,20 @@ namespace MCR
 			
 			VmaAllocationInfo hostAllocationInfo;
 			
-			CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostBufferMemRequirements,
+			CheckResult(vmaCreateBuffer(vulkan.allocator, &hostBufferCreateInfo, &hostBufferAllocationCI,
 			                            m_hostCommandsBuffer.GetCreateAddress(),
 			                            m_hostCommandsAllocation.GetCreateAddress(), &hostAllocationInfo));
 			
 			m_hostCommandsMemory = reinterpret_cast<VkDrawIndexedIndirectCommand*>(hostAllocationInfo.pMappedData);
 			
 			// ** Allocates the device buffer **
-			const VmaMemoryRequirements deviceBufferMemRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+			const VmaAllocationCreateInfo deviceBufferAllocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 			
 			VkBufferCreateInfo deviceBufferCreateInfo;
 			InitBufferCreateInfo(deviceBufferCreateInfo, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
 			                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, bufferSize);
 			
-			CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceBufferMemRequirements,
+			CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceBufferAllocationCI,
 			                            m_deviceCommandsBuffer.GetCreateAddress(),
 			                            m_deviceCommandsAllocation.GetCreateAddress(), nullptr));
 		}
@@ -140,7 +142,7 @@ namespace MCR
 			
 			if (vulkan.limits.hasMultiDrawIndirect)
 			{
-				cb.DrawIndexedIndirect(*m_deviceCommandsBuffer, offset, group.m_meshes.size(),
+				cb.DrawIndexedIndirect(*m_deviceCommandsBuffer, offset, gsl::narrow<uint32_t>(group.m_meshes.size()),
 				                       sizeof(VkDrawIndexedIndirectCommand));
 				
 				offset += group.m_meshes.size() * sizeof(VkDrawIndexedIndirectCommand);

@@ -9,13 +9,13 @@ namespace MCR
 	
 	WindNoiseImage::WindNoiseImage(uint32_t size)
 	{
-		const VmaMemoryRequirements memoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		const VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
 		VkImageCreateInfo imageCreateInfo;
 		InitImageCreateInfo(imageCreateInfo, VK_IMAGE_TYPE_1D, VK_FORMAT_R32_SFLOAT, size, 1);
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		
-		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &memoryRequirements, m_image.GetCreateAddress(),
+		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &allocationCI, m_image.GetCreateAddress(),
 		                           m_imageAllocation.GetCreateAddress(), nullptr));
 		
 		VkImageViewCreateInfo imageViewCreateInfo;
@@ -30,9 +30,9 @@ namespace MCR
 		WindNoiseImage image(size);
 		
 		//Creates a staging buffer for noise values
-		const VmaMemoryRequirements bufferMemoryRequirements =
+		const VmaAllocationCreateInfo bufferAllocationCI =
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT, 
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT, 
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
@@ -42,7 +42,7 @@ namespace MCR
 		VkBuffer buffer;
 		VmaAllocation bufferAllocation;
 		VmaAllocationInfo bufferAllocationInfo;
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &bufferMemoryRequirements, &buffer,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &bufferAllocationCI, &buffer,
 		                            &bufferAllocation, &bufferAllocationInfo));
 		
 		float* bufferData = reinterpret_cast<float*>(bufferAllocationInfo.pMappedData);

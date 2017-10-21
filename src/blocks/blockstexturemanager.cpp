@@ -100,8 +100,8 @@ namespace MCR
 		imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
 		                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		
-		const VmaMemoryRequirements imageMemoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
-		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &imageMemoryRequirements,
+		const VmaAllocationCreateInfo imageAllocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &imageAllocationCI,
 		                           texturesManager.m_image.GetCreateAddress(),
 		                           texturesManager.m_imageAllocation.GetCreateAddress(), nullptr));
 		
@@ -112,15 +112,15 @@ namespace MCR
 		
 		VmaAllocation stagingBufferAllocation;
 		
-		const VmaMemoryRequirements stagingBufferMemoryRequirements =
+		const VmaAllocationCreateInfo stagingBufferAllocationCI =
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
 		VmaAllocationInfo stagingBufferAllocationInfo;
 		VkBuffer stagingBuffer;
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &stagingBufferCreateInfo, &stagingBufferMemoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &stagingBufferCreateInfo, &stagingBufferAllocationCI,
 		                            &stagingBuffer, &stagingBufferAllocation, &stagingBufferAllocationInfo));
 		
 		uint8_t* stagingBufferData = reinterpret_cast<uint8_t*>(stagingBufferAllocationInfo.pMappedData);

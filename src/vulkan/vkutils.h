@@ -40,6 +40,16 @@ namespace MCR
 #endif
 	}
 	
+	inline void WaitForFence(VkFence fence, uint64_t timeout = UINT64_MAX)
+	{
+		CheckResult(vkWaitForFences(vulkan.device, 1, &fence, VK_TRUE, timeout));
+	}
+	
+	inline void WaitForFences(gsl::span<const VkFence> fences, bool waitForAll = true, uint64_t timeout = UINT64_MAX)
+	{
+		CheckResult(vkWaitForFences(vulkan.device, fences.size(), fences.data(), waitForAll, timeout));
+	}
+	
 	inline void InitImageCreateInfo(VkImageCreateInfo& imageCreateInfo, VkImageType imageType, VkFormat format,
 	                                uint32_t width, uint32_t height, uint32_t depth = 1)
 	{

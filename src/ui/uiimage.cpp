@@ -23,16 +23,16 @@ namespace MCR
 		VmaAllocation stagingBufferAlloc;
 		VkBuffer stagingBuffer;
 		
-		const VmaMemoryRequirements stagingBufferMemoryRequirements =
+		const VmaAllocationCreateInfo stagingBufferAllocationCI =
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
 		VkBufferCreateInfo stagingBufferCreateInfo;
 		InitBufferCreateInfo(stagingBufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, numBytes);
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &stagingBufferCreateInfo, &stagingBufferMemoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &stagingBufferCreateInfo, &stagingBufferAllocationCI,
 		                            &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo));
 		
 		std::copy_n(memory, numBytes, reinterpret_cast<stbi_uc*>(stagingBufferAllocInfo.pMappedData));
@@ -82,9 +82,9 @@ namespace MCR
 		InitImageCreateInfo(imageCreateInfo, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, width, height);
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		
-		const VmaMemoryRequirements memoryRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		const VmaAllocationCreateInfo allocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
-		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &memoryRequirements, m_image.GetCreateAddress(),
+		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &allocationCI, m_image.GetCreateAddress(),
 		                           m_allocation.GetCreateAddress(), nullptr));
 		
 		// ** Creates the image view **

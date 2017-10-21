@@ -25,7 +25,9 @@ namespace MCR
 	public:
 		WorldManager();
 		
-		void SaveAll(bool wait);
+		void WaitIdle();
+		
+		void SaveAll();
 		
 		void SetRenderDistance(int renderDist);
 		

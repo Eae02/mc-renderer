@@ -65,9 +65,9 @@ namespace MCR
 		
 		std::vector<GlyphImage> layers;
 		
-		const VmaMemoryRequirements stagingBufferRequirements =
+		const VmaAllocationCreateInfo stagingBufferAllocationCI =
 		{
-			VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		
@@ -117,7 +117,7 @@ namespace MCR
 				
 				VmaAllocationInfo allocationInfo;
 				
-				CheckResult(vmaCreateBuffer(vulkan.allocator, &stagingBufferCreateInfo, &stagingBufferRequirements,
+				CheckResult(vmaCreateBuffer(vulkan.allocator, &stagingBufferCreateInfo, &stagingBufferAllocationCI,
 				                            &layers.back().m_stagingBuffer, &layers.back().m_stagingBufferAllocation,
 				                            &allocationInfo));
 				
@@ -139,8 +139,8 @@ namespace MCR
 		VkImage image;
 		VmaAllocation imageAllocation;
 		
-		const VmaMemoryRequirements imageRequirements = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
-		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &imageRequirements, &image,
+		const VmaAllocationCreateInfo imageAllocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
+		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &imageAllocationCI, &image,
 		                           &imageAllocation, nullptr));
 		
 		font.m_image = image;

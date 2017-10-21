@@ -1,19 +1,21 @@
 #include "chunkuploader.h"
 #include "meshbuilder.h"
 
+#include <vector>
+
 namespace MCR
 {
 	ChunkUploader::HostBuffer::HostBuffer(uint64_t size) : m_size(size), m_fence(CreateVkFence())
 	{
-		VmaMemoryRequirements memoryRequirements = { };
-		memoryRequirements.flags = VMA_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT;
-		memoryRequirements.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+		VmaAllocationCreateInfo allocationCI = { };
+		allocationCI.flags = VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT;
+		allocationCI.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 		
 		VmaAllocationInfo allocationInfo;
 		
 		VkBufferCreateInfo bufferCreateInfo;
 		InitBufferCreateInfo(bufferCreateInfo, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, size);
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &memoryRequirements,
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &bufferCreateInfo, &allocationCI,
 		                            m_buffer.GetCreateAddress(), m_allocation.GetCreateAddress(), &allocationInfo));
 		
 		m_memory = allocationInfo.pMappedData;
@@ -23,6 +25,18 @@ namespace MCR
 	    : m_commandPool(CreateCommandPool(QUEUE_FAMILY_TRANSFER, 0))
 	{
 		
+	}
+	
+	void ChunkUploader::WaitForCompletion()
+	{
+		std::vector<VkFence> fences(m_tasks.size());
+		
+		std::transform(MAKE_RANGE(m_tasks), fences.begin(), [&] (const Task& task)
+		{
+			return *task.m_hostBuffer.m_fence;
+		});
+		
+		WaitForFences(fences);
 	}
 	
 	void ChunkUploader::BeginUploading(int64_t x, int64_t y, int64_t z, Region::ChunkConnectivity connectivity,

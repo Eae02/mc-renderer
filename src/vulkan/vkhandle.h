@@ -58,7 +58,7 @@ namespace MCR
 		{
 			if (m_resource)
 			{
-				constexpr_if (DestroyTime == VkHandleDestroyTime::Instant)
+				if constexpr (DestroyTime == VkHandleDestroyTime::Instant)
 				{
 					DestroyVulkanObject(m_resource);
 				}

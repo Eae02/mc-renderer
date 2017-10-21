@@ -171,10 +171,10 @@ namespace MCR
 			numPipelines++;
 		}
 		
-		std::array<VkPipeline, 2> pipelinesOut;
+		VkPipeline pipelinesOut[] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
 		
 		CheckResult(vkCreateGraphicsPipelines(vulkan.device, VK_NULL_HANDLE, numPipelines, pipelineCreateInfos.data(),
-		                                      nullptr, pipelinesOut.data()));
+		                                      nullptr, pipelinesOut));
 		
 		m_pipeline = pipelinesOut[0];
 		m_wireframePipeline = pipelinesOut[1];

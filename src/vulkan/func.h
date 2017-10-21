@@ -16,3 +16,5 @@ inline namespace VKFunctions
 #undef VK_INSTANCE_LEVEL_FUNCTION
 #undef VK_DEVICE_LEVEL_FUNCTION
 }
+
+#define VK_GET_DEVICE_FUNCTION(name) reinterpret_cast<PFN_##name>(vkGetDeviceProcAddr(MCR::vulkan.device, #name))
