@@ -1,7 +1,9 @@
 #include "region.h"
 #include "../blocks/blocktype.h"
+#include "../blocks/ids.h"
 
 #include <stack>
+#include <algorithm>
 
 namespace MCR
 {
@@ -10,28 +12,29 @@ namespace MCR
 	constexpr int Region::BlockCount;
 	constexpr size_t Region::DataBufferBytes;
 	
-	void Region::Deserialize(const void* data)
+	void Region::ReadChunk(uint32_t index, std::istream& stream)
 	{
-		const uint8_t* blockIds = reinterpret_cast<const uint8_t*>(data);
-		const uint8_t* blockData = reinterpret_cast<const uint8_t*>(data) + BlockCount;
-		
-		for (size_t i = 0; i < BlockCount; i++)
-		{
-			m_blocks[i].m_id = blockIds[i];
-			m_blocks[i].m_data = blockData[i];
-		}
+		const uint32_t blocksPerChunk = Size * Size * Size;
+		stream.read(reinterpret_cast<char*>(&m_blocks[index * blocksPerChunk]),
+		            blocksPerChunk * sizeof(BlockEntry));
 	}
 	
-	void Region::Serialize(void* data) const
+	void Region::WriteChunk(uint32_t index, std::ostream& stream) const
 	{
-		uint8_t* blockIds = reinterpret_cast<uint8_t*>(data);
-		uint8_t* blockData = reinterpret_cast<uint8_t*>(data) + BlockCount;
+		const uint32_t blocksPerChunk = Size * Size * Size;
+		stream.write(reinterpret_cast<const char*>(&m_blocks[index * blocksPerChunk]),
+		             blocksPerChunk * sizeof(BlockEntry));
+	}
+	
+	bool Region::IsChunkAir(int y) const
+	{
+		if (m_opaquePerChunk[y] != 0)
+			return false;
 		
-		for (size_t i = 0; i < BlockCount; i++)
-		{
-			blockIds[i] = m_blocks[i].m_id;
-			blockData[i] = m_blocks[i].m_data;
-		}
+		const uint32_t blocksPerChunk = Size * Size * Size;
+		uint32_t basePos = y * blocksPerChunk;
+		return std::all_of(m_blocks.begin() + basePos, m_blocks.begin() + basePos + blocksPerChunk,
+		                   [&] (const BlockEntry& block) { return block.m_id == BlockIDs::Air; });
 	}
 	
 	void Region::Set(int locX, int locY, int locZ, Region::BlockEntry newEntry)
@@ -172,8 +175,8 @@ namespace MCR
 	
 	const uint16_t connectionIndices[6][6] = 
 	{
-		/*         +X  -X  +Y  -Y  +Z  -Z */
-		/* +X */ {  0,  1,  2,  3,  4,  5 },
+	    /*         +X  -X  +Y  -Y  +Z  -Z */
+	    /* +X */ {  0,  1,  2,  3,  4,  5 },
 		/* -X */ {  1,  0,  6,  7,  8,  9 },
 		/* +Y */ {  2,  6,  0, 10, 11, 12 },
 		/* -Y */ {  3,  7, 10,  0, 13, 14 },

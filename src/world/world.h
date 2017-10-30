@@ -15,10 +15,9 @@ namespace MCR
 	class World final
 	{
 	public:
-		~World();
+		World(const fs::path& dirPath);
 		
-		static std::unique_ptr<World> Load(const fs::path& path);
-		static std::unique_ptr<World> CreateNew(const fs::path& path);
+		void Save() const;
 		
 		bool HasRegion(int64_t x, int64_t z);
 		
@@ -27,29 +26,14 @@ namespace MCR
 		void SaveRegion(const Region& region);
 		
 	private:
-		static constexpr uint64_t SectionSize = 2048;
+		inline std::string GetRegionPath(int64_t x, int64_t z);
 		
-		explicit inline World(const fs::path& path, std::ios_base::openmode openMode = { })
-		    : m_stream(path, std::ios_base::in | std::ios_base::out | std::ios_base::binary | openMode),
-		      m_numSections(0) { }
-		
-		char m_ioBuffer[SectionSize];
-		
-		void SeekToSection(uint64_t sectionIndex);
-		
-		std::fstream m_stream;
-		
-		struct RegionEntry
-		{
-			int64_t m_x;
-			int64_t m_z;
-			uint64_t m_firstSection;
-		};
+		fs::path m_path;
 		
 		std::mutex m_regionsMutex;
-		std::vector<RegionEntry> m_regions;
+		std::vector<RegionCoordinate> m_regions;
 		
-		std::vector<uint64_t> m_availableSections;
-		size_t m_numSections;
+		glm::vec3 m_cameraPosition;
+		glm::vec2 m_cameraRotation;
 	};
 }

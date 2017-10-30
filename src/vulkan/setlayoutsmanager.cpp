@@ -38,10 +38,16 @@ namespace MCR
 			}
 		}
 		
-		std::vector<VkSampler> immutableSamplers(numImmutableSamplers);
-		VkSampler* nextImmutableSampler = immutableSamplers.data();
+		VkSampler* nextImmutableSampler = nullptr;
+		if (numImmutableSamplers > 0)
+		{
+			void* immutableSamplersMem = alloca(numImmutableSamplers * sizeof(VkSampler));
+			nextImmutableSampler = reinterpret_cast<VkSampler*>(immutableSamplersMem);
+		}
 		
-		std::vector<VkDescriptorSetLayoutBinding> vkBindings(bindings.size());
+		void* vkBindingsMem = alloca(bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+		VkDescriptorSetLayoutBinding* vkBindings = reinterpret_cast<VkDescriptorSetLayoutBinding*>(vkBindingsMem);
+		
 		const uint32_t bindingCount = gsl::narrow<uint32_t>(bindings.size());
 		
 		for (uint32_t i = 0; i < bindingCount; i++)
@@ -73,7 +79,7 @@ namespace MCR
 			/* pNext        */ nullptr,
 			/* flags        */ 0,
 			/* bindingCount */ bindingCount,
-			/* pBindings    */ vkBindings.data()
+			/* pBindings    */ vkBindings
 		};
 		
 		VkDescriptorSetLayout layout;

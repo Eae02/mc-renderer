@@ -34,11 +34,13 @@ namespace MCR
 	class Region
 	{
 	public:
+#pragma pack(push, 1)
 		struct BlockEntry
 		{
 			uint8_t m_id = 0;
 			uint8_t m_data = 0;
 		};
+#pragma pack(pop)
 		
 		class ChunkConnectivity
 		{
@@ -95,8 +97,10 @@ namespace MCR
 		
 		ChunkConnectivity CalculateConnectivity(uint32_t chunkIndex) const;
 		
-		void Deserialize(const void* data);
-		void Serialize(void* data) const;
+		bool IsChunkAir(int y) const;
+		
+		void ReadChunk(uint32_t index, std::istream& stream);
+		void WriteChunk(uint32_t index, std::ostream& stream) const;
 		
 		static constexpr int Size = 32;
 		static constexpr int Height = 256;

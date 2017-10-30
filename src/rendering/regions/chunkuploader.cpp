@@ -27,18 +27,6 @@ namespace MCR
 		
 	}
 	
-	void ChunkUploader::WaitForCompletion()
-	{
-		std::vector<VkFence> fences(m_tasks.size());
-		
-		std::transform(MAKE_RANGE(m_tasks), fences.begin(), [&] (const Task& task)
-		{
-			return *task.m_hostBuffer.m_fence;
-		});
-		
-		WaitForFences(fences);
-	}
-	
 	void ChunkUploader::BeginUploading(int64_t x, int64_t y, int64_t z, Region::ChunkConnectivity connectivity,
 	                                   const MeshBuilder& meshBuilder)
 	{
@@ -66,6 +54,19 @@ namespace MCR
 		vulkan.queues[QUEUE_FAMILY_TRANSFER]->Submit(1, &transferSubmitInfo, *hostBuffer.m_fence);
 		
 		m_tasks.push_back({ x, y, z, std::move(chunk), std::move(hostBuffer), std::move(commandBuffer) });
+	}
+	
+	void ChunkUploader::WaitIdle()
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		
+		if (m_tasks.empty())
+			return;
+		
+		VkFence* fences = reinterpret_cast<VkFence*>(alloca(m_tasks.size() * sizeof(VkFence)));
+		std::transform(MAKE_RANGE(m_tasks), fences, [&] (const Task& task) { return *task.m_hostBuffer.m_fence; });
+		
+		WaitForFences({ fences, gsl::narrow<int>(m_tasks.size()) });
 	}
 	
 	ChunkUploader::HostBuffer ChunkUploader::AllocateHostBuffer(uint64_t size)

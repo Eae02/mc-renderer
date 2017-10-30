@@ -115,7 +115,13 @@ namespace MCR
 		worldManager = std::make_unique<WorldManager>();
 		renderer.SetWorldManager(worldManager.get());
 		
-		worldManager->SetWorld(World::CreateNew(MCR::GetResourcePath() / "world"));
+		const fs::path worldPath = MCR::GetResourcePath() / "world";
+		if (!fs::exists(worldPath))
+		{
+			fs::create_directory(worldPath);
+		}
+		
+		worldManager->SetWorld(std::make_unique<World>(worldPath));
 		
 		while (true)
 		{

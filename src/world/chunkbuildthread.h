@@ -67,6 +67,11 @@ namespace MCR
 			m_uploader.IterateCompleted(callback);
 		}
 		
+		inline void WaitIdle()
+		{
+			m_uploader.WaitIdle();
+		}
+		
 	private:
 		void ThreadTarget();
 		

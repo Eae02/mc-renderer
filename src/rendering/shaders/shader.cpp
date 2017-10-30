@@ -7,16 +7,17 @@ namespace MCR
 {
 	Shader::Shader(VkRenderPass renderPass, const CreateInfo& createInfo)
 	{
-		std::vector<VkDescriptorSetLayout> dsLayouts(createInfo.setLayoutNames.size());
-		std::transform(MAKE_RANGE(createInfo.setLayoutNames), dsLayouts.begin(), &GetDescriptorSetLayout);
+		void* dsLayoytsMem = alloca(createInfo.setLayoutNames.size() * sizeof(VkDescriptorSetLayout));
+		VkDescriptorSetLayout* dsLayouts = reinterpret_cast<VkDescriptorSetLayout*>(dsLayoytsMem);
+		std::transform(MAKE_RANGE(createInfo.setLayoutNames), dsLayouts, &GetDescriptorSetLayout);
 		
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = 
 		{
 			/* sType                  */ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			/* pNext                  */ nullptr,
 			/* flags                  */ 0,
-			/* setLayoutCount         */ gsl::narrow<uint32_t>(dsLayouts.size()),
-			/* pSetLayouts            */ dsLayouts.data(),
+			/* setLayoutCount         */ gsl::narrow<uint32_t>(createInfo.setLayoutNames.size()),
+			/* pSetLayouts            */ dsLayouts,
 			/* pushConstantRangeCount */ gsl::narrow<uint32_t>(createInfo.pushConstantRanges.size()),
 			/* pPushConstantRanges    */ createInfo.pushConstantRanges.data()
 		};

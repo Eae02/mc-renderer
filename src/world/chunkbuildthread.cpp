@@ -14,7 +14,7 @@ namespace MCR
 		
 		m_thread.join();
 		
-		m_uploader.WaitForCompletion();
+		m_uploader.WaitIdle();
 	}
 	
 	void ChunkBuildThread::BuildSync(const Region& region, uint32_t chunkY, gsl::span<const Region*> neighbors,

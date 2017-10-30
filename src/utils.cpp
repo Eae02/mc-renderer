@@ -108,24 +108,24 @@ namespace MCR
 		if (checkAttachedToDebugger)
 		{
 #if defined(__linux__)
-			std::array<char, 1024> buffer;
+			//If a debugger is attached, the file "/proc/self/status" will contain a line with TracerPid
+			//followed by a non-zero process id.
 			
-			int statusFD = open("/proc/self/status", O_RDONLY);
-			if (statusFD == -1)
-				return false;
+			static const std::string_view tracerPIDString = "TracerPid:";
 			
-			long numRead = read(statusFD, buffer.data(), buffer.size() - 1);
+			std::ifstream stream("/proc/self/status");
 			
-			if (numRead > 0)
+			//Searches for a line containing "TracerPid:".
+			std::string line;
+			while (std::getline(stream, line))
 			{
-				static const char tracerPid[] = "TracerPid:";
-				char* tracerPidPos;
+				const size_t tracerPIDPos = std::string_view(line).find(tracerPIDString);
 				
-				buffer[numRead] = '\0';
-				tracerPidPos = std::strstr(buffer.data(), tracerPid);
-				if (tracerPidPos)
+				if (tracerPIDPos != std::string_view::npos)
 				{
-					isAttachedToDebugger = std::atoi(tracerPidPos + sizeof(tracerPid) - 1) != 0;
+					//Checks if the process id is non-zero.
+					isAttachedToDebugger = std::atoi(line.c_str() + tracerPIDPos + tracerPIDString.size()) != 0;
+					break;
 				}
 			}
 #elif defined(_WIN32)

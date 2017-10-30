@@ -13,31 +13,31 @@ namespace MCR
 		m_roughnessPerlin.SetLacunarity(2.0);
 		m_roughnessPerlin.SetPersistence(0.5);
 		m_roughnessPerlin.SetOctaveCount(2);
-		m_roughnessPerlin.SetNoiseQuality(noise::QUALITY_FAST);
+		m_roughnessPerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		m_heightPerlin.SetFrequency(1.0 / 4.0);
 		m_heightPerlin.SetLacunarity(2.0);
 		m_heightPerlin.SetPersistence(0.5);
 		m_heightPerlin.SetOctaveCount(4);
-		m_heightPerlin.SetNoiseQuality(noise::QUALITY_STD);
+		m_heightPerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		m_terracePerlin.SetFrequency(1.0 / 4.0);
 		m_terracePerlin.SetLacunarity(2.0);
 		m_terracePerlin.SetPersistence(0.5);
 		m_terracePerlin.SetOctaveCount(2);
-		m_terracePerlin.SetNoiseQuality(noise::QUALITY_STD);
+		m_terracePerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		m_flowerPerlin.SetFrequency(16);
 		m_flowerPerlin.SetLacunarity(2.0);
 		m_flowerPerlin.SetPersistence(0.5);
 		m_flowerPerlin.SetOctaveCount(2);
-		m_flowerPerlin.SetNoiseQuality(noise::QUALITY_FAST);
+		m_flowerPerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		m_fernPerlin.SetFrequency(16);
 		m_fernPerlin.SetLacunarity(2.0);
 		m_fernPerlin.SetPersistence(0.5);
 		m_fernPerlin.SetOctaveCount(2);
-		m_fernPerlin.SetNoiseQuality(noise::QUALITY_FAST);
+		m_fernPerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		for (noise::module::Perlin& cavePerlin : m_caveDirectionPerlin)
 		{
@@ -45,14 +45,14 @@ namespace MCR
 			cavePerlin.SetLacunarity(2.0);
 			cavePerlin.SetPersistence(0.8);
 			cavePerlin.SetOctaveCount(1);
-			cavePerlin.SetNoiseQuality(noise::QUALITY_FAST);
+			cavePerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		}
 		
 		m_caveRadiusPerlin.SetFrequency(16);
 		m_caveRadiusPerlin.SetLacunarity(2.0);
 		m_caveRadiusPerlin.SetPersistence(0.8);
 		m_caveRadiusPerlin.SetOctaveCount(1);
-		m_caveRadiusPerlin.SetNoiseQuality(noise::QUALITY_FAST);
+		m_caveRadiusPerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		SetSeed(0);
 	}
