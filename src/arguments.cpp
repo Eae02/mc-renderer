@@ -8,6 +8,7 @@ namespace Arguments
 {
 	bool noValidation = false;
 	bool noBackgroundTransfer = false;
+	bool noVkExtensions = false;
 	
 	void Parse(int argc, char** argv)
 	{
@@ -21,6 +22,11 @@ namespace Arguments
 			if (std::strcmp(argv[i], "--no-bkg-transfer") == 0)
 			{
 				noBackgroundTransfer = true;
+			}
+			
+			if (std::strcmp(argv[i], "--no-vk-ext") == 0)
+			{
+				noVkExtensions = true;
 			}
 		}
 	}

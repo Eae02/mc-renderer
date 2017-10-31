@@ -11,14 +11,35 @@ namespace MCR
 	public:
 		Framebuffer() = default;
 		
-		void Create(const class Renderer& renderer, const class UIGraphicsContext& uiGraphicsContext,
-		            gsl::span<const VkImage> outputImages, uint32_t width, uint32_t height);
+		struct RenderPasses
+		{
+			VkRenderPass m_renderer;
+			VkRenderPass m_godRays;
+			VkRenderPass m_ui;
+		};
+		
+		void Create(const RenderPasses& renderPasses, gsl::span<const VkImage> outputImages,
+		            uint32_t width, uint32_t height);
 		
 		inline VkFramebuffer GetRendererFramebuffer() const
-		{ return *m_rendererFramebuffer; }
+		{
+			return *m_rendererFramebuffer;
+		}
+		
+		inline VkFramebuffer GetGodRaysGenFramebuffer() const
+		{
+			return *m_godRaysGenFramebuffer;
+		}
+		
+		inline VkFramebuffer GetGodRaysBlurFramebuffer() const
+		{
+			return *m_godRaysBlurFramebuffer;
+		}
 		
 		inline VkFramebuffer GetOutputFramebuffer(size_t index) const
-		{ return *m_outputs[index].m_framebuffer; }
+		{
+			return *m_outputs[index].m_framebuffer;
+		}
 		
 		inline void GetViewportAndRenderArea(VkRect2D& renderArea, VkViewport& viewport) const
 		{
@@ -59,6 +80,16 @@ namespace MCR
 			return *m_depthAttachment.m_imageView;
 		}
 		
+		inline VkImageView GetUnblurredGodRaysImageView() const
+		{
+			return *m_unblurredGodRaysAttachment.m_imageView;
+		}
+		
+		inline VkImageView GetBlurredGodRaysImageView() const
+		{
+			return *m_blurredGodRaysAttachment.m_imageView;
+		}
+		
 	private:
 		struct Attachment
 		{
@@ -67,8 +98,13 @@ namespace MCR
 			VkHandle<VmaAllocation> m_allocation;
 		};
 		
+		static Attachment CreateColorAttachment(VkFormat format, uint32_t width, uint32_t height,
+		                                        VkImageUsageFlags extraUsageFlags = 0);
+		
 		Attachment m_colorAttachment;
 		Attachment m_depthAttachment;
+		Attachment m_unblurredGodRaysAttachment;
+		Attachment m_blurredGodRaysAttachment;
 		
 		struct OutputEntry
 		{
@@ -79,6 +115,8 @@ namespace MCR
 		std::vector<OutputEntry> m_outputs;
 		
 		VkHandle<VkFramebuffer> m_rendererFramebuffer;
+		VkHandle<VkFramebuffer> m_godRaysGenFramebuffer;
+		VkHandle<VkFramebuffer> m_godRaysBlurFramebuffer;
 		
 		uint32_t m_width;
 		uint32_t m_height;

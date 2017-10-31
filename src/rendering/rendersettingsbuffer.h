@@ -30,6 +30,8 @@ namespace MCR
 			float m_time;
 			DirLight m_sun;
 			DirLight m_moon;
+			glm::vec2 m_sunScreenPos;
+			glm::ivec2 m_screenSize;
 		};
 #pragma pack(pop)
 		

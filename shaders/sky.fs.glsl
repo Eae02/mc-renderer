@@ -3,6 +3,7 @@
 
 #include "inc/rendersettings.glh"
 #include "inc/depth.glh"
+#include "godrays-blur.glh"
 
 layout(location=0) in vec2 texCoord_in;
 layout(location=1) in vec3 eyeVector_in;
@@ -16,6 +17,7 @@ layout(binding=0) uniform RenderSettingsUB
 
 layout(binding=1) uniform sampler2D colorImage;
 layout(binding=2) uniform sampler2D depthImage;
+layout(binding=3) uniform sampler2D godRaysImage;
 
 const float rayleighBrightness = 0.3;
 const float rayleighStrength = 5000;
@@ -85,6 +87,11 @@ vec3 calcAbsorbtion(float dist, vec3 initialColor, float factor)
 	return initialColor - initialColor * pow(absorbtionProfile, vec3(factor / dist));
 }
 
+layout(push_constant) uniform PC
+{
+	float yPixelSize;
+} pc;
+
 void main()
 {
 	vec4 color = texture(colorImage, texCoord_in);
@@ -101,7 +108,7 @@ void main()
 	
 	float rayleighFactor = phase(alpha, -0.01) * rayleighBrightness;
 	float mieFactor = phase(alpha, mieDistribution) * mieBrightness;
-	float spotFactor = sky ? smoothstep(0.0, 15.0, phase(alpha, 0.9995)) * spotBrightness : 0;
+	//float spotFactor = sky ? smoothstep(0.0, 15.0, phase(alpha, 0.9995)) * spotBrightness : 0;
 	
 	float eyeDepth = min(linDepth * blockDepthScale * (atmosphereRadius / ZFar), getAtmosphericTravelDistance(cameraPosition, eyeVector));
 	float eyeRayOcc = sky ? getRayOcclusionAmount(cameraPosition, eyeVector, 0.85) : 1.0;
@@ -132,6 +139,9 @@ void main()
 	rayleighLight = (rayleighLight * eyeRayOcc * (pow(eyeDepth * rayleighCollectionScale, rayleighCollectionPower))) / float(sampleCount);
 	mieLight = (mieLight * eyeRayOcc * (pow(eyeDepth * mieCollectionScale, mieCollectionPower))) / float(sampleCount);
 	
-	color_out = color.rgb + mieLight * (spotFactor + mieFactor) + rayleighFactor * rayleighLight;
+	color_out = color.rgb + mieLight * mieFactor + rayleighFactor * rayleighLight;
+	
+	color_out += sampleAndBlurGodRays(godRaysImage, texCoord_in, vec2(0.0, pc.yPixelSize)) * renderSettings.sun.radiance;
+	
 	color_out = vec3(1.0) - exp(-exposure * color_out);
 }

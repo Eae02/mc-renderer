@@ -4,7 +4,7 @@ FLAGS=-V
 OUT_PATH=../res/spv
 
 SHADERS=block.vs block.fs block-shadow.vs block-shadow.gs block-shadow.fs debug.vs debug.fs sky.vs sky.fs ui.vs ui.fs \
-night-star.vs
+godrays.vs godrays-gen.fs godrays-hblur.fs
 HEADER_FILES=$(wildcard inc/*.glh)
 
 all: $(addsuffix .spv,$(addprefix $(OUT_PATH)/,$(SHADERS)))

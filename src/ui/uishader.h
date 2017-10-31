@@ -8,7 +8,7 @@ namespace MCR
 	{
 	public:
 		inline UIShader(VkRenderPass renderPass)
-		    : Shader(renderPass, s_createInfo) { }
+		    : Shader({ renderPass, 0 }, s_createInfo) { }
 		
 	private:
 		static const CreateInfo s_createInfo;

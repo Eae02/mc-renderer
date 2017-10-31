@@ -68,8 +68,8 @@ namespace MCR
 	
 	Renderer::Renderer()
 	    : m_renderPass(CreateRenderPass()), m_shadowMapper(m_renderSettingsBuffer.GetBufferInfo()),
-	      m_blockShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo()),
-	      m_debugShader(*m_renderPass, m_renderSettingsBuffer.GetBufferInfo())
+	      m_blockShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo()),
+	      m_debugShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo())
 	{
 		m_commandBuffers.reserve(SwapChain::GetImageCount());
 		for (uint32_t i = 0; i < SwapChain::GetImageCount(); i++)

@@ -105,7 +105,7 @@ namespace MCR
 	};
 	
 	CascadedShadowMapper::CascadedShadowMapper(const VkDescriptorBufferInfo& renderSettingsBufferInfo)
-	    : m_renderPass(CreateRenderPass()), m_shader(*m_renderPass, shaderCreateInfo),
+	    : m_renderPass(CreateRenderPass()), m_shader({ *m_renderPass, 0 }, shaderCreateInfo),
 	      m_renderDescriptorSet("BlockShaderShadow_Global"), m_sampleDescriptorSet("ShadowSample")
 	{
 		SetResolution(1024);

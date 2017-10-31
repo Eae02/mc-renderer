@@ -5,7 +5,7 @@
 
 namespace MCR
 {
-	Shader::Shader(VkRenderPass renderPass, const CreateInfo& createInfo)
+	Shader::Shader(RenderPassInfo renderPassInfo, const CreateInfo& createInfo)
 	{
 		void* dsLayoytsMem = alloca(createInfo.setLayoutNames.size() * sizeof(VkDescriptorSetLayout));
 		VkDescriptorSetLayout* dsLayouts = reinterpret_cast<VkDescriptorSetLayout*>(dsLayoytsMem);
@@ -154,11 +154,27 @@ namespace MCR
 			/* pColorBlendState    */ &colorBlendState,
 			/* pDynamicState       */ &dynamicState,
 			/* layout              */ *m_pipelineLayout,
-			/* renderPass          */ renderPass,
-			/* subpass             */ 0,
+			/* renderPass          */ renderPassInfo.m_renderPass,
+			/* subpass             */ renderPassInfo.m_subpass,
 			/* basePipelineHandle  */ VK_NULL_HANDLE,
 			/* basePipelineIndex   */ -1
 		};
+		
+		if (pipelineCreateInfos[0].pVertexInputState == nullptr)
+		{
+			static const VkPipelineVertexInputStateCreateInfo defaultVertexInputState = 
+			{
+				/* sType                           */ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+				/* pNext                           */ nullptr,
+				/* flags                           */ 0,
+				/* vertexBindingDescriptionCount   */ 0,
+				/* pVertexBindingDescriptions      */ nullptr,
+				/* vertexAttributeDescriptionCount */ 0,
+				/* pVertexAttributeDescriptions    */ nullptr
+			};
+			
+			pipelineCreateInfos[0].pVertexInputState = &defaultVertexInputState;
+		}
 		
 		if (createInfo.hasWireframeVariant)
 		{

@@ -60,6 +60,15 @@ namespace MCR
 		};
 	}
 	
+	glm::vec2 GetSunScreenPos(const ViewProjection& viewProj, const glm::vec3& toLight)
+	{
+		const glm::vec3 viewSpacePos = glm::normalize(glm::vec3(viewProj.m_view * glm::vec4(toLight, 0.0f)));
+		const glm::vec4 ndcPos = viewProj.m_proj * glm::vec4(viewSpacePos, 0.0f);
+		//invisible if ndcPos.z < 0
+		
+		return (glm::vec2(ndcPos) / ndcPos.w + glm::vec2(1.0f)) / 2.0f;
+	}
+	
 	void RenderSettingsBuffer::SetData(CommandBuffer& cb, const ViewProjection& viewProj,
 	                                   const glm::vec3& cameraPosition, float time, const TimeManager& timeManager)
 	{
@@ -69,6 +78,7 @@ namespace MCR
 		m_data[frameQueueIndex].m_time = time;
 		m_data[frameQueueIndex].m_sun = timeManager.GetSunDescription();
 		m_data[frameQueueIndex].m_moon = timeManager.GetMoonDescription();
+		m_data[frameQueueIndex].m_sunScreenPos = GetSunScreenPos(viewProj, m_data[frameQueueIndex].m_sun.m_direction);
 		
 		cb.CopyBuffer(*m_hostBuffer, *m_deviceBuffer, { sizeof(Data) * frameQueueIndex, 0, sizeof(Data) });
 		

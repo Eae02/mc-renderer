@@ -1,0 +1,21 @@
+#ifndef GODRAYS_BLUR_H
+#define GODRAYS_BLUR_H
+
+const float godRaysKernel[] = float[]
+(
+	0.000489, 0.002403, 0.009246, 0.02784, 0.065602, 0.120999, 0.174697, 0.197448, 0.174697, 0.120999, 0.065602, 0.02784, 0.009246, 0.002403, 0.000489
+);
+
+float sampleAndBlurGodRays(sampler2D inputSampler, vec2 texCoord, vec2 blurVector)
+{
+	float light = 0;
+	for (int i = 0; i < godRaysKernel.length(); i++)
+	{
+		vec2 sampleCoord = texCoord + blurVector * (i - godRaysKernel.length() / 2);
+		light += texture(inputSampler, sampleCoord).r * godRaysKernel[i];
+	}
+	
+	return light;
+}
+
+#endif

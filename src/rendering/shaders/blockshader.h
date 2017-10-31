@@ -7,7 +7,7 @@ namespace MCR
 	class BlockShader : public Shader
 	{
 	public:
-		BlockShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
+		BlockShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, BindModes mode) const;
 		

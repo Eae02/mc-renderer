@@ -53,6 +53,7 @@ namespace MCR
 	};
 	
 	const Samplers framebufferSamplers[] = { Samplers::Framebuffer };
+	const Samplers framebufferSamplersDS[] = { Samplers::FramebufferDownsampled };
 	
 	static DSLayoutBinding Sky[] = 
 	{
@@ -64,6 +65,24 @@ namespace MCR
 		
 		//Depth image
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
+		
+		//God rays image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
+	};
+	
+	static DSLayoutBinding GodRaysGen[] = 
+	{
+		//Render settings buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT },
+		
+		//Depth image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers }
+	};
+	
+	static DSLayoutBinding GodRaysBlur[] = 
+	{
+		//God rays image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplersDS }
 	};
 	
 	static DSLayoutBinding UI_Sampler[] = 
@@ -85,6 +104,8 @@ namespace MCR
 		RegisterDescriptorSetLayout("BlockShaderShadow_Global", BlockShaderShadow_Global);
 		RegisterDescriptorSetLayout("DebugShader_Global", DebugShader_Global);
 		RegisterDescriptorSetLayout("Sky", Sky);
+		RegisterDescriptorSetLayout("GodRaysGen", GodRaysGen);
+		RegisterDescriptorSetLayout("GodRaysBlur", GodRaysBlur);
 		RegisterDescriptorSetLayout("UI_Sampler", UI_Sampler);
 		RegisterDescriptorSetLayout("UI_Image", UI_Image);
 	}

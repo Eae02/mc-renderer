@@ -195,7 +195,12 @@ namespace MCR
 				
 				SwapChain::Create(enableVSync);
 				
-				framebuffer.Create(renderer, uiGraphicsContext, SwapChain::GetImages(), drawableWidth, drawableHeight);
+				Framebuffer::RenderPasses renderPasses;
+				renderPasses.m_renderer = renderer.GetRenderPass();
+				renderPasses.m_godRays = postProcessor.GetGodRaysRenderPass();
+				renderPasses.m_ui = uiGraphicsContext.GetRenderPass();
+				
+				framebuffer.Create(renderPasses, SwapChain::GetImages(), drawableWidth, drawableHeight);
 				
 				renderer.FramebufferChanged(framebuffer);
 				postProcessor.FramebufferChanged(framebuffer);

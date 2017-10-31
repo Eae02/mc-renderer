@@ -37,8 +37,8 @@ namespace MCR
 		/* dynamicState            */ dynamicState
 	};
 	
-	BlockShader::BlockShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
-	    : Shader(renderPass, s_createInfo), m_globalDescriptorSet("BlockShader_Global")
+	BlockShader::BlockShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
+	    : Shader(renderPassInfo, s_createInfo), m_globalDescriptorSet("BlockShader_Global")
 	{
 		VkWriteDescriptorSet globalDescriptorWrites[3];
 		

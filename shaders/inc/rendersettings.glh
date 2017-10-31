@@ -11,6 +11,7 @@ struct RenderSettings
 	float time;
 	DirLight sun;
 	DirLight moon;
+	vec2 sunScreenPosition;
 };
 
 const float ZNear = 0.1;

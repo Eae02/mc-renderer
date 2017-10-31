@@ -1,22 +1,20 @@
-#include "skyshader.h"
-#include "../blendstates.h"
+#include "godraysgenshader.h"
 #include "../framebuffer.h"
+#include "../blendstates.h"
 
 namespace MCR
 {
 	static const VkDynamicState dynamicState[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	
-	static const std::string_view setLayouts[] = { "Sky" };
+	static const std::string_view setLayouts[] = { "GodRaysGen" };
 	
-	static const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) };
-	
-	const Shader::CreateInfo SkyShader::s_createInfo = 
+	const Shader::CreateInfo GodRaysGenShader::s_createInfo = 
 	{
-		/* vsName                  */ "sky.vs",
+		/* vsName                  */ "godrays.vs",
 		/* gsName                  */ "",
-		/* fsName                  */ "sky.fs",
+		/* fsName                  */ "godrays-gen.fs",
 		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
+		/* pushConstantRanges      */ { },
 		/* vertexInputState        */ nullptr,
 		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
@@ -36,8 +34,9 @@ namespace MCR
 		/* dynamicState            */ dynamicState
 	};
 	
-	SkyShader::SkyShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
-	    : Shader(renderPassInfo, s_createInfo), m_descriptorSet("Sky")
+	GodRaysGenShader::GodRaysGenShader(Shader::RenderPassInfo renderPass,
+	                                   const VkDescriptorBufferInfo& renderSettingsBufferInfo)
+	    : Shader(renderPass, s_createInfo), m_descriptorSet("GodRaysGen")
 	{
 		VkWriteDescriptorSet renderSettingsWrite;
 		
@@ -47,18 +46,9 @@ namespace MCR
 		UpdateDescriptorSets(SingleElementSpan(renderSettingsWrite));
 	}
 	
-	void SkyShader::FramebufferChanged(const Framebuffer& framebuffer)
+	void GodRaysGenShader::FramebufferChanged(const Framebuffer& framebuffer)
 	{
-		VkWriteDescriptorSet descriptorWrites[3];
-		
-		const VkDescriptorImageInfo colorImageInfo =
-		{
-			/* sampler     */ VK_NULL_HANDLE, //Immutable
-			/* imageView   */ framebuffer.GetColorImageView(),
-			/* imageLayout */ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		};
-		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[0], 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                       colorImageInfo);
+		VkWriteDescriptorSet descriptorWrite;
 		
 		const VkDescriptorImageInfo depthImageInfo =
 		{
@@ -66,22 +56,13 @@ namespace MCR
 			/* imageView   */ framebuffer.GetDepthImageView(),
 			/* imageLayout */ VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
 		};
-		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[1], 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		m_descriptorSet.InitWriteDescriptorSet(descriptorWrite, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		                                       depthImageInfo);
 		
-		const VkDescriptorImageInfo godRaysImageInfo =
-		{
-			/* sampler     */ VK_NULL_HANDLE, //Immutable
-			/* imageView   */ framebuffer.GetBlurredGodRaysImageView(),
-			/* imageLayout */ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		};
-		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[2], 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                       godRaysImageInfo);
-		
-		UpdateDescriptorSets(descriptorWrites);
+		UpdateDescriptorSets(SingleElementSpan(descriptorWrite));
 	}
 	
-	void SkyShader::Bind(CommandBuffer& commandBuffer)
+	void GodRaysGenShader::Bind(CommandBuffer& commandBuffer)
 	{
 		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet };
 		commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, GetLayout(), 0, descriptorSets);

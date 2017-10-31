@@ -33,6 +33,12 @@ namespace MCR
 			gsl::span<const VkDynamicState>                      dynamicState;
 		};
 		
+		struct RenderPassInfo
+		{
+			VkRenderPass m_renderPass;
+			uint32_t m_subpass;
+		};
+		
 		enum class BindModes
 		{
 			Default,
@@ -46,7 +52,7 @@ namespace MCR
 			return *m_pipelineLayout;
 		}
 		
-		Shader(VkRenderPass renderPass, const CreateInfo& createInfo);
+		Shader(RenderPassInfo renderPassInfo, const CreateInfo& createInfo);
 		
 	private:
 		VkHandle<VkPipelineLayout> m_pipelineLayout;

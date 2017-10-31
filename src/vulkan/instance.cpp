@@ -403,8 +403,9 @@ namespace MCR
 		};
 		
 		MaybeEnableExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		bool hasDedicatedAllocation = MaybeEnableExtension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) &&
-		                              MaybeEnableExtension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+		const bool hasDedicatedAllocation = !Arguments::noVkExtensions &&
+		        MaybeEnableExtension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) &&
+		        MaybeEnableExtension(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 		
 		// ** Creates the logical device **
 		VkDeviceCreateInfo deviceCI = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };

@@ -28,6 +28,9 @@ namespace MCR
 		"debug.fs",
 		"sky.vs",
 		"sky.fs",
+		"godrays.vs",
+		"godrays-gen.fs",
+		"godrays-hblur.fs",
 		"ui.vs",
 		"ui.fs"
 	};

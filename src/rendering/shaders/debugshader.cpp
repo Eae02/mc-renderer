@@ -60,8 +60,8 @@ namespace MCR
 		/* dynamicState            */ dynamicState
 	};
 	
-	DebugShader::DebugShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
-	    : Shader(renderPass, s_createInfo), m_globalDescriptorSet("DebugShader_Global")
+	DebugShader::DebugShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
+	    : Shader(renderPassInfo, s_createInfo), m_globalDescriptorSet("DebugShader_Global")
 	{
 		VkWriteDescriptorSet globalDescriptorWrite;
 		

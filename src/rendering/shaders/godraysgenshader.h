@@ -4,17 +4,17 @@
 
 namespace MCR
 {
-	class SkyShader : public Shader
+	class GodRaysGenShader : public Shader
 	{
 	public:
-		SkyShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
+		explicit GodRaysGenShader(RenderPassInfo renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void FramebufferChanged(const class Framebuffer& framebuffer);
 		
 		void Bind(CommandBuffer& commandBuffer);
 		
 	private:
-		static const Shader::CreateInfo s_createInfo;
+		static const CreateInfo s_createInfo;
 		
 		UniqueDescriptorSet m_descriptorSet;
 	};

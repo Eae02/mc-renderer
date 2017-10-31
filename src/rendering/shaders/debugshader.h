@@ -7,7 +7,7 @@ namespace MCR
 	class DebugShader : public Shader
 	{
 	public:
-		DebugShader(VkRenderPass renderPass, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
+		DebugShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void Bind(CommandBuffer& cb, BindModes mode) const;
 		
