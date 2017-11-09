@@ -10,11 +10,19 @@ namespace MCR
 	class PostProcessor
 	{
 	public:
+		struct Timestamps
+		{
+			std::chrono::duration<float, std::milli> m_godRays;
+			std::chrono::duration<float, std::milli> m_sky;
+		};
+		
 		PostProcessor(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void SetRenderSettings(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void FramebufferChanged(const class Framebuffer& framebuffer);
+		
+		Timestamps GetElapsedTime() const;
 		
 		inline VkCommandBuffer GetCommandBuffer() const
 		{
@@ -37,6 +45,8 @@ namespace MCR
 	private:
 		VkHandle<VkRenderPass> m_godRaysRenderPass; //Used for both generation and blurring.
 		VkHandle<VkRenderPass> m_skyRenderPass;
+		
+		VkHandle<VkQueryPool> m_timestampQueryPool;
 		
 		GodRaysGenShader m_godRaysGenShader;
 		GodRaysBlurShader m_godRaysBlurShader;

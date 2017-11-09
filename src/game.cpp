@@ -95,6 +95,8 @@ namespace MCR
 		auto startTime = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds lastFrameTime = std::chrono::nanoseconds::zero();
 		
+		Settings settings;
+		
 		int cursorX, cursorY;
 		SDL_GetMouseState(&cursorX, &cursorY);
 		
@@ -113,6 +115,7 @@ namespace MCR
 		UIDrawList uiDrawList;
 		
 		worldManager = std::make_unique<WorldManager>();
+		worldManager->SetRenderDistance(settings.GetRenderDistance());
 		renderer.SetWorldManager(worldManager.get());
 		
 		const fs::path worldPath = MCR::GetResourcePath() / "world";
@@ -234,6 +237,10 @@ namespace MCR
 #ifdef MCR_DEBUG
 				profilingData = frame.m_profiler.GetData(lastFrameTime);
 				currentFrameProfiler->NewFrame();
+				
+				auto postProcessorTimestamps = postProcessor.GetElapsedTime();
+				currentFrameProfiler->AddTimerResult("Godrays", TimerTypes::GPU, postProcessorTimestamps.m_godRays);
+				currentFrameProfiler->AddTimerResult("Sky", TimerTypes::GPU, postProcessorTimestamps.m_sky);
 #endif
 			}
 			else

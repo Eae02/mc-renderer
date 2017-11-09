@@ -2,6 +2,10 @@
 #include "shaders/shadermodules.h"
 #include "framebuffer.h"
 #include "../vulkan/vkutils.h"
+#include "../vulkan/instance.h"
+
+#include <chrono>
+#include <iostream>
 
 namespace MCR
 {
@@ -84,8 +88,11 @@ namespace MCR
 		return renderPass;
 	}
 	
+	constexpr uint32_t numQueriesPerFrame = 3;
+	
 	PostProcessor::PostProcessor(const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : m_godRaysRenderPass(CreateGodRaysRenderPass()), m_skyRenderPass(CreateSkyRenderPass()),
+	      m_timestampQueryPool(CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, SwapChain::GetImageCount() * numQueriesPerFrame)),
 	      m_godRaysGenShader({ *m_godRaysRenderPass, 0 }, renderSettingsBufferInfo),
 	      m_godRaysBlurShader({ *m_godRaysRenderPass, 0 }),
 	      m_skyShader({ *m_skyRenderPass, 0 }, renderSettingsBufferInfo)
@@ -123,11 +130,14 @@ namespace MCR
 		
 		const glm::vec2 pixelSize(1.0f / viewport.width, 1.0f / viewport.height);
 		
-		for (size_t i = 0; i < m_commandBuffers.size(); i++)
+		for (uint32_t i = 0; i < m_commandBuffers.size(); i++)
 		{
 			CommandBuffer& commandBuffer = m_commandBuffers[i];
 			
 			commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+			
+			uint32_t firstTimestamp = i * numQueriesPerFrame;
+			commandBuffer.WriteTimestamp(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, *m_timestampQueryPool, firstTimestamp);
 			
 			// ** God rays generate pass **
 			const VkRenderPassBeginInfo godRaysGenRenderPassBeginInfo = 
@@ -176,6 +186,9 @@ namespace MCR
 			
 			commandBuffer.EndRenderPass();
 			
+			commandBuffer.WriteTimestamp(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			                             *m_timestampQueryPool, firstTimestamp + 1);
+			
 			// ** Sky rendering pass **
 			const VkRenderPassBeginInfo skyRenderPassBeginInfo = 
 			{
@@ -201,7 +214,29 @@ namespace MCR
 			
 			commandBuffer.EndRenderPass();
 			
+			commandBuffer.WriteTimestamp(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			                             *m_timestampQueryPool, firstTimestamp + 2);
+			
 			commandBuffer.End();
 		}
+	}
+	
+	PostProcessor::Timestamps PostProcessor::GetElapsedTime() const
+	{
+		uint64_t times[numQueriesPerFrame];
+		VkResult result = vkGetQueryPoolResults(vulkan.device, *m_timestampQueryPool,
+		                                        static_cast<uint32_t>(frameQueueIndex * numQueriesPerFrame),
+		                                        numQueriesPerFrame, sizeof(times), times, sizeof(uint64_t),
+		                                        VK_QUERY_RESULT_64_BIT);
+		
+		if (result == VK_NOT_READY)
+			return { };
+		
+		CheckResult(result);
+		
+		return {
+			std::chrono::duration<float, std::milli>((times[1] - times[0]) * vulkan.limits.timestampMillisecondPeriod),
+			std::chrono::duration<float, std::milli>((times[2] - times[1]) * vulkan.limits.timestampMillisecondPeriod)
+		};
 	}
 }

@@ -42,9 +42,9 @@ namespace MCR
 		
 		inline void WriteIndirectCommand(VkDrawIndexedIndirectCommand& command) const
 		{
-			command.vertexOffset = m_allocation.GetVertexOffset();
-			command.firstIndex = m_allocation.GetIndexOffset();
-			command.indexCount = m_allocation.GetNumIndices();
+			command.vertexOffset = static_cast<int32_t>(m_allocation.GetVertexOffset());
+			command.firstIndex = static_cast<uint32_t>(m_allocation.GetIndexOffset());
+			command.indexCount = static_cast<uint32_t>(m_allocation.GetNumIndices());
 			command.instanceCount = 1;
 			command.firstInstance = 0;
 		}

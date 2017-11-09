@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "game.h"
+#include "settings.h"
 #include "utils.h"
 #include "arguments.h"
 #include "vulkan/instance.h"
@@ -31,6 +32,8 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
+	MCR::Settings::QueryAvailableDisplayModes();
+	
 	MCR::Font::InitFreetype();
 	
 	if (SDL_Vulkan_LoadLibrary(nullptr) != 0)
@@ -39,8 +42,13 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
+	SDL_DisplayMode currentDisplayMode;
+	SDL_GetCurrentDisplayMode(0, &currentDisplayMode);
+	int windowWidth = static_cast<int>(currentDisplayMode.w * 0.8);
+	int windowHeight = static_cast<int>(currentDisplayMode.h * 0.8);
+	
 	SDL_Window* window = SDL_CreateWindow("Minecraft Renderer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                                      WindowWidth, WindowHeight, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+	                                      windowWidth, windowHeight, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 	if (window == nullptr)
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Creating Window", SDL_GetError(), nullptr);

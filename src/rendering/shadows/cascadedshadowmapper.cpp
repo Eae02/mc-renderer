@@ -108,7 +108,7 @@ namespace MCR
 	    : m_renderPass(CreateRenderPass()), m_shader({ *m_renderPass, 0 }, shaderCreateInfo),
 	      m_renderDescriptorSet("BlockShaderShadow_Global"), m_sampleDescriptorSet("ShadowSample")
 	{
-		SetResolution(1024);
+		SetQualityLevel(QualityLevels::Medium);
 		
 		// ** Creates the light matrices host buffer **
 		
@@ -143,7 +143,7 @@ namespace MCR
 		
 		// ** Updates the shadow render descriptor set **
 		
-		VkWriteDescriptorSet descriptorWrites[6];
+		VkWriteDescriptorSet descriptorWrites[5];
 		
 		//Render settings buffer
 		m_renderDescriptorSet.InitWriteDescriptorSet(descriptorWrites[0], 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -166,23 +166,28 @@ namespace MCR
 		
 		// ** Updates the shadow sample descriptor set **
 		
-		const VkDescriptorImageInfo shadowMapInfo =
-		{
-			/* sampler     */ VK_NULL_HANDLE, //Immutable
-			/* imageView   */ *m_shadowMapView,
-			/* imageLayout */ VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-		};
-		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[4], 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                             shadowMapInfo);
-		
 		const VkDescriptorBufferInfo infoBufferInfoS = { *m_infoDeviceBuffer, 0, sizeof(ShadowInfo) };
-		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[5], 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrites[4], 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		                                             infoBufferInfoS);
 		
 		UpdateDescriptorSets(descriptorWrites);
 	}
 	
-	void CascadedShadowMapper::SetResolution(uint32_t resolution)
+	void CascadedShadowMapper::SetQualityLevel(QualityLevels qualityLevel)
+	{
+		const uint32_t resolutions[] = { 512, 1024, 2048, 4096 };
+		const float endDistances[] = { 40, 50, 60, 80 };
+		
+		if (m_resolution != resolutions[static_cast<int>(qualityLevel)])
+		{
+			m_resolutionChanged = true;
+		}
+		
+		m_resolution = resolutions[static_cast<int>(qualityLevel)];
+		m_endDistance = endDistances[static_cast<int>(qualityLevel)];
+	}
+	
+	void CascadedShadowMapper::CreateFramebuffer(uint32_t resolution)
 	{
 		VkImageCreateInfo imageCreateInfo;
 		InitImageCreateInfo(imageCreateInfo, VK_IMAGE_TYPE_2D, vulkan.depthFormat, resolution, resolution);
@@ -217,7 +222,17 @@ namespace MCR
 		CheckResult(vkCreateFramebuffer(vulkan.device, &framebufferCreateInfo, nullptr,
 		                                m_framebuffer.GetCreateAddress()));
 		
-		m_resolution = resolution;
+		//Updates the sampler descriptor set with the new image view.
+		const VkDescriptorImageInfo shadowMapInfo =
+			{
+				/* sampler     */ VK_NULL_HANDLE, //Immutable
+				/* imageView   */ *m_shadowMapView,
+				/* imageLayout */ VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+			};
+		VkWriteDescriptorSet descriptorWrite;
+		m_sampleDescriptorSet.InitWriteDescriptorSet(descriptorWrite, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		                                             shadowMapInfo);
+		UpdateDescriptorSets(SingleElementSpan(descriptorWrite));
 	}
 	
 	void CascadedShadowMapper::CalcFrustumSlices(const ViewProjection& viewProj, float shadowEndDist)
@@ -306,13 +321,11 @@ namespace MCR
 	void CascadedShadowMapper::CalculateSlices(const glm::vec3& lightDirection, const ViewProjection& viewProjection,
 	                                           const WorldManager& worldManager)
 	{
-		const float shadowEndDist = 80;
-		
 		const glm::vec3 lightDirLeft = glm::cross(worldManager.GetCamera().GetForward(), lightDirection);
 		const glm::mat3 rotationMatrix(lightDirLeft, glm::cross(lightDirLeft, lightDirection), lightDirection);
 		const glm::mat4 rotationMatrixInv = glm::transpose(rotationMatrix);
 		
-		CalcFrustumSlices(viewProjection, shadowEndDist);
+		CalcFrustumSlices(viewProjection, m_endDistance);
 		
 		std::array<glm::mat4, DirLightCascades> invLightMatrices;
 		
@@ -333,6 +346,12 @@ namespace MCR
 	
 	void CascadedShadowMapper::Render(CommandBuffer& commandBuffer, const ChunkRenderList& shadowRenderList)
 	{
+		if (m_resolutionChanged)
+		{
+			CreateFramebuffer(m_resolution);
+			m_resolutionChanged = false;
+		}
+		
 		const VkRect2D renderArea = { { }, { m_resolution, m_resolution } };
 		
 		VkClearValue clearValue;

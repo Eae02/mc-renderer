@@ -90,7 +90,7 @@ namespace MCR
 			                            m_deviceCommandsAllocation.GetCreateAddress(), nullptr));
 		}
 		
-		uint32_t hostCommandsOffset = m_numAllocatedCommands * frameQueueIndex;
+		const uint64_t hostCommandsOffset = m_numAllocatedCommands * frameQueueIndex;
 		VkDrawIndexedIndirectCommand* nextHostCommand = m_hostCommandsMemory + hostCommandsOffset;
 		
 		for (MeshGroup& group : m_meshGroups)

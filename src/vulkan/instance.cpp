@@ -344,6 +344,11 @@ namespace MCR
 		enabledFeatures.geometryShader = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
 		
+		if (physicalDeviceProperties.vendorID == 32902)
+		{
+			enabledFeatures.multiDrawIndirect = VK_FALSE;
+		}
+		
 		vulkan.limits.hasMultiDrawIndirect = enabledFeatures.multiDrawIndirect == VK_TRUE;
 		
 		// ** Selects a depth format **

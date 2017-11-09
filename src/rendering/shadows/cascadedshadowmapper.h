@@ -6,6 +6,7 @@
 #include "../constants.h"
 #include "../chunkvisibilitycalculator.h"
 #include "../chunkrenderlist.h"
+#include "../../settings.h"
 #include "shadowvolumemesh.h"
 #include "directionalshadowvolume.h"
 
@@ -16,7 +17,7 @@ namespace MCR
 	public:
 		CascadedShadowMapper(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
-		void SetResolution(uint32_t resolution);
+		void SetQualityLevel(QualityLevels qualityLevel);
 		
 		void CalculateSlices(const glm::vec3& lightDirection, const ViewProjection& viewProjection,
 		                     const class WorldManager& worldManager);
@@ -48,11 +49,15 @@ namespace MCR
 		glm::mat4 GetCascadeProjectionMatrix(const glm::mat4& sliceMatrix, const FrustumSlice& slice);
 		glm::mat4 GetTexelAlignMatrix(const glm::mat4& lightMatrix);
 		
+		void CreateFramebuffer(uint32_t resolution);
+		
 		VkHandle<VkRenderPass> m_renderPass;
 		
 		Shader m_shader;
 		
-		uint32_t m_resolution;
+		bool m_resolutionChanged = true;
+		float m_endDistance = 0;
+		uint32_t m_resolution = 0;
 		
 		VkHandle<VkImage, VkHandleDestroyTime::Delayed> m_shadowMap;
 		VkHandle<VmaAllocation, VkHandleDestroyTime::Delayed> m_shadowMapAllocation;

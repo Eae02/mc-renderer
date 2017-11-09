@@ -15,7 +15,6 @@
 #include "regioniothread.h"
 #include "world.h"
 #include "camera.h"
-#include "../ringqueue.h"
 
 namespace MCR
 {

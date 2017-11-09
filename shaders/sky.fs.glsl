@@ -41,7 +41,7 @@ const float exposure = 1.0f;
 
 const vec3 absorbtionProfile = vec3(0.18867780436772762, 0.4978442963618773, 0.6616065586417131);
 
-const int sampleCount = 16;
+const int sampleCount = 4;
 
 float getAtmosphericTravelDistance(vec3 position, vec3 dir)
 {

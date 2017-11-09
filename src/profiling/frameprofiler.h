@@ -20,6 +20,8 @@ namespace MCR
 		void NewFrame();
 		void Reset(CommandBuffer& commandBuffer);
 		
+		void AddTimerResult(std::string_view name, TimerTypes type, std::chrono::duration<float, std::milli> duration);
+		
 		uint32_t BeginGPUTimer(CommandBuffer& commandBuffer, VkPipelineStageFlagBits waitStages, std::string_view name);
 		
 		void EndGPUTimer(CommandBuffer& commandBuffer, VkPipelineStageFlagBits waitStages, uint32_t id);
@@ -38,7 +40,9 @@ namespace MCR
 		{
 			std::string_view m_name;
 			TimerTypes m_type;
-			uint32_t m_index;
+			int m_index;
+			std::chrono::high_resolution_clock::time_point m_cpuStartTime;
+			std::chrono::duration<float, std::milli> m_duration;
 		};
 		
 		std::array<TimerEntry, MaxCPUTimers + MaxGPUTimers> m_timers;
@@ -46,10 +50,6 @@ namespace MCR
 		
 		VkHandle<VkQueryPool> m_queryPool;
 		uint32_t m_numUsedGPUTimers = 0;
-		
-		std::array<std::chrono::high_resolution_clock::time_point, MaxCPUTimers> m_cpuTimerStarts;
-		std::array<std::chrono::nanoseconds, MaxCPUTimers> m_cpuTimerDurations;
-		uint32_t m_numUsedCPUTimers = 0;
 	};
 	
 	extern FrameProfiler* currentFrameProfiler;
