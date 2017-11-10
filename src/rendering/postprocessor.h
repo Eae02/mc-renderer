@@ -16,9 +16,7 @@ namespace MCR
 			std::chrono::duration<float, std::milli> m_sky;
 		};
 		
-		PostProcessor(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
-		
-		void SetRenderSettings(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
+		explicit PostProcessor(const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
 		void FramebufferChanged(const class Framebuffer& framebuffer);
 		

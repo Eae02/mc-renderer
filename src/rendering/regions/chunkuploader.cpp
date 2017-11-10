@@ -32,11 +32,9 @@ namespace MCR
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
-		uint64_t size = meshBuilder.GetRequiredBufferSize();
-		
 		ChunkMesh chunk(meshBuilder.GetNumIndices(), meshBuilder.GetNumVertices(), connectivity);
 		
-		HostBuffer hostBuffer = AllocateHostBuffer(size);
+		HostBuffer hostBuffer = AllocateHostBuffer(meshBuilder.GetRequiredBufferSize());
 		
 		meshBuilder.FillUploadBuffer(hostBuffer.m_memory);
 		

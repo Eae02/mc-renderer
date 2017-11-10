@@ -11,7 +11,12 @@ namespace MCR
 			group.m_meshes.clear();
 		}
 		
-		m_numMeshes = 0;
+		for (WaterMeshGroup& group : m_waterMeshGroups)
+		{
+			group.m_meshes.clear();
+		}
+		
+		m_requiredIndirectCommands = 0;
 	}
 	
 	void ChunkRenderList::Add(ChunkMesh& mesh)
@@ -23,7 +28,12 @@ namespace MCR
 		
 		if (groupIt != m_meshGroups.end())
 		{
-			assert(std::find(MAKE_RANGE(groupIt->m_meshes), &mesh) == groupIt->m_meshes.end());
+#ifdef MCR_DEBUG
+			if(std::find(MAKE_RANGE(groupIt->m_meshes), &mesh) != groupIt->m_meshes.end())
+			{
+				throw std::runtime_error("ChunkRenderList: mesh added multiple times.");
+			}
+#endif
 			
 			groupIt->m_meshes.push_back(&mesh);
 		}
@@ -32,12 +42,38 @@ namespace MCR
 			m_meshGroups.emplace_back(mesh);
 		}
 		
-		m_numMeshes++;
+		m_requiredIndirectCommands++;
+	}
+	
+	void ChunkRenderList::Add(WaterMesh& mesh)
+	{
+		auto groupIt = std::find_if(MAKE_RANGE(m_waterMeshGroups), [&] (const WaterMeshGroup& group)
+		{
+			return group.m_vertexBuffer == mesh.GetVertexBuffer() && group.m_indexBuffer == mesh.GetIndexBuffer();
+		});
+		
+		if (groupIt != m_waterMeshGroups.end())
+		{
+#ifdef MCR_DEBUG
+			if(std::find(MAKE_RANGE(groupIt->m_meshes), &mesh) != groupIt->m_meshes.end())
+			{
+				throw std::runtime_error("ChunkRenderList: water mesh added multiple times.");
+			}
+#endif
+			
+			groupIt->m_meshes.push_back(&mesh);
+		}
+		else
+		{
+			m_waterMeshGroups.emplace_back(mesh);
+		}
+		
+		m_requiredIndirectCommands++;
 	}
 	
 	void ChunkRenderList::End(CommandBuffer& cb)
 	{
-		if (m_numMeshes == 0)
+		if (m_requiredIndirectCommands == 0)
 			return;
 		
 		if (!vulkan.limits.hasMultiDrawIndirect)
@@ -53,9 +89,9 @@ namespace MCR
 			return;
 		}
 		
-		if (m_numAllocatedCommands < m_numMeshes)
+		if (m_numAllocatedCommands < m_requiredIndirectCommands)
 		{
-			m_numAllocatedCommands = RoundToNextMultiple<uint32_t>(m_numMeshes, 1024);
+			m_numAllocatedCommands = RoundToNextMultiple<uint32_t>(m_requiredIndirectCommands, 1024);
 			
 			const uint64_t bufferSize = m_numAllocatedCommands * sizeof(VkDrawIndexedIndirectCommand);
 			
@@ -91,7 +127,8 @@ namespace MCR
 		}
 		
 		const uint64_t hostCommandsOffset = m_numAllocatedCommands * frameQueueIndex;
-		VkDrawIndexedIndirectCommand* nextHostCommand = m_hostCommandsMemory + hostCommandsOffset;
+		VkDrawIndexedIndirectCommand* hostCommandsBegin = m_hostCommandsMemory + hostCommandsOffset;
+		VkDrawIndexedIndirectCommand* nextHostCommand = hostCommandsBegin;
 		
 		for (MeshGroup& group : m_meshGroups)
 		{
@@ -102,12 +139,22 @@ namespace MCR
 			}
 		}
 		
+		m_waterIndirectCommandsOffset = nextHostCommand - hostCommandsBegin;
+		
+		for (WaterMeshGroup& group : m_waterMeshGroups)
+		{
+			for (WaterMesh* mesh : group.m_meshes)
+			{
+				mesh->WriteIndirectCommand(*(nextHostCommand++));
+			}
+		}
+		
 		// ** Uploads indirect commands. **
 		const VkBufferCopy commandsBufferCopy =
 		{
 			/* srcOffset */ hostCommandsOffset * sizeof(VkDrawIndexedIndirectCommand),
 			/* dstOffset */ 0,
-			/* size      */ m_numMeshes * sizeof(VkDrawIndexedIndirectCommand)
+			/* size      */ m_requiredIndirectCommands * sizeof(VkDrawIndexedIndirectCommand)
 		};
 		cb.CopyBuffer(*m_hostCommandsBuffer, *m_deviceCommandsBuffer, commandsBufferCopy);
 		
@@ -129,36 +176,53 @@ namespace MCR
 		                   { }, SingleElementSpan(commandsBufferBarrier), { });
 	}
 	
+	template <typename T>
+	inline void DrawMeshGroup(CommandBuffer& cb, const T& group, VkBuffer indirectCommandsBuffer, uint64_t& offset, 
+	                          VkIndexType indexType)
+	{
+		cb.BindIndexBuffer(group.m_indexBuffer, 0, indexType);
+		
+		VkDeviceSize vbOffsets[] = { 0 };
+		cb.BindVertexBuffers(0, 1, &group.m_vertexBuffer, vbOffsets);
+		
+		if (vulkan.limits.hasMultiDrawIndirect)
+		{
+			cb.DrawIndexedIndirect(indirectCommandsBuffer, offset, gsl::narrow<uint32_t>(group.m_meshes.size()),
+			                       sizeof(VkDrawIndexedIndirectCommand));
+			
+			offset += group.m_meshes.size() * sizeof(VkDrawIndexedIndirectCommand);
+		}
+		else
+		{
+			VkDrawIndexedIndirectCommand command;
+			
+			for (const auto* mesh : group.m_meshes)
+			{
+				mesh->WriteIndirectCommand(command);
+				
+				cb.DrawIndexed(command.indexCount, command.instanceCount, command.firstIndex,
+				               command.vertexOffset, command.firstInstance);
+			}
+		}
+	}
+	
 	void ChunkRenderList::Render(CommandBuffer& cb) const
 	{
 		uint64_t offset = 0;
 		
 		for (const MeshGroup& group : m_meshGroups)
 		{
-			cb.BindIndexBuffer(group.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-			
-			VkDeviceSize vbOffsets[] = { 0 };
-			cb.BindVertexBuffers(0, 1, &group.m_vertexBuffer, vbOffsets);
-			
-			if (vulkan.limits.hasMultiDrawIndirect)
-			{
-				cb.DrawIndexedIndirect(*m_deviceCommandsBuffer, offset, gsl::narrow<uint32_t>(group.m_meshes.size()),
-				                       sizeof(VkDrawIndexedIndirectCommand));
-				
-				offset += group.m_meshes.size() * sizeof(VkDrawIndexedIndirectCommand);
-			}
-			else
-			{
-				VkDrawIndexedIndirectCommand command;
-				
-				for (const ChunkMesh* mesh : group.m_meshes)
-				{
-					mesh->WriteIndirectCommand(command);
-					
-					cb.DrawIndexed(command.indexCount, command.instanceCount, command.firstIndex,
-					               command.vertexOffset, command.firstInstance);
-				}
-			}
+			DrawMeshGroup(cb, group, *m_deviceCommandsBuffer, offset, VK_INDEX_TYPE_UINT32);
+		}
+	}
+	
+	void ChunkRenderList::RenderWater(CommandBuffer& cb) const
+	{
+		uint64_t offset = m_waterIndirectCommandsOffset * sizeof(VkDrawIndexedIndirectCommand);
+		
+		for (const WaterMeshGroup& group : m_waterMeshGroups)
+		{
+			DrawMeshGroup(cb, group, *m_deviceCommandsBuffer, offset, VK_INDEX_TYPE_UINT16);
 		}
 	}
 }

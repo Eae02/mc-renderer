@@ -69,6 +69,7 @@ namespace MCR
 	Renderer::Renderer()
 	    : m_renderPass(CreateRenderPass()), m_shadowMapper(m_renderSettingsBuffer.GetBufferInfo()),
 	      m_blockShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo()),
+	      m_waterShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo()),
 	      m_debugShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo())
 	{
 		m_commandBuffers.reserve(SwapChain::GetImageCount());
@@ -99,6 +100,11 @@ namespace MCR
 #endif
 		
 		m_renderSettingsBuffer.SetData(cb, viewProj, camera.GetPosition(), params.m_time, *params.m_timeManager);
+		
+		{
+			MCR_SCOPED_TIMER(0, "Water Build");
+			m_worldManager->BuildWater(cb);
+		}
 		
 		if (!m_isFrustumFrozen)
 		{
@@ -156,8 +162,6 @@ namespace MCR
 		{
 			MCR_SCOPED_TIMER(0, "Render pass record");
 			
-			uint32_t gpuTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, "Main Render");
-			
 			VkRect2D renderArea;
 			VkViewport viewport;
 			m_framebuffer->GetViewportAndRenderArea(renderArea, viewport);
@@ -178,6 +182,8 @@ namespace MCR
 			};
 			
 			cb.BeginRenderPass(&renderPassBeginInfo);
+			
+			uint32_t mainRenderGPUTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, "Main Render");
 			
 			m_blockShader.Bind(cb, m_shadowMapper.GetDescriptorSet(),
 			                   m_wireframe ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
@@ -205,11 +211,17 @@ namespace MCR
 				m_frustumVolume->Draw(cb, m_debugShader);
 			}
 			
+			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mainRenderGPUTimer);
 			
+			uint32_t waterRenderGPUTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, "Water Render");
+			
+			m_waterShader.Bind(cb);
+			
+			m_chunkRenderList.RenderWater(cb);
+			
+			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, waterRenderGPUTimer);
 			
 			cb.EndRenderPass();
-			
-			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, gpuTimer);
 		}
 		
 		if (frameIndex % 16 == 0)

@@ -15,6 +15,8 @@
 #include "regioniothread.h"
 #include "world.h"
 #include "camera.h"
+#include "../rendering/regions/watermesh.h"
+#include "../rendering/regions/watermeshbuilder.h"
 
 namespace MCR
 {
@@ -33,12 +35,20 @@ namespace MCR
 		
 		void Update(float dt, const class InputState& inputState);
 		
+		void BuildWater(CommandBuffer& commandBuffer);
+		
 		inline void FillRenderList(class ChunkRenderList& renderList, const class Frustum& frustum) const
 		{
 			FillRenderListR(renderList, frustum, 0, 0, m_regionTableSize, m_regionTableSize);
 		}
 		
-		ChunkMesh* GetChunkMeshForRendering(int64_t x, int y, int64_t z) const;
+		struct MeshRenderInfo
+		{
+			ChunkMesh* m_chunkMesh;
+			WaterMesh* m_waterMesh;
+		};
+		
+		MeshRenderInfo GetChunkMeshRenderInfo(int64_t x, int y, int64_t z) const;
 		
 		void SetWorld(std::unique_ptr<World> world);
 		
@@ -94,6 +104,7 @@ namespace MCR
 			std::shared_ptr<Region> m_region;
 			std::bitset<Region::ChunkCount> m_meshesOutOfDate;
 			std::array<ChunkMesh, Region::ChunkCount> m_meshes; //Performance improvement: don't allocate statically (faster move).
+			std::array<WaterMesh, Region::ChunkCount> m_waterMeshes;
 		};
 		
 		RegionEntry* RegionEntryFromGlobalCoordinate(RegionCoordinate coordinate);
@@ -114,7 +125,15 @@ namespace MCR
 		
 		std::vector<RegionEntry*> m_regions[2];
 		
+		struct OutOfDateWaterMesh
+		{
+			RegionCoordinate m_coordinate;
+			uint32_t m_chunkY;
+		};
+		std::vector<OutOfDateWaterMesh> m_outOfDateWaterList;
+		
 		MeshBuilder m_meshBuilder;
+		WaterMeshBuilder m_waterMeshBuilder;
 		ChunkBuildThread m_chunkBuildThread;
 		
 		std::unique_ptr<World> m_world;

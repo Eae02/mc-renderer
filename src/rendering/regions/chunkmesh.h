@@ -19,7 +19,7 @@ namespace MCR
 		
 		void Upload(CommandBuffer& commandBuffer, VkBuffer srcBuffer);
 		
-		void PrepareForRendering(CommandBuffer& commandBuffer)
+		inline void PrepareForRendering(CommandBuffer& commandBuffer)
 		{
 			m_allocation.PrepareForRendering(commandBuffer);
 			m_allocation.MarkUsed();

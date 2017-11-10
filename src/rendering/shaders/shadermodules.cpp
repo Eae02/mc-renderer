@@ -32,7 +32,9 @@ namespace MCR
 		"godrays-gen.fs",
 		"godrays-hblur.fs",
 		"ui.vs",
-		"ui.fs"
+		"ui.fs",
+		"water.vs",
+		"water.fs"
 	};
 	
 	void LoadShaderModules()

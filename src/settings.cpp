@@ -34,7 +34,7 @@ namespace MCR
 	
 	Settings::Settings()
 		: m_fullScreen(false), m_fullScreenDisplayMode(s_defaultDisplayModeIndex),
-		  m_renderDistance(6), m_shadowQuality(QualityLevels::Medium)
+		  m_renderDistance(10), m_shadowQuality(QualityLevels::Medium)
 	{
 		
 	}

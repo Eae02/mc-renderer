@@ -11,6 +11,7 @@
 #include "chunkvisibilitycalculator.h"
 #include "shadows/cascadedshadowmapper.h"
 #include "shadows/shadowvolumemesh.h"
+#include "shaders/watershader.h"
 
 namespace MCR
 {
@@ -84,7 +85,7 @@ namespace MCR
 			return m_renderSettingsBuffer.GetBufferInfo();
 		}
 		
-		inline void SetWorldManager(const WorldManager* worldManager)
+		inline void SetWorldManager(WorldManager* worldManager)
 		{
 			m_worldManager = worldManager;
 		}
@@ -105,6 +106,7 @@ namespace MCR
 		CascadedShadowMapper m_shadowMapper;
 		
 		BlockShader m_blockShader;
+		WaterShader m_waterShader;
 		DebugShader m_debugShader;
 		
 		bool m_shouldCaptureShadowVolume = false;
@@ -132,6 +134,6 @@ namespace MCR
 		glm::mat4 m_projectionMatrix;
 		glm::mat4 m_invProjectionMatrix;
 		
-		const WorldManager* m_worldManager = nullptr;
+		WorldManager* m_worldManager = nullptr;
 	};
 }

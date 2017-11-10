@@ -22,6 +22,8 @@ namespace MCR
 		constexpr uint8_t Gravel = 11;
 		constexpr uint8_t Sand = 12;
 		
+		constexpr uint8_t Water = 13;
+		
 		constexpr uint8_t Fern = 14;
 		constexpr uint8_t BlueFlower = 15;
 		constexpr uint8_t RedFlower = 16;

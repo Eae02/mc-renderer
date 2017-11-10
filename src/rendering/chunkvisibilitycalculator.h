@@ -29,7 +29,7 @@ namespace MCR
 		
 		void Prepare(const class WorldManager& worldManager);
 		
-		template <typename GetWalkDirectionCallback, typename BoundingVolumeType>
+		template <bool Water, typename GetWalkDirectionCallback, typename BoundingVolumeType>
 		void ProcessFillQueue(class ChunkRenderList& renderList, const class WorldManager& worldManager,
 		                      FillQueueEntry*& fillQueueBack, const BoundingVolumeType& boundingVolume,
 		                      GetWalkDirectionCallback walkDirectionCallback);

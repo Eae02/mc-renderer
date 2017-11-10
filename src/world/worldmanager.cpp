@@ -1,6 +1,7 @@
 #include "worldmanager.h"
 #include "../rendering/chunkrenderlist.h"
 #include "../rendering/frustum.h"
+#include "../rendering/regions/buildchunkmesh.h"
 #include "../blocks/sides.h"
 
 #include <gsl/gsl_util>
@@ -13,7 +14,7 @@ namespace MCR
 		SetRenderDistance(8);
 	}
 	
-	constexpr bool enableIO = true;
+	constexpr bool enableIO = false;
 	
 	void WorldManager::SaveAll()
 	{
@@ -169,28 +170,40 @@ namespace MCR
 		}
 		
 		//Processes loaded regions.
-		auto ProcessNewRegion = [&] (std::shared_ptr<Region>& region)
+		auto ProcessNewRegion = [&] (NewRegion& newRegion)
 		{
-			const int regTableX = gsl::narrow<int>(region->GetX() - m_centerRegionX) + m_loadDistance;
-			const int regTableZ = gsl::narrow<int>(region->GetZ() - m_centerRegionZ) + m_loadDistance;
+			const int regTableX = gsl::narrow<int>(newRegion.m_region->GetX() - m_centerRegionX) + m_loadDistance;
+			const int regTableZ = gsl::narrow<int>(newRegion.m_region->GetZ() - m_centerRegionZ) + m_loadDistance;
 			const int regTableIndex = GetRegionIndex(regTableX, regTableZ);
 			
 			RegionEntry* regionEntry = regTableIndex == -1 ? nullptr : m_regions[0][regTableIndex];
 			
 			if (regionEntry != nullptr)
 			{
+				for (uint32_t i = 0; i < Region::ChunkCount; i++)
+				{
+					if (newRegion.m_region->ChunkHasWater(i))
+					{
+						m_outOfDateWaterList.push_back({{newRegion.m_region->GetX(), newRegion.m_region->GetZ()}, i});
+					}
+				}
+				
 				regionEntry->m_state = RegionStates::LoadedNotBuilt;
-				regionEntry->m_region = std::move(region);
+				regionEntry->m_region = std::move(newRegion.m_region);
 			}
 		};
 		
-		m_ioThread->IterateLoadedRegions(ProcessNewRegion);
+		if (enableIO)
+		{
+			m_ioThread->IterateLoadedRegions(ProcessNewRegion);
+		}
+		
 		if (m_generateThread.IterateGeneratedRegions(ProcessNewRegion))
 		{
 			m_generateThread.ProcessFutureRegions(*this);
 		}
 		
-		const glm::vec2 regionNeighborDirs[] = 
+		const glm::ivec2 regionNeighborDirs[] = 
 		{
 			/* NeighborPosX */  {  1, 0 },
 			/* NeighborNegX */  { -1, 0 },
@@ -261,7 +274,8 @@ namespace MCR
 						bool allNeighborsLoaded = true;
 						for (int i = 0; i < 4; i++)
 						{
-							int neighborRegIndex = GetRegionIndex(x + regionNeighborDirs[i].x, z + regionNeighborDirs[i].y);
+							int neighborRegIndex = GetRegionIndex(x + regionNeighborDirs[i].x,
+							                                      z + regionNeighborDirs[i].y);
 							if (neighborRegIndex == -1 || !m_regions[0][neighborRegIndex]->m_region)
 							{
 								allNeighborsLoaded = false;
@@ -343,8 +357,6 @@ namespace MCR
 			region->m_state = RegionStates::Uploading;
 			region->m_meshesOutOfDate.reset(chunkToBuild.y);
 			
-			m_meshBuilder.Reset();
-			
 			std::array<const Region*, 4> neighbors;
 			for (int n = 0; n < 4; n++)
 			{
@@ -357,20 +369,30 @@ namespace MCR
 		}
 	}
 	
-	ChunkMesh* WorldManager::GetChunkMeshForRendering(int64_t x, int y, int64_t z) const
+	WorldManager::MeshRenderInfo WorldManager::GetChunkMeshRenderInfo(int64_t x, int y, int64_t z) const
 	{
-		int regionIndex = GetRegionIndex(x - m_centerRegionX + m_loadDistance, z - m_centerRegionZ + m_loadDistance);
+		WorldManager::MeshRenderInfo info = { nullptr, nullptr };
+		
+		int regionIndex = GetRegionIndex(static_cast<int>(x - m_centerRegionX + m_loadDistance),
+		                                 static_cast<int>(z - m_centerRegionZ + m_loadDistance));
 		if (regionIndex == -1)
-			return nullptr;
+			return info;
 		
 		RegionEntry* region = m_regions[0][regionIndex];
+		if (region == nullptr || region->m_region == nullptr)
+			return info;
 		
-		if (region == nullptr || (region->m_state != RegionStates::Built && region->m_state != RegionStates::Uploading))
+		if (region->m_waterMeshes[y].HasData())
 		{
-			return nullptr;
+			info.m_waterMesh = &region->m_waterMeshes[y];
 		}
 		
-		return &region->m_meshes[y];
+		if (region->m_state == RegionStates::Built || region->m_state == RegionStates::Uploading)
+		{
+			info.m_chunkMesh = &region->m_meshes[y];
+		}
+		
+		return info;
 	}
 	
 	void WorldManager::FillRenderListR(ChunkRenderList& renderList, const Frustum& frustum,
@@ -396,7 +418,7 @@ namespace MCR
 			
 			RegionEntry* region = m_regions[0][GetRegionIndex(minX, minZ)];
 			
-			//Not sure if the null check is neccessary...
+			//Not sure if the null check is necessary...
 			if (region != nullptr && (region->m_state == RegionStates::Built ||
 			                          region->m_state == RegionStates::Uploading))
 			{
@@ -405,6 +427,14 @@ namespace MCR
 					if (mesh.HasData())
 					{
 						renderList.Add(mesh);
+					}
+				}
+				
+				for (WaterMesh& waterMesh : region->m_waterMeshes)
+				{
+					if (!waterMesh.Empty())
+					{
+						renderList.Add(waterMesh);
 					}
 				}
 			}
@@ -428,8 +458,8 @@ namespace MCR
 	
 	WorldManager::RegionEntry* WorldManager::RegionEntryFromGlobalCoordinate(RegionCoordinate coordinate)
 	{
-		const int index = GetRegionIndex(coordinate.x - m_centerRegionX + m_loadDistance,
-		                                 coordinate.z - m_centerRegionZ + m_loadDistance);
+		const int index = GetRegionIndex(static_cast<int>(coordinate.x - m_centerRegionX + m_loadDistance),
+		                                 static_cast<int>(coordinate.z - m_centerRegionZ + m_loadDistance));
 		
 		return index == -1 ? nullptr : m_regions[0][index];
 	}
@@ -486,5 +516,26 @@ namespace MCR
 		{
 			entry->m_meshesOutOfDate.set(chunkY);
 		}
+	}
+	
+	void WorldManager::BuildWater(CommandBuffer& commandBuffer)
+	{
+		for (const OutOfDateWaterMesh& waterMesh : m_outOfDateWaterList)
+		{
+			RegionEntry* regionEntry = RegionEntryFromGlobalCoordinate(waterMesh.m_coordinate);
+			if (regionEntry == nullptr)
+				continue;
+			
+			m_waterMeshBuilder.Reset();
+			BuildWaterMesh(*regionEntry->m_region, waterMesh.m_chunkY, m_waterMeshBuilder);
+			
+			if (m_waterMeshBuilder.Empty())
+				continue;
+			
+			regionEntry->m_waterMeshes[waterMesh.m_chunkY].Upload(commandBuffer, m_waterMeshBuilder.GetVertices(),
+			                                                      m_waterMeshBuilder.GetIndices());
+		}
+		
+		m_outOfDateWaterList.clear();
 	}
 }

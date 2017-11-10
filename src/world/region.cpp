@@ -51,6 +51,16 @@ namespace MCR
 			m_opaquePerChunk[locY / Size]++;
 		}
 		
+		if (m_blocks[index].m_id == BlockIDs::Water)
+		{
+			m_waterPerChunk[locY / Size]--;
+		}
+		
+		if (newEntry.m_id == BlockIDs::Water)
+		{
+			m_waterPerChunk[locY / Size]++;
+		}
+		
 		m_blocks[index] = newEntry;
 	}
 	

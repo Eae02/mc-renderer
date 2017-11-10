@@ -136,7 +136,9 @@ namespace MCR
 			
 			commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 			
-			uint32_t firstTimestamp = i * numQueriesPerFrame;
+			const uint32_t firstTimestamp = i * numQueriesPerFrame;
+			
+			commandBuffer.ResetQueryPool(*m_timestampQueryPool, firstTimestamp, numQueriesPerFrame);
 			commandBuffer.WriteTimestamp(VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, *m_timestampQueryPool, firstTimestamp);
 			
 			// ** God rays generate pass **

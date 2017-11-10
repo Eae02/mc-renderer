@@ -108,7 +108,7 @@ namespace MCR
 #endif
 				
 				std::lock_guard<std::mutex> loadedRegionsLock(m_outputMutex);
-				m_loadedRegions.push_back(std::move(region));
+				m_loadedRegions.emplace_back(std::move(region));
 			}
 		}
 	}

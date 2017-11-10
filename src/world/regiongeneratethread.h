@@ -7,6 +7,7 @@
 
 #include "region.h"
 #include "worldgenerator.h"
+#include "newregion.h"
 
 namespace MCR
 {
@@ -45,7 +46,7 @@ namespace MCR
 			if (m_generatedRegions.empty())
 				return false;
 			
-			for (std::shared_ptr<Region>& region : m_generatedRegions)
+			for (NewRegion& region : m_generatedRegions)
 			{
 				callback(region);
 			}
@@ -76,7 +77,7 @@ namespace MCR
 		
 		std::condition_variable m_signal;
 		
-		std::vector<std::shared_ptr<Region>> m_generatedRegions;
+		std::vector<NewRegion> m_generatedRegions;
 		
 		std::vector<std::thread> m_threads;
 	};

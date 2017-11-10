@@ -95,6 +95,11 @@ namespace MCR
 			return m_opaquePerChunk[y] == Size * Size * Size;
 		}
 		
+		inline bool ChunkHasWater(int y) const
+		{
+			return m_waterPerChunk[y] > 0;
+		}
+		
 		ChunkConnectivity CalculateConnectivity(uint32_t chunkIndex) const;
 		
 		bool IsChunkAir(int y) const;
@@ -122,6 +127,7 @@ namespace MCR
 		}
 		
 		std::array<int, ChunkCount> m_opaquePerChunk;
+		std::array<int, ChunkCount> m_waterPerChunk;
 		
 		std::array<BlockEntry, BlockCount> m_blocks;
 		

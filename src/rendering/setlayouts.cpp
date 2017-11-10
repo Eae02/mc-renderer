@@ -85,6 +85,12 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplersDS }
 	};
 	
+	static DSLayoutBinding Water[] =
+	{
+		//Render settings buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT }
+	};
+	
 	static DSLayoutBinding UI_Sampler[] = 
 	{
 		//Sampler
@@ -106,6 +112,7 @@ namespace MCR
 		RegisterDescriptorSetLayout("Sky", Sky);
 		RegisterDescriptorSetLayout("GodRaysGen", GodRaysGen);
 		RegisterDescriptorSetLayout("GodRaysBlur", GodRaysBlur);
+		RegisterDescriptorSetLayout("Water", Water);
 		RegisterDescriptorSetLayout("UI_Sampler", UI_Sampler);
 		RegisterDescriptorSetLayout("UI_Image", UI_Image);
 	}

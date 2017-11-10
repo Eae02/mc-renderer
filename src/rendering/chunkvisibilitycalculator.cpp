@@ -40,7 +40,7 @@ namespace MCR
 		return frustum.Intersects(boundingBox);
 	}
 	
-	template <typename GetWalkDirectionCallback, typename BoundingVolumeType>
+	template <bool Water, typename GetWalkDirectionCallback, typename BoundingVolumeType>
 	void ChunkVisibilityCalculator::ProcessFillQueue(ChunkRenderList& renderList, const WorldManager& worldManager,
 	                                                 FillQueueEntry*& fillQueueBack,
 	                                                 const BoundingVolumeType& boundingVolume,
@@ -55,14 +55,20 @@ namespace MCR
 			
 			const RegionCoordinate regionCoord = worldManager.GetWorldRegionCoord(stackEntry.m_lx, stackEntry.m_lz);
 			
-			ChunkMesh* mesh = worldManager.GetChunkMeshForRendering(regionCoord.x, stackEntry.m_y, regionCoord.z);
+			auto chunkRenderInfo = worldManager.GetChunkMeshRenderInfo(regionCoord.x, stackEntry.m_y, regionCoord.z);
 			
-			if (mesh == nullptr)
+			if (chunkRenderInfo.m_chunkMesh == nullptr && chunkRenderInfo.m_waterMesh == nullptr)
 				continue;
 			
-			if (mesh->HasData())
+			bool hasChunkMesh = chunkRenderInfo.m_chunkMesh && chunkRenderInfo.m_chunkMesh->HasData();
+			if (hasChunkMesh)
 			{
-				renderList.Add(*mesh);
+				renderList.Add(*chunkRenderInfo.m_chunkMesh);
+			}
+			
+			if (Water && chunkRenderInfo.m_waterMesh && chunkRenderInfo.m_waterMesh->HasData())
+			{
+				renderList.Add(*chunkRenderInfo.m_waterMesh);
 			}
 			
 			if (worldManager.GetRegion(regionCoord)->IsChunkOpaque(stackEntry.m_y))
@@ -75,7 +81,7 @@ namespace MCR
 			for (uint8_t n = 0; n < 6; n++)
 			{
 				if (n == stackEntry.m_enterFace || 
-				    (mesh->HasData() && !mesh->IsSideConnected(stackEntry.m_enterFace, n)))
+				    (hasChunkMesh && !chunkRenderInfo.m_chunkMesh->IsSideConnected(stackEntry.m_enterFace, n)))
 				{
 					continue;
 				}
@@ -123,18 +129,23 @@ namespace MCR
 		const int     cameraChunkY = std::floor(camera.GetPosition().y / Region::Size);
 		const int64_t cameraChunkZ = std::floor(camera.GetPosition().z / Region::Size);
 		
-		ChunkMesh* currentChunkMesh = worldManager.GetChunkMeshForRendering(cameraChunkX, cameraChunkY, cameraChunkZ);
-		if (currentChunkMesh == nullptr)
+		auto chunkRenderInfo = worldManager.GetChunkMeshRenderInfo(cameraChunkX, cameraChunkY, cameraChunkZ);
+		if (chunkRenderInfo.m_chunkMesh == nullptr)
 			return;
 		
 		Prepare(worldManager);
 		
 		//Adds the current chunk to the render list and marks it visited.
-		if (currentChunkMesh->HasData())
+		if (chunkRenderInfo.m_chunkMesh && chunkRenderInfo.m_chunkMesh->HasData())
 		{
-			renderList.Add(*currentChunkMesh);
-			shadowRenderList.Add(*currentChunkMesh);
+			renderList.Add(*chunkRenderInfo.m_chunkMesh);
+			shadowRenderList.Add(*chunkRenderInfo.m_chunkMesh);
 		}
+		if (chunkRenderInfo.m_waterMesh && chunkRenderInfo.m_waterMesh->HasData())
+		{
+			renderList.Add(*chunkRenderInfo.m_waterMesh);
+		}
+		
 		GetVisited(worldManager.m_loadDistance, cameraChunkY, worldManager.m_loadDistance) = true;
 		
 		FillQueueEntry* fillQueueBack = m_fillQueue.get();
@@ -156,12 +167,12 @@ namespace MCR
 			*(fillQueueBack++) = { nlx, nlz, static_cast<uint8_t>(ny), OpposingSides[n] };
 		}
 		
-		ProcessFillQueue(renderList, worldManager, fillQueueBack, frustum, [&] (const glm::vec3& faceCenter)
+		ProcessFillQueue<true>(renderList, worldManager, fillQueueBack, frustum, [&] (const glm::vec3& faceCenter)
 		{
 			return faceCenter - camera.GetPosition();
 		});
 		
-		ProcessFillQueue(shadowRenderList, worldManager, fillQueueBack, shadowVolume, [&] (const glm::vec3&)
+		ProcessFillQueue<false>(shadowRenderList, worldManager, fillQueueBack, shadowVolume, [&] (const glm::vec3&)
 		{
 			return -shadowVolume.GetLightDirection();
 		});

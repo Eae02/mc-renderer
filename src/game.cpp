@@ -12,6 +12,7 @@
 #include "rendering/renderer.h"
 #include "rendering/framebuffer.h"
 #include "rendering/windnoiseimage.h"
+#include "rendering/regions/watermesh.h"
 #include "profiling/profiling.h"
 #include "ui/profilingpane.h"
 
@@ -106,6 +107,8 @@ namespace MCR
 		int currentDrawableHeight = 0;
 		
 		Initialize();
+		
+		WaterMesh::CreateBuffers();
 		
 		Renderer renderer;
 		PostProcessor postProcessor(renderer.GetRenderSettingsBufferInfo());
@@ -255,6 +258,7 @@ namespace MCR
 			}
 			
 			ProcessVulkanDestroyList();
+			WaterMesh::ProcessFreeList();
 			
 			{
 				MCR_SCOPED_TIMER(0, "Render");
@@ -319,6 +323,8 @@ namespace MCR
 		WindNoiseImage::SetInstance(nullptr);
 		
 		ChunkBufferAllocator::s_instance.ReleaseMemory();
+		
+		WaterMesh::DestroyBuffers();
 		
 		ClearVulkanDestroyList();
 	}

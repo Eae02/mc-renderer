@@ -7,6 +7,7 @@
 #include <stack>
 
 #include "region.h"
+#include "newregion.h"
 
 namespace MCR
 {
@@ -47,7 +48,7 @@ namespace MCR
 		{
 			std::lock_guard<std::mutex> lock(m_outputMutex);
 			
-			for (std::shared_ptr<Region>& region : m_loadedRegions)
+			for (NewRegion& region : m_loadedRegions)
 			{
 				callback(region);
 			}
@@ -74,7 +75,7 @@ namespace MCR
 		
 		std::condition_variable m_taskAvailableSignal;
 		
-		std::vector<std::shared_ptr<Region>> m_loadedRegions;
+		std::vector<NewRegion> m_loadedRegions;
 		
 		std::thread m_thread;
 	};

@@ -1,5 +1,6 @@
 #include "buildchunkmesh.h"
 #include "../../blocks/blocktype.h"
+#include "../../blocks/ids.h"
 
 namespace MCR
 {
@@ -104,5 +105,39 @@ namespace MCR
 		}
 	}
 	
-	
+	void BuildWaterMesh(const Region& region, uint32_t chunkY, WaterMeshBuilder& waterMeshBuilder)
+	{
+		const int64_t baseWorldY = chunkY * Region::Size;
+		
+		for (int yo = 0; yo < Region::Size; yo++)
+		{
+			const int64_t y = yo + baseWorldY;
+			const float waterY = y + 0.8f;
+			
+			for (int z = 0; z < Region::Size; z++)
+			{
+				const int64_t worldZ = z + region.GetZ() * Region::Size;
+				
+				for (int x = 0; x < Region::Size; x++)
+				{
+					const int64_t worldX = x + region.GetX() * Region::Size;
+					
+					Region::BlockEntry block = region.Get(x, y, z);
+					
+					//If this block is water and the block above is air, insert a water quad.
+					if (block.m_id == BlockIDs::Water &&
+					    (y == Region::Height - 1 || region.Get(x, y + 1, z).m_id == BlockIDs::Air))
+					{
+						std::array<glm::vec3, 4> waterVertices;
+						for (int i = 0; i < 4; i++)
+						{
+							waterVertices[i] = glm::vec3(worldX + (i % 2), waterY, worldZ + (i / 2));
+						}
+						
+						waterMeshBuilder.AddQuad(waterVertices.data());
+					}
+				}
+			}
+		}
+	}
 }

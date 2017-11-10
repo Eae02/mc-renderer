@@ -27,6 +27,12 @@ namespace MCR
 		m_terracePerlin.SetOctaveCount(2);
 		m_terracePerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
+		m_oceanPerlin.SetFrequency(1.0 / 64.0);
+		m_oceanPerlin.SetLacunarity(2.0);
+		m_oceanPerlin.SetPersistence(0.8f);
+		m_oceanPerlin.SetOctaveCount(6);
+		m_oceanPerlin.SetNoiseQuality(noise::QUALITY_BEST);
+		
 		m_flowerPerlin.SetFrequency(16);
 		m_flowerPerlin.SetLacunarity(2.0);
 		m_flowerPerlin.SetPersistence(0.5);
@@ -162,6 +168,13 @@ namespace MCR
 	//Slope for the transition between terraces.
 	const double terraceSlope = 10;
 	
+	const int seaLevel = averageSurfaceLevel - 15;
+	
+	const double maxOceanDepth = 20;
+	const double seaFloorLevelRange = 2;
+	
+	const double beachSteepness = 10;
+	
 	std::uniform_int_distribution<int> spruceRadDist(2, 4);
 	std::uniform_int_distribution<int> spruceHeightDist(8, 16);
 	const double spruceLeafBeginHeight = 0.25;
@@ -263,8 +276,10 @@ namespace MCR
 		}
 	}
 	
-	void WorldGenerator::Generate(Region& region)
+	void WorldGenerator::Generate(Region& region, bool& hasWater)
 	{
+		hasWater = false;
+		
 		struct NeighborBlockPlacement
 		{
 			int64_t m_x;
@@ -277,7 +292,7 @@ namespace MCR
 		
 		std::subtract_with_carry_engine<uint64_t, 48, 5, 12> randEngine(region.GetX() ^ bswap_64(region.GetZ()));
 		
-		double PerlinDiv = 25;
+		const double PerlinDiv = 25;
 		
 		const int64_t regionMinX = region.GetX() * Region::Size;
 		const int64_t regionMinZ = region.GetZ() * Region::Size;
@@ -295,21 +310,34 @@ namespace MCR
 				int64_t x = lx + region.GetX() * Region::Size;
 				double px = x / PerlinDiv;
 				
+				double oceanProgress = m_oceanPerlin.GetValue(px, 0, pz);
+				const bool isOcean = oceanProgress > 0.0;
+				float oceanProgressSat = static_cast<float>(glm::clamp(oceanProgress * 1.5, 0.0, 1.0));
+				
 				int blocksSinceAir = 0;
 				
-				double surfaceLevelRange = glm::mix(minSurfaceLevelRange, maxSurfaceLevelRange,
-				                                    m_roughnessPerlin.GetValue(px, 0, pz) * 0.5 + 0.5);
-				
+				// ** Calculates the terrace offset **
 				double terraceVal = (m_terracePerlin.GetValue(px, 0, pz) * 0.5 + 0.5) * terraceCount;
 				const double heightCurrentTerrace = glm::clamp(terraceSlope * (glm::fract(terraceVal) - 0.5) + 0.5, 0.0, 1.0);
-				
 				double terraceOffset = (glm::floor(terraceVal) + heightCurrentTerrace - (terraceCount / 2.0)) * terraceHeight;
+				
+				double roughness = m_roughnessPerlin.GetValue(px, 0, pz) * 0.5 + 0.5;
+				const double oceanRoughnessRedBegin = -0.25;
+				if (oceanProgress > oceanRoughnessRedBegin)
+				{
+					double oceanRoughnessRedFactor = glm::clamp(oceanProgress / oceanRoughnessRedBegin, 0.0, 1.0); 
+					roughness *= oceanRoughnessRedFactor;
+					terraceOffset *= oceanRoughnessRedFactor;
+					terraceOffset *= oceanRoughnessRedFactor;
+				}
+				
+				double surfaceLevelRange = glm::mix(minSurfaceLevelRange, maxSurfaceLevelRange, roughness);
 				
 				bool hasFern = m_fernPerlin.GetValue(px, 0, pz) > 0.0;
 				
 				surfaceHeights[lx][lz] = 0;
 				
-				for (int y = averageSurfaceLevel + maxSurfaceLevelRange; y > 0; y--)
+				for (int y = static_cast<int>(std::ceil(averageSurfaceLevel + maxSurfaceLevelRange)); y > 0; y--)
 				{
 					Region::BlockEntry block;
 					block.m_data = 0;
@@ -317,16 +345,35 @@ namespace MCR
 					double py = y / PerlinDiv;
 					
 					double heightVal = m_heightPerlin.GetValue(px, py, pz);
-					heightVal += (y - (averageSurfaceLevel + terraceOffset)) / surfaceLevelRange;
+					heightVal += glm::mix((y - (averageSurfaceLevel + terraceOffset)),
+					                      (y - (seaLevel - maxOceanDepth)),
+					                      oceanProgressSat) / surfaceLevelRange;
 					
 					if (heightVal > 0)
 					{
 						blocksSinceAir = 0;
-						block.m_id = BlockIDs::Air;
+						
+						if (isOcean && y < seaLevel)
+						{
+							block.m_id = BlockIDs::Water;
+							hasWater = true;
+						}
+						else
+						{
+							block.m_id = BlockIDs::Air;
+						}
 					}
 					else
 					{
-						if (blocksSinceAir == 0)
+						if (blocksSinceAir > 3)
+						{
+							block.m_id = BlockIDs::Stone;
+						}
+						else if (isOcean)
+						{
+							block.m_id = BlockIDs::Sand;
+						}
+						else if (blocksSinceAir == 0)
 						{
 							if (surfaceHeights[lx][lz] == 0)
 							{
@@ -354,10 +401,10 @@ namespace MCR
 								}
 							}
 						}
-						else if (blocksSinceAir > 3)
-							block.m_id = BlockIDs::Stone;
 						else
+						{
 							block.m_id = BlockIDs::Dirt;
+						}
 						
 						blocksSinceAir++;
 					}

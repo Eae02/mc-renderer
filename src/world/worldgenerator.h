@@ -15,7 +15,7 @@ namespace MCR
 		
 		void SetSeed(int seed);
 		
-		void Generate(Region& region);
+		void Generate(Region& region, bool& hasWater);
 		
 		void ProcessFutureRegions(class WorldManager& worldManager);
 		
@@ -54,6 +54,7 @@ namespace MCR
 		
 		noise::module::Perlin m_roughnessPerlin;
 		noise::module::Perlin m_heightPerlin;
+		noise::module::Perlin m_oceanPerlin;
 		noise::module::Perlin m_terracePerlin;
 		noise::module::Perlin m_flowerPerlin;
 		noise::module::Perlin m_fernPerlin;

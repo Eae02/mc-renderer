@@ -1,6 +1,7 @@
 #pragma once
 
 #include "meshbuilder.h"
+#include "watermeshbuilder.h"
 #include "chunkmesh.h"
 #include "../../world/region.h"
 
@@ -23,4 +24,6 @@ namespace MCR
 	};
 	
 	void BuildChunkMesh(const ChunkMeshBuildParams& params);
+	
+	void BuildWaterMesh(const Region& m_region, uint32_t chunkY, WaterMeshBuilder& waterMeshBuilder);
 }

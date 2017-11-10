@@ -1,0 +1,8 @@
+{
+	"id": 11,
+	"name": "Gravel",
+	"roughness": 0.8,
+	"texture": {
+		"all": "gravel"
+	}
+}

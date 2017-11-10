@@ -70,9 +70,9 @@ namespace MCR
 			Log("Generating (", regionCoord.x, ", ", regionCoord.z, ")");
 #endif
 			
-			std::shared_ptr<Region> region = std::make_shared<Region>(regionCoord.x, regionCoord.z);
+			NewRegion newRegion(std::make_shared<Region>(regionCoord.x, regionCoord.z));
 			
-			m_generator.Generate(*region);
+			m_generator.Generate(*newRegion.m_region, newRegion.m_hasWater);
 			
 #ifdef MCR_REGION_LOG
 			Log("Generated (", regionCoord.x, ", ", regionCoord.z, ")");
@@ -80,7 +80,7 @@ namespace MCR
 			
 			std::lock_guard<std::mutex> outputLock(m_outputMutex);
 			
-			m_generatedRegions.push_back(std::move(region));
+			m_generatedRegions.push_back(std::move(newRegion));
 		}
 	}
 }

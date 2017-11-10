@@ -2,6 +2,7 @@
 
 #include "../vulkan/vk.h"
 #include "regions/chunkmesh.h"
+#include "regions/watermesh.h"
 
 namespace MCR
 {
@@ -13,10 +14,12 @@ namespace MCR
 		void Begin();
 		
 		void Add(ChunkMesh& mesh);
+		void Add(WaterMesh& mesh);
 		
 		void End(CommandBuffer& cb);
 		
 		void Render(CommandBuffer& cb) const;
+		void RenderWater(CommandBuffer& cb) const;
 		
 	private:
 		struct MeshGroup
@@ -31,8 +34,22 @@ namespace MCR
 		
 		std::vector<MeshGroup> m_meshGroups;
 		
-		uint32_t m_numMeshes = 0;
+		struct WaterMeshGroup
+		{
+			VkBuffer m_vertexBuffer;
+			VkBuffer m_indexBuffer;
+			std::vector<WaterMesh*> m_meshes;
+			
+			inline explicit WaterMeshGroup(WaterMesh& mesh)
+				: m_vertexBuffer(mesh.GetVertexBuffer()), m_indexBuffer(mesh.GetIndexBuffer()), m_meshes{ &mesh } { }
+		};
+		
+		std::vector<WaterMeshGroup> m_waterMeshGroups;
+		
+		uint32_t m_requiredIndirectCommands = 0;
 		uint32_t m_numAllocatedCommands = 0;
+		
+		uint64_t m_waterIndirectCommandsOffset;
 		
 		VkHandle<VmaAllocation, VkHandleDestroyTime::Delayed> m_hostCommandsAllocation;
 		VkHandle<VkBuffer, VkHandleDestroyTime::Delayed> m_hostCommandsBuffer;
