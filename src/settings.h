@@ -30,14 +30,14 @@ namespace MCR
 			return m_shadowQuality;
 		}
 		
-		inline bool IsFullscreen() const
+		inline bool IsFullScreen() const
 		{
-			return m_fullscreen;
+			return m_fullScreen;
 		}
 		
-		inline int GetFullscreenDisplayModeIndex() const
+		inline int GetFullScreenDisplayModeIndex() const
 		{
-			return m_fullscreenDisplayMode;
+			return m_fullScreenDisplayMode;
 		}
 		
 		inline int GetRenderDistance() const
@@ -49,8 +49,8 @@ namespace MCR
 		static std::vector<SDL_DisplayMode> s_availableDisplayModes;
 		static int s_defaultDisplayModeIndex;
 		
-		bool m_fullscreen;
-		int m_fullscreenDisplayMode;
+		bool m_fullScreen;
+		int m_fullScreenDisplayMode;
 		
 		int m_renderDistance;
 		

@@ -19,7 +19,7 @@ namespace SwapChain
 	
 	void Create(bool enableVSync, bool force = false);
 	
-	uint32_t AquireImage(VkSemaphore& aquireSemaphoreOut);
+	uint32_t AcquireImage(VkSemaphore& acquireSemaphoreOut);
 	
 	void Present(VkSemaphore waitSemaphore, uint32_t imageIndex);
 	

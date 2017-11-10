@@ -58,7 +58,7 @@ namespace MCR
 				const int64_t dy = static_cast<int64_t>(m_buildCommands[i].m_chunkY) - m_cameraChunkY;
 				const int64_t dz = m_buildCommands[i].m_coordinate.z - m_cameraChunkZ;
 				
-				const uint64_t distFromCameraSq = dx * dx + dy * dy + dz * dz;
+				const uint64_t distFromCameraSq = static_cast<const uint64_t>(dx * dx + dy * dy + dz * dz);
 				if (selectedChunkDistFromCameraSq > distFromCameraSq || selectedIndex == -1)
 				{
 					selectedIndex = i;

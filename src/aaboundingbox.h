@@ -7,7 +7,7 @@ namespace MCR
 	class AABoundingBox
 	{
 	public:
-		inline AABoundingBox() { }
+		inline AABoundingBox() = default;
 		
 		inline AABoundingBox(glm::vec3 pos1, glm::vec3 pos2)
 		    : m_positions{ pos1, pos2 } { }

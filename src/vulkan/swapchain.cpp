@@ -22,8 +22,8 @@ namespace SwapChain
 	static VkExtent2D dimensions;
 	static bool enableVSync;
 	
-	static std::vector<VkHandle<VkSemaphore>> aquireSemaphores;
-	static uint32_t aquireSemaphoreIndex = 0;
+	static std::vector<VkHandle<VkSemaphore>> acquireSemaphores;
+	static uint32_t acquireSemaphoreIndex = 0;
 	
 	inline VkSurfaceFormatKHR SelectSurfaceFormat()
 	{
@@ -96,8 +96,6 @@ namespace SwapChain
 	
 	inline bool CheckSurfaceCapabilities(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
-		//return bool(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-		
 		return bool(capabilities.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	}
 	
@@ -116,10 +114,10 @@ namespace SwapChain
 		
 		swapChainImages.resize(imageCount);
 		
-		aquireSemaphores.resize(imageCount);
+		acquireSemaphores.resize(imageCount);
 		for (uint32_t i = 0; i < imageCount; i++)
 		{
-			aquireSemaphores[i] = CreateVkSemaphore();
+			acquireSemaphores[i] = CreateVkSemaphore();
 		}
 	}
 	
@@ -168,7 +166,7 @@ namespace SwapChain
 		chainCreateInfo.preTransform = capabilities.currentTransform;
 		chainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		chainCreateInfo.presentMode = SelectPresentMode(t_enableVSync);
-		chainCreateInfo.clipped = true;
+		chainCreateInfo.clipped = VK_TRUE;
 		chainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		
 		CheckResult(vkCreateSwapchainKHR(vulkan.device, &chainCreateInfo, nullptr, swapChain.GetCreateAddress()));
@@ -192,20 +190,20 @@ namespace SwapChain
 	void Destroy()
 	{
 		swapChain.Reset();
-		aquireSemaphores.clear();
+		acquireSemaphores.clear();
 	}
 	
-	uint32_t AquireImage(VkSemaphore& aquireSemaphoreOut)
+	uint32_t AcquireImage(VkSemaphore& acquireSemaphoreOut)
 	{
-		aquireSemaphoreOut = *aquireSemaphores[aquireSemaphoreIndex];
-		aquireSemaphoreIndex = (aquireSemaphoreIndex + 1) % imageCount;
+		acquireSemaphoreOut = *acquireSemaphores[acquireSemaphoreIndex];
+		acquireSemaphoreIndex = (acquireSemaphoreIndex + 1) % imageCount;
 		
-	preAquire:
+	preAcquire:
 		uint32_t imageIndex;
-		VkResult aquireResult = vkAcquireNextImageKHR(vulkan.device, *swapChain, UINT64_MAX,
-		                                              aquireSemaphoreOut, nullptr, &imageIndex);
+		VkResult acquireResult = vkAcquireNextImageKHR(vulkan.device, *swapChain, UINT64_MAX,
+		                                               acquireSemaphoreOut, nullptr, &imageIndex);
 		
-		switch (aquireResult)
+		switch (acquireResult)
 		{
 		case VK_SUCCESS:
 			return imageIndex;
@@ -213,7 +211,7 @@ namespace SwapChain
 		case VK_SUBOPTIMAL_KHR:
 		case VK_ERROR_OUT_OF_DATE_KHR:
 			Create(enableVSync, true);
-			goto preAquire;
+			goto preAcquire;
 			
 		default:
 			throw std::runtime_error("Error acquiring next image from swap chain.");

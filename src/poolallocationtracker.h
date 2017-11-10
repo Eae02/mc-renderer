@@ -38,7 +38,7 @@ namespace MCR
 			}
 			
 		private:
-			inline FindAvailableResult(AvailableBlock& block)
+			inline explicit FindAvailableResult(AvailableBlock& block)
 			    : m_firstElement(block.m_firstElement), m_block(&block) { }
 			
 			uint64_t m_firstElement;

@@ -29,32 +29,33 @@ find_package(LibZip REQUIRED)
 
 find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h PATHS ${HEADER_SEARCH_PATH} "$ENV{VK_SDK_PATH}/Include")
 
-#Compiler specific flags
-if (CMAKE_COMPILER_IS_GNUCXX)
-	add_compile_options(-Wall -Wextra -Wshadow -pedantic -Wno-unused-parameter -Wno-missing-field-initializers
-	                    $<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor> $<$<COMPILE_LANGUAGE:CXX>:-std=c++1z>)
-	link_libraries(stdc++fs)
-	
-	set(CMAKE_INSTALL_RPATH "$ORIGIN")
-	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-endif()
-
 if (${MSVC})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4250 /wd4251 /wd4307 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /std:c++latest")
 endif()
 
+add_executable(mcrenderer ${SOURCE_FILES})
+
+#Compiler specific flags
+if (CMAKE_COMPILER_IS_GNUCXX)
+	target_compile_options(mcrenderer BEFORE PUBLIC -Wall -Wextra -Wshadow -pedantic -Wno-unused-parameter
+		-Wno-missing-field-initializers -Wnon-virtual-dtor -std=c++17)
+	set(EXTRA_LIBS stdc++fs sndio)
+endif()
+
 #Sets link libraries
-link_libraries(
+target_link_libraries(mcrenderer
 	${SDL2_LIBRARY}
 	${FREETYPE_LIBRARIES}
 	${ZLIB_LIBRARIES}
 	${NOISE_LIBRARY}
 	${LIBZIP_LIBRARY}
 	${CMAKE_THREAD_LIBS_INIT}
+	${CMAKE_DL_LIBS}
+	${EXTRA_LIBS}
 )
 
 #Sets include directories
-include_directories(SYSTEM
+target_include_directories(mcrenderer SYSTEM PUBLIC
 	${SDL2_INCLUDE_DIR}
 	${VULKAN_INCLUDE_DIR}
 	${GLM_INCLUDE_DIRS}
@@ -65,4 +66,4 @@ include_directories(SYSTEM
 	${CMAKE_SOURCE_DIR}/inc
 )
 
-add_executable(mcrenderer ${SOURCE_FILES})
+

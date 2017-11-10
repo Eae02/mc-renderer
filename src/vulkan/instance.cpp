@@ -479,9 +479,10 @@ namespace MCR
 		
 		if (hasDedicatedAllocation)
 		{
-			allocatorVulkanFunctions.vkGetBufferMemoryRequirements2KHR = VK_GET_DEVICE_FUNCTION(vkGetBufferMemoryRequirements2KHR);
-			
-			allocatorVulkanFunctions.vkGetImageMemoryRequirements2KHR =  VK_GET_DEVICE_FUNCTION(vkGetImageMemoryRequirements2KHR);
+			allocatorVulkanFunctions.vkGetBufferMemoryRequirements2KHR =
+				VK_GET_DEVICE_FUNCTION(vkGetBufferMemoryRequirements2KHR);
+			allocatorVulkanFunctions.vkGetImageMemoryRequirements2KHR = 
+				VK_GET_DEVICE_FUNCTION(vkGetImageMemoryRequirements2KHR);
 			
 			allocatorCreateInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
 		}

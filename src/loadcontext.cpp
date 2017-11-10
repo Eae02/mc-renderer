@@ -24,7 +24,7 @@ namespace MCR
 		submitInfo.pCommandBuffers = &m_commandBuffer.GetVkCB();
 		vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submitInfo, *fence);
 		
-		CheckResult(vkWaitForFences(vulkan.device, 1, &*fence, true, UINT64_MAX));
+		WaitForFence(*fence);
 		
 		for (const Resource& resource : m_resources)
 		{

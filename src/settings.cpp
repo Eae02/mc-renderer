@@ -33,8 +33,8 @@ namespace MCR
 	}
 	
 	Settings::Settings()
-		: m_fullscreen(false), m_fullscreenDisplayMode(s_defaultDisplayModeIndex),
-		  m_renderDistance(6), m_shadowQuality(QualityLevels::Low)
+		: m_fullScreen(false), m_fullScreenDisplayMode(s_defaultDisplayModeIndex),
+		  m_renderDistance(6), m_shadowQuality(QualityLevels::Medium)
 	{
 		
 	}

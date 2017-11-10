@@ -19,9 +19,6 @@
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 #endif
 
-constexpr int WindowWidth = 1400;
-constexpr int WindowHeight = 800;
-
 int main(int argc, char** argv)
 {
 	MCR::Arguments::Parse(argc, argv);

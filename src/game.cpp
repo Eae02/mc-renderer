@@ -152,6 +152,12 @@ namespace MCR
 					inputState.MouseButtonEvent(event.button.button, event.button.state == SDL_PRESSED);
 					break;
 				case SDL_KEYUP:
+					if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+					{
+						shouldQuit = true;
+						break;
+					}
+					[[fallthrough]];
 				case SDL_KEYDOWN:
 					if (event.key.repeat)
 						break;
@@ -212,8 +218,8 @@ namespace MCR
 				currentDrawableHeight = drawableHeight;
 			}
 			
-			VkSemaphore aquireSemaphore;
-			frameQueueIndex = SwapChain::AquireImage(aquireSemaphore);
+			VkSemaphore acquireSemaphore;
+			frameQueueIndex = SwapChain::AcquireImage(acquireSemaphore);
 			
 			uiDrawList.Reset();
 			
@@ -278,7 +284,7 @@ namespace MCR
 				/* sType                */ VK_STRUCTURE_TYPE_SUBMIT_INFO,
 				/* pNext                */ nullptr,
 				/* waitSemaphoreCount   */ 1,
-				/* pWaitSemaphores      */ &aquireSemaphore,
+				/* pWaitSemaphores      */ &acquireSemaphore,
 				/* pWaitDstStageMask    */ &waitStages,
 				/* commandBufferCount   */ ArrayLength(commandBuffers),
 				/* pCommandBuffers      */ commandBuffers,
