@@ -28,8 +28,8 @@ namespace MCR
 		m_terracePerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
 		m_oceanPerlin.SetFrequency(1.0 / 64.0);
-		m_oceanPerlin.SetLacunarity(2.0);
-		m_oceanPerlin.SetPersistence(0.8f);
+		m_oceanPerlin.SetLacunarity(1.0);
+		m_oceanPerlin.SetPersistence(0.9f);
 		m_oceanPerlin.SetOctaveCount(6);
 		m_oceanPerlin.SetNoiseQuality(noise::QUALITY_BEST);
 		
@@ -141,8 +141,6 @@ namespace MCR
 	std::uniform_real_distribution<double> caveWormWorldPosXZDist(0, Region::Size - 1);
 	std::uniform_real_distribution<double> caveWormWorldPosYDist(0, averageSurfaceLevel);
 	
-	std::uniform_int_distribution<int> numCaveWormsDist(0, 2);
-	
 	//Minimum and maximum radius for caves (in blocks).
 	const double caveMinRadius = 2.0;
 	const double caveMaxRadius = 3.0;
@@ -171,9 +169,7 @@ namespace MCR
 	const int seaLevel = averageSurfaceLevel - 15;
 	
 	const double maxOceanDepth = 20;
-	const double seaFloorLevelRange = 2;
-	
-	const double beachSteepness = 10;
+	const int beachHeight = 5;
 	
 	std::uniform_int_distribution<int> spruceRadDist(2, 4);
 	std::uniform_int_distribution<int> spruceHeightDist(8, 16);
@@ -208,8 +204,8 @@ namespace MCR
 			
 			if (regionPos.z < 0 || regionPos.x < 0 || regionPos.x >= Region::Size || regionPos.z >= Region::Size)
 			{
-				int64_t newRegX = std::floor(worm.m_worldPos.x / Region::Size);
-				int64_t newRegZ = std::floor(worm.m_worldPos.z / Region::Size);
+				const int64_t newRegX = static_cast<int64_t>(std::floor(worm.m_worldPos.x / Region::Size));
+				const int64_t newRegZ = static_cast<int64_t>(std::floor(worm.m_worldPos.z / Region::Size));
 				
 				std::lock_guard<std::mutex> futureRegionsLock(m_futureRegionsMutex);
 				FindFutureRegion({ newRegX, newRegZ }).m_worms.push_back(worm);
@@ -221,7 +217,7 @@ namespace MCR
 			const double radiusD = glm::mix(caveMinRadius, caveMaxRadius, radiusVal * 0.5 + 0.5);
 			const double radiusDSq = radiusD * radiusD;
 			
-			const int radiusI = std::ceil(radiusD);
+			const int radiusI = static_cast<int>(std::ceil(radiusD));
 			
 			for (int yo = -radiusI; yo <= radiusI; yo++)
 			{
@@ -276,10 +272,8 @@ namespace MCR
 		}
 	}
 	
-	void WorldGenerator::Generate(Region& region, bool& hasWater)
+	void WorldGenerator::Generate(Region& region)
 	{
-		hasWater = false;
-		
 		struct NeighborBlockPlacement
 		{
 			int64_t m_x;
@@ -312,7 +306,7 @@ namespace MCR
 				
 				double oceanProgress = m_oceanPerlin.GetValue(px, 0, pz);
 				const bool isOcean = oceanProgress > 0.0;
-				float oceanProgressSat = static_cast<float>(glm::clamp(oceanProgress * 1.5, 0.0, 1.0));
+				float oceanProgressSat = static_cast<float>(glm::clamp(oceanProgress * 5, 0.0, 1.0));
 				
 				int blocksSinceAir = 0;
 				
@@ -356,7 +350,6 @@ namespace MCR
 						if (isOcean && y < seaLevel)
 						{
 							block.m_id = BlockIDs::Water;
-							hasWater = true;
 						}
 						else
 						{
@@ -369,7 +362,7 @@ namespace MCR
 						{
 							block.m_id = BlockIDs::Stone;
 						}
-						else if (isOcean)
+						else if (isOcean && y < seaLevel + beachHeight)
 						{
 							block.m_id = BlockIDs::Sand;
 						}

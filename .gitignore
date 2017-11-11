@@ -5,5 +5,5 @@ bin
 .vs
 res/spv
 res/world
-res/textures
+res/textures/chroma_hills.zip
 *.template

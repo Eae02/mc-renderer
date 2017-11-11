@@ -15,7 +15,7 @@ namespace MCR
 		
 		void SetSeed(int seed);
 		
-		void Generate(Region& region, bool& hasWater);
+		void Generate(Region& region);
 		
 		void ProcessFutureRegions(class WorldManager& worldManager);
 		

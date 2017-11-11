@@ -1,7 +1,7 @@
 {
 	"id": 12,
 	"name": "Sand",
-	"roughness": 0.8,
+	"roughness": 0.9,
 	"texture": {
 		"all": "sand"
 	}

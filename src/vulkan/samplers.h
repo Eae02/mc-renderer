@@ -6,10 +6,11 @@ namespace MCR
 {
 	enum class Samplers
 	{
-		Framebuffer,
-		FramebufferDownsampled,
-		WindNoise,
-		ShadowMap
+		Framebuffer = 0,
+		FramebufferDownsampled = 1,
+		WindNoise = 2,
+		WaterNormalMap = 2, //Uses the same settings as the wind noise sampler.
+		ShadowMap = 3
 	};
 	
 	void CreateSamplers();

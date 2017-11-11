@@ -29,30 +29,44 @@ namespace MCR
 		return attachment;
 	}
 	
+	Framebuffer::Attachment Framebuffer::CreateDepthAttachment(uint32_t width, uint32_t height,
+	                                                           VkImageUsageFlags extraUsageFlags)
+	{
+		Attachment attachment;
+		
+		//Creates the image
+		VkImageCreateInfo imageCreateInfo;
+		InitImageCreateInfo(imageCreateInfo, VK_IMAGE_TYPE_2D, vulkan.depthFormat, width, height);
+		imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | extraUsageFlags;
+		
+		CheckResult(vmaCreateImage(vulkan.allocator, &imageCreateInfo, &gpuAllocationCI,
+		                           attachment.m_image.GetCreateAddress(),
+		                           attachment.m_allocation.GetCreateAddress(), nullptr));
+		
+		//Creates the image view
+		VkImageViewCreateInfo viewCreateInfo;
+		InitImageViewCreateInfo(viewCreateInfo, *attachment.m_image, VK_IMAGE_VIEW_TYPE_2D,
+		                        vulkan.depthFormat, { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 });
+		CheckResult(vkCreateImageView(vulkan.device, &viewCreateInfo, nullptr,
+		                              attachment.m_imageView.GetCreateAddress()));
+		
+		return attachment;
+	}
+	
 	void Framebuffer::Create(const RenderPasses& renderPasses, gsl::span<const VkImage> outputImages,
 	                         uint32_t width, uint32_t height)
 	{
 		m_rendererFramebuffer.Reset();
 		
-		// ** Creates the color attachment image **
 		m_colorAttachment = CreateColorAttachment(Renderer::ColorAttachmentFormat, width, height,
 		                                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 		
-		// ** Creates the depth attachment image **
-		VkImageCreateInfo depthImageCreateInfo;
-		InitImageCreateInfo(depthImageCreateInfo, VK_IMAGE_TYPE_2D, vulkan.depthFormat, width, height);
-		depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		m_depthAttachment = CreateDepthAttachment(width, height, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 		
-		CheckResult(vmaCreateImage(vulkan.allocator, &depthImageCreateInfo, &gpuAllocationCI,
-		                           m_depthAttachment.m_image.GetCreateAddress(),
-		                           m_depthAttachment.m_allocation.GetCreateAddress(), nullptr));
+		m_waterColorAttachment = CreateColorAttachment(Renderer::ColorAttachmentFormat, width, height,
+		                                               VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 		
-		// ** Creates the depth attachment image view **
-		VkImageViewCreateInfo depthImageViewCreateInfo;
-		InitImageViewCreateInfo(depthImageViewCreateInfo, *m_depthAttachment.m_image, VK_IMAGE_VIEW_TYPE_2D,
-		                        vulkan.depthFormat, { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 });
-		CheckResult(vkCreateImageView(vulkan.device, &depthImageViewCreateInfo, nullptr,
-		                              m_depthAttachment.m_imageView.GetCreateAddress()));
+		m_waterDepthAttachment = CreateDepthAttachment(width, height, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 		
 		// ** Creates the god rays attachments **
 		uint32_t godRaysWidth = width / PostProcessor::GodRaysDownscale;
@@ -76,8 +90,19 @@ namespace MCR
 			                                               width, height);
 		}
 		
-		std::array<VkImageView, 2> rendererAttachments{ *m_colorAttachment.m_imageView, *m_depthAttachment.m_imageView };
+		const VkImageView rendererAttachments[] =
+		{
+			*m_colorAttachment.m_imageView,
+			*m_depthAttachment.m_imageView
+		};
 		m_rendererFramebuffer = CreateFramebuffer(renderPasses.m_renderer, rendererAttachments, width, height);
+		
+		const VkImageView waterAttachments[] =
+		{
+			*m_waterColorAttachment.m_imageView,
+			*m_waterDepthAttachment.m_imageView
+		};
+		m_waterFramebuffer = CreateFramebuffer(renderPasses.m_water, waterAttachments, width, height);
 		
 		m_godRaysGenFramebuffer =
 		        CreateFramebuffer(renderPasses.m_godRays, SingleElementSpan(*m_unblurredGodRaysAttachment.m_imageView),
@@ -89,5 +114,65 @@ namespace MCR
 		
 		m_width = width;
 		m_height = height;
+	}
+	
+	void Framebuffer::EnqueueWaterCopyCommands(CommandBuffer& commandBuffer) const
+	{
+		// ** Inserts barriers preparing water output attachments for being copied to **
+		VkImageMemoryBarrier preCopyBarriers[2];
+		
+		InitImageMemoryBarrier(preCopyBarriers[0], *m_waterColorAttachment.m_image);
+		preCopyBarriers[0].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		preCopyBarriers[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		preCopyBarriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		
+		InitImageMemoryBarrier(preCopyBarriers[1], *m_waterDepthAttachment.m_image);
+		preCopyBarriers[1].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		preCopyBarriers[1].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		preCopyBarriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		preCopyBarriers[1].subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
+		
+		commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+		                              0, { }, { }, preCopyBarriers);
+		
+		// ** Copies the water input attachments to the water output attachments **
+		const VkImageCopy colorCopyRegion =
+		{
+			/* srcSubresource */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+			/* srcOffset      */ { 0, 0, 0 },
+			/* dstSubresource */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+			/* dstOffset      */ { 0, 0, 0 },
+			/* extent         */ { m_width, m_height, 1 }
+		};
+		commandBuffer.CopyImage(*m_colorAttachment.m_image, *m_waterColorAttachment.m_image, colorCopyRegion);
+		
+		const VkImageCopy depthCopyRegion =
+		{
+			/* srcSubresource */ { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1 },
+			/* srcOffset      */ { 0, 0, 0 },
+			/* dstSubresource */ { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1 },
+			/* dstOffset      */ { 0, 0, 0 },
+			/* extent         */ { m_width, m_height, 1 }
+		};
+		commandBuffer.CopyImage(*m_depthAttachment.m_image, *m_waterDepthAttachment.m_image, depthCopyRegion);
+		
+		// ** Inserts barriers preparing water input attachments for reading in the fragment shader **
+		VkImageMemoryBarrier postCopyBarriers[2];
+		
+		InitImageMemoryBarrier(postCopyBarriers[0], *m_colorAttachment.m_image);
+		postCopyBarriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		postCopyBarriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		postCopyBarriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		postCopyBarriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		
+		InitImageMemoryBarrier(postCopyBarriers[1], *m_depthAttachment.m_image);
+		postCopyBarriers[1].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		postCopyBarriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		postCopyBarriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		postCopyBarriers[1].newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		postCopyBarriers[1].subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
+		
+		commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		                              0, { }, { }, postCopyBarriers);
 	}
 }

@@ -14,6 +14,7 @@ namespace MCR
 		struct RenderPasses
 		{
 			VkRenderPass m_renderer;
+			VkRenderPass m_water;
 			VkRenderPass m_godRays;
 			VkRenderPass m_ui;
 		};
@@ -21,9 +22,16 @@ namespace MCR
 		void Create(const RenderPasses& renderPasses, gsl::span<const VkImage> outputImages,
 		            uint32_t width, uint32_t height);
 		
+		void EnqueueWaterCopyCommands(CommandBuffer& commandBuffer) const;
+		
 		inline VkFramebuffer GetRendererFramebuffer() const
 		{
 			return *m_rendererFramebuffer;
+		}
+		
+		inline VkFramebuffer GetWaterFramebuffer() const
+		{
+			return *m_waterFramebuffer;
 		}
 		
 		inline VkFramebuffer GetGodRaysGenFramebuffer() const
@@ -60,24 +68,24 @@ namespace MCR
 		inline uint32_t GetHeight() const
 		{ return m_height; }
 		
-		inline VkImage GetColorImage() const
-		{
-			return *m_colorAttachment.m_image;
-		}
-		
-		inline VkImage GetDepthImage() const
-		{
-			return *m_depthAttachment.m_image;
-		}
-		
-		inline VkImageView GetColorImageView() const
+		inline VkImageView GetWaterInputColorImageView() const
 		{
 			return *m_colorAttachment.m_imageView;
 		}
 		
-		inline VkImageView GetDepthImageView() const
+		inline VkImageView GetWaterInputDepthImageView() const
 		{
 			return *m_depthAttachment.m_imageView;
+		}
+		
+		inline VkImageView GetColorImageView() const
+		{
+			return *m_waterColorAttachment.m_imageView;
+		}
+		
+		inline VkImageView GetDepthImageView() const
+		{
+			return *m_waterDepthAttachment.m_imageView;
 		}
 		
 		inline VkImageView GetUnblurredGodRaysImageView() const
@@ -101,8 +109,12 @@ namespace MCR
 		static Attachment CreateColorAttachment(VkFormat format, uint32_t width, uint32_t height,
 		                                        VkImageUsageFlags extraUsageFlags = 0);
 		
+		static Attachment CreateDepthAttachment(uint32_t width, uint32_t height, VkImageUsageFlags extraUsageFlags = 0);
+		
 		Attachment m_colorAttachment;
 		Attachment m_depthAttachment;
+		Attachment m_waterColorAttachment;
+		Attachment m_waterDepthAttachment;
 		Attachment m_unblurredGodRaysAttachment;
 		Attachment m_blurredGodRaysAttachment;
 		
@@ -115,6 +127,7 @@ namespace MCR
 		std::vector<OutputEntry> m_outputs;
 		
 		VkHandle<VkFramebuffer> m_rendererFramebuffer;
+		VkHandle<VkFramebuffer> m_waterFramebuffer;
 		VkHandle<VkFramebuffer> m_godRaysGenFramebuffer;
 		VkHandle<VkFramebuffer> m_godRaysBlurFramebuffer;
 		

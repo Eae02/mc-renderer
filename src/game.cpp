@@ -30,24 +30,6 @@ namespace MCR
 	ProfilingPane profilingPane;
 #endif
 	
-	void Initialize()
-	{
-		LoadContext loadContext;
-		loadContext.Begin();
-		
-		//Loads block textures
-		const fs::path texturePackPath = GetResourcePath() / "textures" / "chroma_hills.zip";
-		BlocksTextureManager::SetInstance(std::make_unique<BlocksTextureManager>(BlocksTextureManager::LoadTexturePack(texturePackPath, loadContext)));
-		
-		WindNoiseImage::SetInstance(std::make_unique<WindNoiseImage>(WindNoiseImage::Generate(256, loadContext)));
-		
-		Font::LoadStandard(loadContext);
-		
-		loadContext.End();
-		
-		RegisterBlockTypes();
-	}
-	
 	void UpdateGame(float dt, const InputState& inputState)
 	{
 		{
@@ -106,11 +88,28 @@ namespace MCR
 		int currentDrawableWidth = 0;
 		int currentDrawableHeight = 0;
 		
-		Initialize();
+		std::unique_ptr<LoadContext> loadContext = std::make_unique<LoadContext>();
+		loadContext->Begin();
+		
+		//Loads block textures
+		const fs::path texturePackPath = GetResourcePath() / "textures" / "chroma_hills.zip";
+		BlocksTextureManager::SetInstance(std::make_unique<BlocksTextureManager>(
+			BlocksTextureManager::LoadTexturePack(texturePackPath, *loadContext)));
+		
+		WindNoiseImage::SetInstance(std::make_unique<WindNoiseImage>(WindNoiseImage::Generate(256, *loadContext)));
+		
+		Font::LoadStandard(*loadContext);
+		
+		Renderer renderer;
+		renderer.Initialize(*loadContext);
+		
+		loadContext->End();
+		loadContext.reset();
+		
+		RegisterBlockTypes();
 		
 		WaterMesh::CreateBuffers();
 		
-		Renderer renderer;
 		PostProcessor postProcessor(renderer.GetRenderSettingsBufferInfo());
 		UIGraphicsContext uiGraphicsContext;
 		Framebuffer framebuffer;
@@ -208,6 +207,7 @@ namespace MCR
 				SwapChain::Create(enableVSync);
 				
 				Framebuffer::RenderPasses renderPasses;
+				renderPasses.m_water = renderer.GetWaterRenderPass();
 				renderPasses.m_renderer = renderer.GetRenderPass();
 				renderPasses.m_godRays = postProcessor.GetGodRaysRenderPass();
 				renderPasses.m_ui = uiGraphicsContext.GetRenderPass();

@@ -176,7 +176,7 @@ namespace MCR
 	void CascadedShadowMapper::SetQualityLevel(QualityLevels qualityLevel)
 	{
 		const uint32_t resolutions[] = { 512, 1024, 2048, 4096 };
-		const float endDistances[] = { 40, 50, 60, 80 };
+		const float endDistances[] = { 60, 70, 80, 100 };
 		
 		if (m_resolution != resolutions[static_cast<int>(qualityLevel)])
 		{

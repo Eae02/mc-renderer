@@ -72,7 +72,7 @@ namespace MCR
 			
 			NewRegion newRegion(std::make_shared<Region>(regionCoord.x, regionCoord.z));
 			
-			m_generator.Generate(*newRegion.m_region, newRegion.m_hasWater);
+			m_generator.Generate(*newRegion.m_region);
 			
 #ifdef MCR_REGION_LOG
 			Log("Generated (", regionCoord.x, ", ", regionCoord.z, ")");

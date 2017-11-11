@@ -25,7 +25,7 @@ namespace MCR
 		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		attachments[0].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		
 		attachments[1].format = vulkan.depthFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -34,7 +34,7 @@ namespace MCR
 		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		
 		VkAttachmentReference colorAttachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 		VkAttachmentReference depthStencilAttachmentRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
@@ -48,9 +48,9 @@ namespace MCR
 		dependencies[0].srcSubpass = 0;
 		dependencies[0].dstSubpass = VK_SUBPASS_EXTERNAL;
 		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		dependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 		
 		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
@@ -66,8 +66,68 @@ namespace MCR
 		return renderPass;
 	}
 	
+	VkRenderPass Renderer::CreateWaterRenderPass()
+	{
+		std::array<VkAttachmentDescription, 2> attachments = { };
+		attachments[0].format = ColorAttachmentFormat;
+		attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[0].initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		attachments[0].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		
+		attachments[1].format = vulkan.depthFormat;
+		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachments[1].initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		
+		VkAttachmentReference colorAttachmentRef = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+		VkAttachmentReference depthStencilAttachmentRef = { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+		
+		std::array<VkSubpassDescription, 1> subpassDescriptions = { };
+		subpassDescriptions[0].colorAttachmentCount = 1;
+		subpassDescriptions[0].pColorAttachments = &colorAttachmentRef;
+		subpassDescriptions[0].pDepthStencilAttachment = &depthStencilAttachmentRef;
+		
+		std::array<VkSubpassDependency, 2> dependencies;
+		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].dstSubpass = 0;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		
+		dependencies[1].srcSubpass = 0;
+		dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+		
+		VkRenderPassCreateInfo renderPassCreateInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+		renderPassCreateInfo.attachmentCount = attachments.size();
+		renderPassCreateInfo.pAttachments = attachments.data();
+		renderPassCreateInfo.subpassCount = subpassDescriptions.size();
+		renderPassCreateInfo.pSubpasses = subpassDescriptions.data();
+		renderPassCreateInfo.dependencyCount = dependencies.size();
+		renderPassCreateInfo.pDependencies = dependencies.data();
+		
+		VkRenderPass renderPass;
+		CheckResult(vkCreateRenderPass(vulkan.device, &renderPassCreateInfo, nullptr, &renderPass));
+		return renderPass;
+	}
+	
 	Renderer::Renderer()
-	    : m_renderPass(CreateRenderPass()), m_shadowMapper(m_renderSettingsBuffer.GetBufferInfo()),
+	    : m_renderPass(CreateRenderPass()), m_waterRenderPass(CreateWaterRenderPass()),
+	      m_shadowMapper(m_renderSettingsBuffer.GetBufferInfo()),
 	      m_blockShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo()),
 	      m_waterShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo()),
 	      m_debugShader({ *m_renderPass, 0 }, m_renderSettingsBuffer.GetBufferInfo())
@@ -166,6 +226,8 @@ namespace MCR
 			VkViewport viewport;
 			m_framebuffer->GetViewportAndRenderArea(renderArea, viewport);
 			
+			// ** Main rendering **
+			
 			std::array<VkClearValue, 2> clearValues;
 			SetColorClearValue(clearValues[0], glm::vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
 			SetDepthStencilClearValue(clearValues[1], 1.0f, 0);
@@ -211,17 +273,36 @@ namespace MCR
 				m_frustumVolume->Draw(cb, m_debugShader);
 			}
 			
+			cb.EndRenderPass();
+			
 			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mainRenderGPUTimer);
 			
+			// ** Water rendering **
+			
 			uint32_t waterRenderGPUTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, "Water Render");
+			
+			m_framebuffer->EnqueueWaterCopyCommands(cb);
+			
+			const VkRenderPassBeginInfo waterRenderPassBeginInfo =
+			{
+				/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+				/* pNext           */ nullptr,
+				/* renderPass      */ *m_waterRenderPass,
+				/* framebuffer     */ m_framebuffer->GetWaterFramebuffer(),
+				/* renderArea      */ renderArea,
+				/* clearValueCount */ 0,
+				/* pClearValues    */ nullptr
+			};
+			
+			cb.BeginRenderPass(&waterRenderPassBeginInfo);
 			
 			m_waterShader.Bind(cb);
 			
 			m_chunkRenderList.RenderWater(cb);
 			
-			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, waterRenderGPUTimer);
-			
 			cb.EndRenderPass();
+			
+			EndGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, waterRenderGPUTimer);
 		}
 		
 		if (frameIndex % 16 == 0)
@@ -240,5 +321,7 @@ namespace MCR
 		                                                framebuffer.GetHeight(), ZNear, ZFar);
 		
 		m_invProjectionMatrix = glm::inverse(m_projectionMatrix);
+		
+		m_waterShader.FramebufferChanged(framebuffer);
 	}
 }

@@ -37,7 +37,7 @@ const float atmosphereRadius = 100000;
 const float surfaceLevelPercentage = 0.997;
 const float occlusionSmoothness = 0.01;
 const float blockDepthScale = 0.05;
-const float exposure = 1.0f;
+const float exposure = 1.2f;
 
 const vec3 absorbtionProfile = vec3(0.18867780436772762, 0.4978442963618773, 0.6616065586417131);
 

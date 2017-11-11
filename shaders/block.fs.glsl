@@ -59,5 +59,5 @@ void main()
 	}
 	
 	//Ambient approximation
-	color_out.rgb += vec3(0.05) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
+	color_out.rgb += vec3(0.04) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 }

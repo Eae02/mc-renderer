@@ -28,6 +28,11 @@ namespace MCR
 			const class TimeManager* m_timeManager;
 		};
 		
+		inline void Initialize(class LoadContext& loadContext)
+		{
+			m_waterShader.Initialize(loadContext);
+		}
+		
 		void Render(const RenderParams& params);
 		
 		inline VkCommandBuffer GetCommandBuffer() const
@@ -80,6 +85,11 @@ namespace MCR
 			return *m_renderPass;
 		}
 		
+		inline VkRenderPass GetWaterRenderPass() const
+		{
+			return *m_waterRenderPass;
+		}
+		
 		inline const VkDescriptorBufferInfo& GetRenderSettingsBufferInfo() const
 		{
 			return m_renderSettingsBuffer.GetBufferInfo();
@@ -96,10 +106,12 @@ namespace MCR
 		
 	private:
 		static VkRenderPass CreateRenderPass();
+		static VkRenderPass CreateWaterRenderPass();
 		
 		ChunkVisibilityCalculator m_visibilityCalculator;
 		
 		VkHandle<VkRenderPass> m_renderPass;
+		VkHandle<VkRenderPass> m_waterRenderPass;
 		
 		RenderSettingsBuffer m_renderSettingsBuffer;
 		

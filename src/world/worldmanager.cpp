@@ -373,8 +373,12 @@ namespace MCR
 	{
 		WorldManager::MeshRenderInfo info = { nullptr, nullptr };
 		
-		int regionIndex = GetRegionIndex(static_cast<int>(x - m_centerRegionX + m_loadDistance),
-		                                 static_cast<int>(z - m_centerRegionZ + m_loadDistance));
+		const int relX = static_cast<int>(x - m_centerRegionX);
+		const int relZ = static_cast<int>(z - m_centerRegionZ);
+		if (relX * relX + relZ * relZ > m_renderDistanceSq)
+			return info;
+		
+		int regionIndex = GetRegionIndex(relX + m_loadDistance, relZ + m_loadDistance);
 		if (regionIndex == -1)
 			return info;
 		
@@ -432,7 +436,7 @@ namespace MCR
 				
 				for (WaterMesh& waterMesh : region->m_waterMeshes)
 				{
-					if (!waterMesh.Empty())
+					if (waterMesh.HasData())
 					{
 						renderList.Add(waterMesh);
 					}
