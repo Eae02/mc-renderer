@@ -102,6 +102,9 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },
 		
 		//Normal map
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, waterNormalsSamplers },
+		
+		//Caustics map
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, waterNormalsSamplers }
 	};
 	
@@ -117,6 +120,12 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT }
 	};
 	
+	static DSLayoutBinding CausticsGen[] =
+	{
+		//Image
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT }
+	};
+	
 	void RegisterSetLayouts()
 	{
 		RegisterDescriptorSetLayout("BlockShader_Global", BlockShader_Global);
@@ -129,5 +138,6 @@ namespace MCR
 		RegisterDescriptorSetLayout("Water", Water);
 		RegisterDescriptorSetLayout("UI_Sampler", UI_Sampler);
 		RegisterDescriptorSetLayout("UI_Image", UI_Image);
+		RegisterDescriptorSetLayout("CausticsGen", CausticsGen);
 	}
 }

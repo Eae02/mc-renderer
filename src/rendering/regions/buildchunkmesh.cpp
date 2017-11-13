@@ -1,6 +1,7 @@
 #include "buildchunkmesh.h"
 #include "../../blocks/blocktype.h"
 #include "../../blocks/ids.h"
+#include "watermesh.h"
 
 namespace MCR
 {
@@ -112,7 +113,7 @@ namespace MCR
 		for (int yo = 0; yo < Region::Size; yo++)
 		{
 			const int64_t y = yo + baseWorldY;
-			const float waterY = y + 0.8f;
+			const float waterY = y + WaterMesh::WaterHeight;
 			
 			for (int z = 0; z < Region::Size; z++)
 			{

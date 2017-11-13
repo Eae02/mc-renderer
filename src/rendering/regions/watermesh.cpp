@@ -3,6 +3,8 @@
 
 namespace MCR
 {
+	constexpr float WaterMesh::WaterHeight;
+	
 	static const VkVertexInputBindingDescription waterVertexInputBinding =
 	{
 		/* binding   */ 0,

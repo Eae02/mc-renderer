@@ -12,6 +12,7 @@
 #include "shadows/cascadedshadowmapper.h"
 #include "shadows/shadowvolumemesh.h"
 #include "shaders/watershader.h"
+#include "causticstexture.h"
 
 namespace MCR
 {
@@ -28,10 +29,7 @@ namespace MCR
 			const class TimeManager* m_timeManager;
 		};
 		
-		inline void Initialize(class LoadContext& loadContext)
-		{
-			m_waterShader.Initialize(loadContext);
-		}
+		void Initialize(class LoadContext& loadContext);
 		
 		void Render(const RenderParams& params);
 		
@@ -116,6 +114,8 @@ namespace MCR
 		RenderSettingsBuffer m_renderSettingsBuffer;
 		
 		CascadedShadowMapper m_shadowMapper;
+		
+		CausticsTexture m_causticsTexture;
 		
 		BlockShader m_blockShader;
 		WaterShader m_waterShader;

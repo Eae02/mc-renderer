@@ -3,6 +3,7 @@
 #include "../rendering/frustum.h"
 #include "../rendering/regions/buildchunkmesh.h"
 #include "../blocks/sides.h"
+#include "../blocks/ids.h"
 
 #include <gsl/gsl_util>
 
@@ -541,5 +542,33 @@ namespace MCR
 		}
 		
 		m_outOfDateWaterList.clear();
+	}
+	
+	bool WorldManager::IsCameraUnderWater() const
+	{
+		int64_t cameraChunkX = static_cast<int64_t>(std::floor(m_camera.GetPosition().x / Region::Size));
+		int64_t cameraChunkZ = static_cast<int64_t>(std::floor(m_camera.GetPosition().z / Region::Size));
+		
+		const Region* region = GetRegion({ cameraChunkX, cameraChunkZ });
+		if (region == nullptr)
+			return false;
+		
+		glm::ivec3 cameraPosI(glm::floor(m_camera.GetPosition()));
+		if (cameraPosI.y >= Region::Height || cameraPosI.y < 0)
+			return false;
+		
+		glm::ivec3 localCameraPosI(cameraPosI.x - (cameraChunkX * Region::Size), cameraPosI.y,
+		                           cameraPosI.z - (cameraChunkZ * Region::Size));
+		
+		if (region->Get(localCameraPosI.x, localCameraPosI.y, localCameraPosI.z).m_id != BlockIDs::Water)
+			return false;
+		
+		if (localCameraPosI.y < Region::Height - 1 &&
+			region->Get(localCameraPosI.x, localCameraPosI.y + 1, localCameraPosI.z).m_id == BlockIDs::Water)
+		{
+			return true;
+		}
+		
+		return glm::fract(m_camera.GetPosition().y) < WaterMesh::WaterHeight;
 	}
 }

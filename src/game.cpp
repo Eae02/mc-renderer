@@ -11,6 +11,7 @@
 #include "rendering/postprocessor.h"
 #include "rendering/renderer.h"
 #include "rendering/framebuffer.h"
+#include "rendering/causticstexture.h"
 #include "rendering/windnoiseimage.h"
 #include "rendering/regions/watermesh.h"
 #include "profiling/profiling.h"
@@ -84,6 +85,8 @@ namespace MCR
 		SDL_GetMouseState(&cursorX, &cursorY);
 		
 		InputState inputState(glm::vec2(cursorX, cursorY));
+		
+		CausticsTexture::CreatePipelines();
 		
 		int currentDrawableWidth = 0;
 		int currentDrawableHeight = 0;
@@ -324,6 +327,7 @@ namespace MCR
 		
 		ChunkBufferAllocator::s_instance.ReleaseMemory();
 		
+		CausticsTexture::DestroyPipelines();
 		WaterMesh::DestroyBuffers();
 		
 		ClearVulkanDestroyList();

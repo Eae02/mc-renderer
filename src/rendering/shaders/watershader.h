@@ -9,9 +9,11 @@ namespace MCR
 	public:
 		WaterShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo);
 		
+		void SetCausticsTexture(const class CausticsTexture& causticsTexture);
+		
 		void Initialize(class LoadContext& loadContext);
 		
-		void Bind(CommandBuffer& cb) const;
+		void Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, bool underwater) const;
 		
 		void FramebufferChanged(const class Framebuffer& framebuffer);
 		

@@ -3,6 +3,7 @@
 #include "../blendstates.h"
 #include "../framebuffer.h"
 #include "../../loadcontext.h"
+#include "../causticstexture.h"
 
 #include <stb_image.h>
 #include <glm/gtc/constants.hpp>
@@ -14,7 +15,9 @@ namespace MCR
 	
 	static const VkDynamicState dynamicState[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	
-	static const std::string_view setLayouts[] = { "Water" };
+	static const std::string_view setLayouts[] = { "Water", "ShadowSample" };
+	
+	static const VkPushConstantRange pushConstantRanges[] = { { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t) } };
 	
 	const Shader::CreateInfo WaterShader::s_createInfo =
 	{
@@ -22,7 +25,7 @@ namespace MCR
 		/* gsName                  */ "",
 		/* fsName                  */ "water.fs",
 		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ { },
+		/* pushConstantRanges      */ pushConstantRanges,
 		/* vertexInputState        */ &WaterMesh::s_vertexInputState,
 		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
@@ -70,13 +73,16 @@ namespace MCR
 		UpdateDescriptorSets(bufferDSWrites);
 	}
 	
-	void WaterShader::Bind(CommandBuffer& cb) const
+	void WaterShader::Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, bool underwater) const
 	{
 		Shader::Bind(cb);
 		
-		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet };
+		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet, shadowDescriptorSet };
 		
 		cb.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, GetLayout(), 0, descriptorSets, { });
+		
+		const uint32_t pushConstantData = underwater ? VK_TRUE : VK_FALSE;
+		cb.PushConstants(GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &pushConstantData);
 	}
 	
 	void WaterShader::FramebufferChanged(const Framebuffer& framebuffer)
@@ -222,5 +228,20 @@ namespace MCR
 		
 		loadContext.TakeResource(VkHandle<VmaAllocation>(stagingAllocation));
 		loadContext.TakeResource(VkHandle<VkBuffer>(stagingBuffer));
+	}
+	
+	void WaterShader::SetCausticsTexture(const CausticsTexture& causticsTexture)
+	{
+		VkWriteDescriptorSet dsWrite;
+		
+		const VkDescriptorImageInfo imageInfo =
+		{
+			/* sampler     */ VK_NULL_HANDLE, //Immutable
+			/* imageView   */ causticsTexture.GetImageView(),
+			/* imageLayout */ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		};
+		m_descriptorSet.InitWriteDescriptorSet(dsWrite, 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo);
+		
+		UpdateDescriptorSets(SingleElementSpan(dsWrite));
 	}
 }

@@ -73,7 +73,7 @@ namespace MCR
 		
 		return features.fullDrawIndexUint32 == VK_TRUE && features.samplerAnisotropy == VK_TRUE &&
 		       features.drawIndirectFirstInstance == VK_TRUE && features.depthClamp == VK_TRUE &&
-		       features.geometryShader == VK_TRUE;
+		       features.geometryShader == VK_TRUE && features.shaderStorageImageExtendedFormats == VK_TRUE;
 	}
 	
 	inline bool GetQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface, uint32_t* queueFamiliesOut)
@@ -305,6 +305,8 @@ namespace MCR
 		vulkan.limits.uniformBufferOffsetAlignment = physicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
 		vulkan.limits.storageBufferOffsetAlignment = physicalDeviceProperties.limits.minStorageBufferOffsetAlignment;
 		vulkan.limits.timestampMillisecondPeriod = physicalDeviceProperties.limits.timestampPeriod * 1E-6f;
+		vulkan.limits.maxComputeWorkGroupInvocations = physicalDeviceProperties.limits.maxComputeWorkGroupInvocations;
+		std::copy_n(physicalDeviceProperties.limits.maxComputeWorkGroupSize, 3, vulkan.limits.maxComputeWorkGroupSize);
 		
 		Log("Using vulkan device: ", physicalDeviceProperties.deviceName);
 		
@@ -342,6 +344,7 @@ namespace MCR
 		enabledFeatures.depthClamp = VK_TRUE;
 		enabledFeatures.fillModeNonSolid = VK_TRUE;
 		enabledFeatures.geometryShader = VK_TRUE;
+		enabledFeatures.shaderStorageImageExtendedFormats = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
 		
 		if (physicalDeviceProperties.vendorID == 32902)

@@ -81,6 +81,8 @@ namespace MCR
 		
 		static const VkPipelineVertexInputStateCreateInfo s_vertexInputState;
 		
+		static constexpr float WaterHeight = 0.75f;
+		
 	private:
 		void ReleaseVertices();
 		void ReleaseIndices();

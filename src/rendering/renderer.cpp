@@ -3,6 +3,7 @@
 #include "framebuffer.h"
 #include "constants.h"
 #include "regions/chunkbufferallocator.h"
+#include "../loadcontext.h"
 #include "../profiling/profiling.h"
 #include "../world/worldmanager.h"
 #include "../profiling/frameprofiler.h"
@@ -137,6 +138,8 @@ namespace MCR
 		{
 			m_commandBuffers.emplace_back(vulkan.stdCommandPools[QUEUE_FAMILY_GRAPHICS]);
 		}
+		
+		m_waterShader.SetCausticsTexture(m_causticsTexture);
 	}
 	
 	void Renderer::Render(const RenderParams& params)
@@ -296,7 +299,9 @@ namespace MCR
 			
 			cb.BeginRenderPass(&waterRenderPassBeginInfo);
 			
-			m_waterShader.Bind(cb);
+			bool underwater = m_worldManager->IsCameraUnderWater();
+			
+			m_waterShader.Bind(cb, m_shadowMapper.GetDescriptorSet(), underwater);
 			
 			m_chunkRenderList.RenderWater(cb);
 			
@@ -323,5 +328,12 @@ namespace MCR
 		m_invProjectionMatrix = glm::inverse(m_projectionMatrix);
 		
 		m_waterShader.FramebufferChanged(framebuffer);
+	}
+	
+	void Renderer::Initialize(LoadContext& loadContext)
+	{
+		m_causticsTexture.Render(loadContext.GetCB());
+		
+		m_waterShader.Initialize(loadContext);
 	}
 }
