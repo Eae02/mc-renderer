@@ -39,7 +39,7 @@ add_executable(mcrenderer ${SOURCE_FILES})
 if (CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(mcrenderer BEFORE PUBLIC -Wall -Wextra -Wshadow -pedantic -Wno-unused-parameter
 		-Wno-missing-field-initializers -Wnon-virtual-dtor -std=c++17)
-	set(EXTRA_LIBS stdc++fs sndio)
+	set(EXTRA_LIBS stdc++fs sndio X11-xcb)
 endif()
 
 #Sets link libraries
