@@ -60,9 +60,6 @@ namespace MCR
 		//Render settings buffer
 		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },
 		
-		//Color image
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
-		
 		//Depth image
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
 		
@@ -108,6 +105,27 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, waterNormalsSamplers }
 	};
 	
+	static DSLayoutBinding WaterPost[] =
+	{
+		//Render settings buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT },
+		
+		//Color image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
+		
+		//Depth image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
+		
+		//Caustics map
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, waterNormalsSamplers }
+	};
+	
+	static DSLayoutBinding PostProcess[] =
+	{
+		//Input image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers }
+	};
+	
 	static DSLayoutBinding UI_Sampler[] = 
 	{
 		//Sampler
@@ -135,9 +153,11 @@ namespace MCR
 		RegisterDescriptorSetLayout("Sky", Sky);
 		RegisterDescriptorSetLayout("GodRaysGen", GodRaysGen);
 		RegisterDescriptorSetLayout("GodRaysBlur", GodRaysBlur);
+		RegisterDescriptorSetLayout("WaterPost", WaterPost);
 		RegisterDescriptorSetLayout("Water", Water);
 		RegisterDescriptorSetLayout("UI_Sampler", UI_Sampler);
 		RegisterDescriptorSetLayout("UI_Image", UI_Image);
+		RegisterDescriptorSetLayout("PostProcess", PostProcess);
 		RegisterDescriptorSetLayout("CausticsGen", CausticsGen);
 	}
 }

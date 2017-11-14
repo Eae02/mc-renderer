@@ -17,7 +17,25 @@ namespace MCR
 	
 	static const std::string_view setLayouts[] = { "Water", "ShadowSample" };
 	
-	static const VkPushConstantRange pushConstantRanges[] = { { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t) } };
+	static const VkPushConstantRange pushConstantRange =
+	{
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		0,
+		sizeof(uint32_t)
+	};
+	
+	static const VkStencilOpState stencilOpState = 
+	{
+		/* failOp      */ VK_STENCIL_OP_REPLACE,
+		/* passOp      */ VK_STENCIL_OP_REPLACE,
+		/* depthFailOp */ VK_STENCIL_OP_KEEP,
+		/* compareOp   */ VK_COMPARE_OP_ALWAYS,
+		/* compareMask */ 0x0,
+		/* writeMask   */ 0x1,
+		/* reference   */ 0x1
+	};
+	
+	static const Shader::StencilState stencilState = { stencilOpState, stencilOpState };
 	
 	const Shader::CreateInfo WaterShader::s_createInfo =
 	{
@@ -25,16 +43,17 @@ namespace MCR
 		/* gsName                  */ "",
 		/* fsName                  */ "water.fs",
 		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ pushConstantRanges,
+		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
 		/* vertexInputState        */ &WaterMesh::s_vertexInputState,
 		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
 		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ false,
+		/* enableDepthClamp        */ true,
 		/* cullMode                */ VK_CULL_MODE_NONE,
 		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ true,
+		/* enableDepthTest         */ false,
 		/* enableDepthWrite        */ true,
+		/* stencilState            */ &stencilState,
 		/* hasWireframeVariant     */ true,
 		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
 		/* enableDepthBias         */ false,
@@ -82,7 +101,8 @@ namespace MCR
 		cb.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, GetLayout(), 0, descriptorSets, { });
 		
 		const uint32_t pushConstantData = underwater ? VK_TRUE : VK_FALSE;
-		cb.PushConstants(GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(uint32_t), &pushConstantData);
+		cb.PushConstants(GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
+		                 0, sizeof(uint32_t), &pushConstantData);
 	}
 	
 	void WaterShader::FramebufferChanged(const Framebuffer& framebuffer)
@@ -92,7 +112,7 @@ namespace MCR
 		const VkDescriptorImageInfo colorImageInfo =
 		{
 			/* sampler     */ VK_NULL_HANDLE, //Immutable
-			/* imageView   */ framebuffer.GetWaterInputColorImageView(),
+			/* imageView   */ framebuffer.GetColorImageView(),
 			/* imageLayout */ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		};
 		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[0], 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -101,7 +121,7 @@ namespace MCR
 		const VkDescriptorImageInfo depthImageInfo =
 		{
 			/* sampler     */ VK_NULL_HANDLE, //Immutable
-			/* imageView   */ framebuffer.GetWaterInputDepthImageView(),
+			/* imageView   */ framebuffer.GetDepthImageView(),
 			/* imageLayout */ VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
 		};
 		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[1], 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

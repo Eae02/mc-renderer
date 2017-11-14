@@ -17,7 +17,7 @@ namespace MCR
 		const VkAttachmentDescription attachmentDescription = 
 		{
 			/* flags          */ 0,
-			/* format         */ vulkan.depthFormat,
+			/* format         */ vulkan.depthStencilFormat,
 			/* samples        */ VK_SAMPLE_COUNT_1_BIT,
 			/* loadOp         */ VK_ATTACHMENT_LOAD_OP_CLEAR,
 			/* storeOp        */ VK_ATTACHMENT_STORE_OP_STORE,
@@ -94,6 +94,7 @@ namespace MCR
 		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
 		/* enableDepthTest         */ true,
 		/* enableDepthWrite        */ true,
+		/* stencilState            */ nullptr,
 		/* hasWireframeVariant     */ false,
 		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
 		/* enableDepthBias         */ true,
@@ -190,7 +191,7 @@ namespace MCR
 	void CascadedShadowMapper::CreateFramebuffer(uint32_t resolution)
 	{
 		VkImageCreateInfo imageCreateInfo;
-		InitImageCreateInfo(imageCreateInfo, VK_IMAGE_TYPE_2D, vulkan.depthFormat, resolution, resolution);
+		InitImageCreateInfo(imageCreateInfo, VK_IMAGE_TYPE_2D, vulkan.depthStencilFormat, resolution, resolution);
 		imageCreateInfo.arrayLayers = DirLightCascades;
 		imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 		
@@ -200,7 +201,7 @@ namespace MCR
 		                           m_shadowMapAllocation.GetCreateAddress(), nullptr));
 		
 		VkImageViewCreateInfo imageViewCreateInfo;
-		InitImageViewCreateInfo(imageViewCreateInfo, *m_shadowMap, VK_IMAGE_VIEW_TYPE_2D_ARRAY, vulkan.depthFormat,
+		InitImageViewCreateInfo(imageViewCreateInfo, *m_shadowMap, VK_IMAGE_VIEW_TYPE_2D_ARRAY, vulkan.depthStencilFormat,
 		                        { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, DirLightCascades });
 		
 		CheckResult(vkCreateImageView(vulkan.device, &imageViewCreateInfo, nullptr,

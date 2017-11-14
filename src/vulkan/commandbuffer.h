@@ -304,9 +304,9 @@ namespace MCR
 			vkCmdEndRenderPass(m_commandBuffer);
 		}
 		
-		inline void ExecuteCommands(const CommandBuffer& commandBuffer)
+		inline void ExecuteCommands(VkCommandBuffer commandBuffer)
 		{
-			vkCmdExecuteCommands(m_commandBuffer, 1, &commandBuffer.m_commandBuffer);
+			vkCmdExecuteCommands(m_commandBuffer, 1, &commandBuffer);
 		}
 		
 		inline void ExecuteCommands(gsl::span<const VkCommandBuffer> commandBuffers)

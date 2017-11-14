@@ -27,6 +27,7 @@ namespace MCR
 		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
 		/* enableDepthTest         */ true,
 		/* enableDepthWrite        */ true,
+		/* stencilState            */ nullptr,
 		/* hasWireframeVariant     */ true,
 		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
 		/* enableDepthBias         */ false,

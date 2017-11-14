@@ -26,13 +26,14 @@ namespace MCR
 		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
 		/* enableDepthTest         */ false,
 		/* enableDepthWrite        */ false,
+		/* stencilState            */ nullptr,
 		/* hasWireframeVariant     */ false,
 		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
 		/* enableDepthBias         */ false,
 		/* depthBiasConstantFactor */ 0.0f,
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
+		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::additive),
 		/* dynamicState            */ dynamicState
 	};
 	
@@ -49,16 +50,7 @@ namespace MCR
 	
 	void SkyShader::FramebufferChanged(const Framebuffer& framebuffer)
 	{
-		VkWriteDescriptorSet descriptorWrites[3];
-		
-		const VkDescriptorImageInfo colorImageInfo =
-		{
-			/* sampler     */ VK_NULL_HANDLE, //Immutable
-			/* imageView   */ framebuffer.GetColorImageView(),
-			/* imageLayout */ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		};
-		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[0], 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		                                       colorImageInfo);
+		VkWriteDescriptorSet descriptorWrites[2];
 		
 		const VkDescriptorImageInfo depthImageInfo =
 		{
@@ -66,7 +58,7 @@ namespace MCR
 			/* imageView   */ framebuffer.GetDepthImageView(),
 			/* imageLayout */ VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
 		};
-		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[1], 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[0], 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		                                       depthImageInfo);
 		
 		const VkDescriptorImageInfo godRaysImageInfo =
@@ -75,7 +67,7 @@ namespace MCR
 			/* imageView   */ framebuffer.GetBlurredGodRaysImageView(),
 			/* imageLayout */ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		};
-		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[2], 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		m_descriptorSet.InitWriteDescriptorSet(descriptorWrites[1], 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		                                       godRaysImageInfo);
 		
 		UpdateDescriptorSets(descriptorWrites);

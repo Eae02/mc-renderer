@@ -113,7 +113,7 @@ namespace MCR
 		
 		WaterMesh::CreateBuffers();
 		
-		PostProcessor postProcessor(renderer.GetRenderSettingsBufferInfo());
+		PostProcessor postProcessor;
 		UIGraphicsContext uiGraphicsContext;
 		Framebuffer framebuffer;
 		
@@ -210,9 +210,7 @@ namespace MCR
 				SwapChain::Create(enableVSync);
 				
 				Framebuffer::RenderPasses renderPasses;
-				renderPasses.m_water = renderer.GetWaterRenderPass();
-				renderPasses.m_renderer = renderer.GetRenderPass();
-				renderPasses.m_godRays = postProcessor.GetGodRaysRenderPass();
+				renderer.GetRenderPasses(renderPasses);
 				renderPasses.m_ui = uiGraphicsContext.GetRenderPass();
 				
 				framebuffer.Create(renderPasses, SwapChain::GetImages(), drawableWidth, drawableHeight);
@@ -250,9 +248,9 @@ namespace MCR
 				profilingData = frame.m_profiler.GetData(lastFrameTime);
 				currentFrameProfiler->NewFrame();
 				
-				auto postProcessorTimestamps = postProcessor.GetElapsedTime();
-				currentFrameProfiler->AddTimerResult("Godrays", TimerTypes::GPU, postProcessorTimestamps.m_godRays);
-				currentFrameProfiler->AddTimerResult("Sky", TimerTypes::GPU, postProcessorTimestamps.m_sky);
+				//auto postProcessorTimestamps = postProcessor.GetElapsedTime();
+				//currentFrameProfiler->AddTimerResult("Godrays", TimerTypes::GPU, postProcessorTimestamps.m_godRays);
+				//currentFrameProfiler->AddTimerResult("Sky", TimerTypes::GPU, postProcessorTimestamps.m_sky);
 #endif
 			}
 			else

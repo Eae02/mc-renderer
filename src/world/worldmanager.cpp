@@ -544,7 +544,7 @@ namespace MCR
 		m_outOfDateWaterList.clear();
 	}
 	
-	bool WorldManager::IsCameraUnderWater() const
+	bool WorldManager::IsCameraUnderWater(float& waterPlaneY) const
 	{
 		int64_t cameraChunkX = static_cast<int64_t>(std::floor(m_camera.GetPosition().x / Region::Size));
 		int64_t cameraChunkZ = static_cast<int64_t>(std::floor(m_camera.GetPosition().z / Region::Size));
@@ -563,12 +563,16 @@ namespace MCR
 		if (region->Get(localCameraPosI.x, localCameraPosI.y, localCameraPosI.z).m_id != BlockIDs::Water)
 			return false;
 		
-		if (localCameraPosI.y < Region::Height - 1 &&
-			region->Get(localCameraPosI.x, localCameraPosI.y + 1, localCameraPosI.z).m_id == BlockIDs::Water)
+		for (int y = localCameraPosI.y; ; y++)
 		{
-			return true;
+			if (y >= Region::Height - 1 ||
+				region->Get(localCameraPosI.x, y + 1, localCameraPosI.z).m_id != BlockIDs::Water)
+			{
+				waterPlaneY = static_cast<float>(y) + WaterMesh::WaterHeight;
+				break;
+			}
 		}
 		
-		return glm::fract(m_camera.GetPosition().y) < WaterMesh::WaterHeight;
+		return m_camera.GetPosition().y < waterPlaneY;
 	}
 }

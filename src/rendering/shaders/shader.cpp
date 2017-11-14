@@ -97,7 +97,7 @@ namespace MCR
 			/* alphaToOneEnable      */ VK_FALSE
 		};
 		
-		const VkPipelineDepthStencilStateCreateInfo depthStencilState = 
+		VkPipelineDepthStencilStateCreateInfo depthStencilState = 
 		{
 			/* sType                 */ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 			/* pNext                 */ nullptr,
@@ -112,6 +112,13 @@ namespace MCR
 			/* minDepthBounds        */ 0,
 			/* maxDepthBounds        */ 0
 		};
+		
+		if (createInfo.stencilState != nullptr)
+		{
+			depthStencilState.stencilTestEnable = VK_TRUE;
+			depthStencilState.front = createInfo.stencilState->front;
+			depthStencilState.back = createInfo.stencilState->back;
+		}
 		
 		const VkPipelineColorBlendStateCreateInfo colorBlendState = 
 		{

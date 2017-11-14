@@ -1,26 +1,14 @@
 #version 440 core
 #extension GL_GOOGLE_include_directive : enable
 
-const float indexOfRefraction = 0.6;
-const float reflectDistortionFactor = 0.05;
-const float visibility = 5;
-const vec3 colorExtinction = vec3(0.7, 3.0, 4.0);
-const vec3 waterUp = vec3(0, 1, 0);
-const float nmStrength = 0.15;
-
-const int nmSamples = 3;
-
-const float causticsPosScale = 20;
-const float causticsTimeScale = 0.05;
-const float causticsIntensity = 0.04;
-const float causticsPower = 5.0;
-
 #define DLS_SET_INDEX 1
 
 #include "inc/rendersettings.glh"
 #include "inc/light.glh"
 
 const float R0 = 0.03;
+const float nmStrength = 0.15;
+const int nmSamples = 3;
 
 layout(set=0, binding=0) uniform RenderSettingsUB
 {
@@ -31,7 +19,8 @@ layout(set=0, binding=0) uniform RenderSettingsUB
 
 layout(location=0) noperspective in vec2 screenCoord_in;
 layout(location=1) in vec3 position_in;
-layout(location=2) in vec2 normalMapSamples_in[nmSamples];
+layout(location=2) in vec3 scatteringColor_in;
+layout(location=3) in vec2 normalMapSamples_in[nmSamples];
 
 layout(location=0) out vec4 color_out;
 
@@ -42,21 +31,13 @@ layout(set=0, binding=4) uniform sampler2D normalMap;
 
 layout(set=0, binding=5) uniform sampler3D causticsMap;
 
+#include "inc/water.glh"
+
 vec3 reconstructWorldPos(float depthH, vec2 texCoord)
 {
 	vec4 h = vec4(texCoord * 2.0 - vec2(1.0), depthH, 1.0);
 	vec4 d = renderSettings.invViewProj * h;
 	return d.xyz / d.w;
-}
-
-vec3 vectorProject(vec3 v, vec3 target)
-{
-	return target * (dot(target, v) / dot(target, target));
-}
-
-vec3 getExtinctionMul(float waterTravelDist)
-{
-	return max(1.0 - max(waterTravelDist, 1.0) / (colorExtinction * visibility), vec3(0.0));
 }
 
 vec3 toWorldSpaceNormal(vec3 normalMapValue)
@@ -73,6 +54,12 @@ layout(push_constant) uniform PC
 
 void main()
 {
+	float hDepth = texture(inputDepth, screenCoord_in).r;
+	if (hDepth < gl_FragCoord.z)
+		discard;
+	
+	vec3 targetPos = reconstructWorldPos(hDepth, screenCoord_in);
+	
 	vec3 normal = vec3(0, 0, 0);
 	for (int i = 0; i < nmSamples; i++)
 	{
@@ -80,19 +67,16 @@ void main()
 	}
 	normal = normalize(normal);
 	
-	vec3 targetPos = reconstructWorldPos(texture(inputDepth, screenCoord_in).r, screenCoord_in);
-	
 	float tDepth = distance(targetPos, renderSettings.cameraPos);
 	float wDepth = distance(position_in, renderSettings.cameraPos);
 	
 	vec3 dirToEye = normalize(renderSettings.cameraPos - position_in);
 	
-	float waterTravelDist = underwater ? wDepth : (tDepth - wDepth);
+	float waterTravelDist = gl_FrontFacing ? (tDepth - wDepth) : wDepth;
 	
 	float horizontalDepth = position_in.y - targetPos.y;
-	float lightTravelDist = horizontalDepth / dot(-renderSettings.sun.direction, vec3(0, 1, 0));
 	
-	vec3 distortMoveVec = waterUp - vectorProject(normal, waterUp);
+	vec3 distortMoveVec = waterUp * (1.0 - dot(normal, waterUp));
 	
 	//The vector to move by to get to the reflection coordinate
 	vec3 reflectMoveVec = distortMoveVec * reflectDistortionFactor;
@@ -106,8 +90,8 @@ void main()
 	
 	vec3 surfaceToTarget = normalize(targetPos - position_in);
 	
-	vec3 refraction = refract(-dirToEye, underwater ? -normal : normal, indexOfRefraction);
-	vec3 refractMoveVec = refraction * min(waterTravelDist, 5.0);
+	vec3 refraction = refract(-dirToEye, gl_FrontFacing ? normal : -normal, indexOfRefraction);
+	vec3 refractMoveVec = refraction * min(tDepth - wDepth, 5.0);
 	
 	vec3 refractPos = position_in + refractMoveVec;
 	
@@ -133,30 +117,25 @@ void main()
 		
 		targetPos = reconstructWorldPos(refractedTDepth_H, refractTexcoord);
 		
-		if (!underwater)
+		if (gl_FrontFacing)
 		{
 			waterTravelDist = distance(position_in, targetPos);
 		}
 	}
 	
-	if (!underwater && waterTravelDist < 20)
+	if (gl_FrontFacing && waterTravelDist < 20)
 	{
 		float targetShadowFactor = getShadowFactor(targetPos);
-		
-		vec3 lightEnterPos = targetPos + renderSettings.sun.direction * lightTravelDist;
-		
-		vec2 causticsSamplePos2D = lightEnterPos.xz / causticsPosScale;
-		vec3 causticsSamplePos = vec3(causticsSamplePos2D, renderSettings.time * causticsTimeScale);
-		
-		float caustics = pow(texture(causticsMap, causticsSamplePos).r, causticsPower);
-		
-		refractColor += (caustics * targetShadowFactor * causticsIntensity * min(lightTravelDist, 5.0)) * renderSettings.sun.radiance;
+		if (targetShadowFactor > 0.01)
+		{
+			refractColor += getCaustics(targetPos, horizontalDepth) * targetShadowFactor;
+		}
 	}
 	
-	refractColor *= getExtinctionMul(waterTravelDist);
+	refractColor = doColorExtinction(refractColor, waterTravelDist, horizontalDepth);
 	
 	vec3 color = refractColor;
-	if (!underwater)
+	if (gl_FrontFacing)
 	{
 		const float roughness = 0.15;
 		
@@ -171,6 +150,8 @@ void main()
 		float NDF = distributionGGX(normal, normalize(dirToEye - renderSettings.sun.direction), roughness);
 		
 		color += NDF * fresnel * radiance * NdotL;
+		
+		color += scatteringColor_in;
 	}
 	
 	color_out = vec4(color, 1.0);

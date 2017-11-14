@@ -7,11 +7,12 @@
 #include "rendersettingsbuffer.h"
 #include "shaders/blockshader.h"
 #include "shaders/debugshader.h"
-#include "postprocessor.h"
+#include "skyrenderer.h"
 #include "chunkvisibilitycalculator.h"
 #include "shadows/cascadedshadowmapper.h"
 #include "shadows/shadowvolumemesh.h"
 #include "shaders/watershader.h"
+#include "shaders/waterpostshader.h"
 #include "causticstexture.h"
 
 namespace MCR
@@ -78,14 +79,12 @@ namespace MCR
 			m_shouldCaptureShadowVolume = true;
 		}
 		
-		inline VkRenderPass GetRenderPass() const
+		inline void GetRenderPasses(Framebuffer::RenderPasses& renderPasses) const
 		{
-			return *m_renderPass;
-		}
-		
-		inline VkRenderPass GetWaterRenderPass() const
-		{
-			return *m_waterRenderPass;
+			renderPasses.m_renderer = *m_renderPass;
+			renderPasses.m_water = *m_waterRenderPass;
+			renderPasses.m_godRays = m_skyRenderer.GetGodRaysRenderPass();
+			renderPasses.m_sky = m_skyRenderer.GetSkyRenderPass();
 		}
 		
 		inline const VkDescriptorBufferInfo& GetRenderSettingsBufferInfo() const
@@ -99,8 +98,6 @@ namespace MCR
 		}
 		
 		void FramebufferChanged(const Framebuffer& framebuffer);
-		
-		static constexpr VkFormat ColorAttachmentFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 		
 	private:
 		static VkRenderPass CreateRenderPass();
@@ -119,7 +116,10 @@ namespace MCR
 		
 		BlockShader m_blockShader;
 		WaterShader m_waterShader;
+		WaterPostShader m_waterPostShader;
 		DebugShader m_debugShader;
+		
+		SkyRenderer m_skyRenderer;
 		
 		bool m_shouldCaptureShadowVolume = false;
 		std::unique_ptr<ShadowVolumeMesh> m_shadowVolume;

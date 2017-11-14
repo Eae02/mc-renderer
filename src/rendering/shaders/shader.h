@@ -7,6 +7,12 @@ namespace MCR
 	class Shader
 	{
 	public:
+		struct StencilState
+		{
+			VkStencilOpState front;
+			VkStencilOpState back;
+		};
+		
 		struct CreateInfo
 		{
 			std::string_view                                     vsName;
@@ -23,6 +29,7 @@ namespace MCR
 			VkFrontFace                                          frontFace;
 			bool                                                 enableDepthTest;
 			bool                                                 enableDepthWrite;
+			const StencilState*                                  stencilState;
 			bool                                                 hasWireframeVariant;
 			VkCompareOp                                          depthCompareOp;
 			bool                                                 enableDepthBias;

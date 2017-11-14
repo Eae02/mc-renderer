@@ -60,6 +60,9 @@ namespace MCR
 		//Rounds the work group size down to the previous power of two.
 		s_workGroupSize = 1u << static_cast<uint32_t>(std::log2(s_workGroupSize));
 		
+		//Caps the work group size if is is larger than the larger of resolution and depth. 
+		s_workGroupSize = std::min(std::max(resolution, depth), s_workGroupSize);
+		
 		Log("Caustics work group size: ", s_workGroupSize);
 		
 		// ** Creates the pipeline layout **

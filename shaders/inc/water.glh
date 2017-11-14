@@ -1,0 +1,39 @@
+#ifndef WATER_H
+#define WATER_H
+
+const vec3 colorSurface = vec3(0.04, 0.59, 0.77);
+const vec3 colorDeep = vec3(0.01, 0.03, 0.35);
+const float visibility = 15;
+const vec3 colorExtinction = vec3(0.7, 3.0, 4.0) * 10;
+
+const float indexOfRefraction = 0.6;
+const float reflectDistortionFactor = 0.05;
+
+const vec3 waterUp = vec3(0, 1, 0);
+
+const float causticsPosScale = 20;
+const float causticsTimeScale = 0.05;
+const float causticsIntensity = 0.04;
+const float causticsPower = 5.0;
+
+vec3 doColorExtinction(vec3 inputColor, float waterTravelDist, float waterDepth)
+{
+	vec3 step1Res = mix(inputColor, colorSurface, clamp(waterTravelDist / visibility, 0.0, 1.0));
+	return mix(step1Res, colorDeep, clamp(min(waterDepth, 10) / (colorExtinction), vec3(0.0), vec3(1.0)));
+}
+
+vec3 getCaustics(vec3 targetPos, float waterDepth)
+{
+	float lightTravelDist = waterDepth / dot(-renderSettings.sun.direction, waterUp);
+	
+	vec3 lightEnterPos = targetPos + renderSettings.sun.direction * lightTravelDist;
+	
+	vec2 causticsSamplePos2D = lightEnterPos.xz / causticsPosScale;
+	vec3 causticsSamplePos = vec3(causticsSamplePos2D, renderSettings.time * causticsTimeScale);
+	
+	float caustics = pow(texture(causticsMap, causticsSamplePos).r, causticsPower);
+	
+	return (caustics * causticsIntensity * min(lightTravelDist, 5.0)) * renderSettings.sun.radiance;
+}
+
+#endif

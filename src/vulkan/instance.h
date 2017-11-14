@@ -26,7 +26,7 @@ namespace MCR
 		VmaAllocator allocator;
 		Queue* queues[QUEUE_FAMILY_COUNT];
 		VkCommandPool stdCommandPools[QUEUE_FAMILY_COUNT];
-		VkFormat depthFormat;
+		VkFormat depthStencilFormat;
 		
 		struct
 		{

@@ -66,7 +66,7 @@ namespace MCR
 			return m_camera;
 		}
 		
-		bool IsCameraUnderWater() const;
+		bool IsCameraUnderWater(float& waterPlaneY) const;
 		
 	private:
 		void FillRenderListR(class ChunkRenderList& renderList, const class Frustum& frustum,

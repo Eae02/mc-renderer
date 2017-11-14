@@ -35,7 +35,10 @@ namespace MCR
 		"ui.fs",
 		"water.vs",
 		"water.fs",
-		"caustics.cs"
+		"water-post.fs",
+		"caustics.cs",
+		"post.vs",
+		"post.fs"
 	};
 	
 	void LoadShaderModules()

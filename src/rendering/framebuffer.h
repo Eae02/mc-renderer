@@ -14,8 +14,9 @@ namespace MCR
 		struct RenderPasses
 		{
 			VkRenderPass m_renderer;
-			VkRenderPass m_water;
+			VkRenderPass m_sky;
 			VkRenderPass m_godRays;
+			VkRenderPass m_water;
 			VkRenderPass m_ui;
 		};
 		
@@ -29,9 +30,9 @@ namespace MCR
 			return *m_rendererFramebuffer;
 		}
 		
-		inline VkFramebuffer GetWaterFramebuffer() const
+		inline VkFramebuffer GetSkyFramebuffer() const
 		{
-			return *m_waterFramebuffer;
+			return *m_skyFramebuffer;
 		}
 		
 		inline VkFramebuffer GetGodRaysGenFramebuffer() const
@@ -42,6 +43,11 @@ namespace MCR
 		inline VkFramebuffer GetGodRaysBlurFramebuffer() const
 		{
 			return *m_godRaysBlurFramebuffer;
+		}
+		
+		inline VkFramebuffer GetWaterFramebuffer() const
+		{
+			return *m_waterFramebuffer;
 		}
 		
 		inline VkFramebuffer GetOutputFramebuffer(size_t index) const
@@ -68,24 +74,24 @@ namespace MCR
 		inline uint32_t GetHeight() const
 		{ return m_height; }
 		
-		inline VkImageView GetWaterInputColorImageView() const
-		{
-			return *m_colorAttachment.m_imageView;
-		}
-		
-		inline VkImageView GetWaterInputDepthImageView() const
-		{
-			return *m_depthAttachment.m_imageView;
-		}
-		
-		inline VkImageView GetColorImageView() const
+		inline VkImageView GetWaterColorImageView() const
 		{
 			return *m_waterColorAttachment.m_imageView;
 		}
 		
-		inline VkImageView GetDepthImageView() const
+		inline VkImageView GetWaterDepthImageView() const
 		{
 			return *m_waterDepthAttachment.m_imageView;
+		}
+		
+		inline VkImageView GetColorImageView() const
+		{
+			return *m_colorAttachment.m_imageView;
+		}
+		
+		inline VkImageView GetDepthImageView() const
+		{
+			return *m_depthAttachment.m_imageView;
 		}
 		
 		inline VkImageView GetUnblurredGodRaysImageView() const
@@ -127,9 +133,10 @@ namespace MCR
 		std::vector<OutputEntry> m_outputs;
 		
 		VkHandle<VkFramebuffer> m_rendererFramebuffer;
-		VkHandle<VkFramebuffer> m_waterFramebuffer;
 		VkHandle<VkFramebuffer> m_godRaysGenFramebuffer;
 		VkHandle<VkFramebuffer> m_godRaysBlurFramebuffer;
+		VkHandle<VkFramebuffer> m_skyFramebuffer;
+		VkHandle<VkFramebuffer> m_waterFramebuffer;
 		
 		uint32_t m_width;
 		uint32_t m_height;

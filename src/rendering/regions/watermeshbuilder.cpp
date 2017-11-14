@@ -49,8 +49,8 @@ namespace MCR
 		indicesOut[0] = indices[0];
 		indicesOut[1] = indices[1];
 		indicesOut[2] = indices[2];
-		indicesOut[3] = indices[1];
+		indicesOut[3] = indices[3];
 		indicesOut[4] = indices[2];
-		indicesOut[5] = indices[3];
+		indicesOut[5] = indices[1];
 	}
 }

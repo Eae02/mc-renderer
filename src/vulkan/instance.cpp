@@ -356,11 +356,9 @@ namespace MCR
 		
 		// ** Selects a depth format **
 		
-		//Contains valid depth formats, in order of decreasing preference.
-		const VkFormat depthFormats[] = 
+		//Contains valid depth stencil formats, in order of decreasing preference.
+		const VkFormat depthStencilFormats[] = 
 		{
-			VK_FORMAT_D32_SFLOAT,
-			VK_FORMAT_D16_UNORM,
 			VK_FORMAT_D24_UNORM_S8_UINT,
 			VK_FORMAT_D32_SFLOAT_S8_UINT,
 			VK_FORMAT_D16_UNORM_S8_UINT
@@ -369,17 +367,17 @@ namespace MCR
 		const VkFormatFeatureFlags requiredDepthFormatFeatures =
 		        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
 		
-		vulkan.depthFormat = VK_FORMAT_UNDEFINED;
-		for (VkFormat format : depthFormats)
+		vulkan.depthStencilFormat = VK_FORMAT_UNDEFINED;
+		for (VkFormat format : depthStencilFormats)
 		{
 			if (CanUseFormat(format, requiredDepthFormatFeatures, VK_IMAGE_TILING_OPTIMAL))
 			{
-				vulkan.depthFormat = format;
+				vulkan.depthStencilFormat = format;
 				break;
 			}
 		}
 		
-		if (vulkan.depthFormat == VK_FORMAT_UNDEFINED)
+		if (vulkan.depthStencilFormat == VK_FORMAT_UNDEFINED)
 		{
 			throw std::runtime_error("No supported depth format was found.");
 		}
