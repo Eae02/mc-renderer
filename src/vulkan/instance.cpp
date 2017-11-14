@@ -2,10 +2,11 @@
 #include "func.h"
 #include "vkutils.h"
 #include "swapchain.h"
+#include "platform.h"
 #include "../utils.h"
 #include "../arguments.h"
+#include "instanceextensionslist.h"
 
-#include <SDL2/SDL_vulkan.h>
 #include <gsl/span>
 #include <vector>
 #include <memory>
@@ -215,50 +216,41 @@ namespace MCR
 		return supportedLayers;
 	}
 	
-	inline bool InstanceExtensionsSupported(gsl::span<const char*> extensions)
-	{
-		uint32_t numExtensionProps;
-		CheckResult(vkEnumerateInstanceExtensionProperties(nullptr, &numExtensionProps, nullptr));
-		std::vector<VkExtensionProperties> extensionProps(numExtensionProps);
-		CheckResult(vkEnumerateInstanceExtensionProperties(nullptr, &numExtensionProps, extensionProps.data()));
-		
-		for (const char* extension : extensions)
-		{
-			auto pos = std::find_if(MAKE_RANGE(extensionProps), [extension] (const VkExtensionProperties& properties)
-			{
-				return std::strcmp(properties.extensionName, extension) == 0;
-			});
-			
-			if (pos == extensionProps.end())
-				return false;
-		}
-		
-		return true;
-	}
-	
 	void InitializeVulkan(SDL_Window* window)
 	{
-		vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
-		
 		LoadGlobalVulkanFunctions();
 		
 		VkApplicationInfo applicationInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		applicationInfo.pApplicationName = "EAE Minecraft Renderer";
 		applicationInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 		
+		InstanceExtensionsList instanceExtensionsList;
+		
 		// ** Prepares a list of required extensions **
-		unsigned int numInstanceExtensions;
-		SDL_Vulkan_GetInstanceExtensions(window, &numInstanceExtensions, nullptr);
-		std::vector<const char*> instanceExtensions(numInstanceExtensions);
-		SDL_Vulkan_GetInstanceExtensions(window, &numInstanceExtensions, instanceExtensions.data());
+		const char* platformSurfaceExtension = GetPlatformSurfaceName(window, instanceExtensionsList);
+		if (platformSurfaceExtension == nullptr)
+		{
+			throw std::runtime_error("Unsupported window system");
+		}
+		
+		std::array<const char*, 3> instanceExtensions;
+		instanceExtensions[0] = platformSurfaceExtension;
+		instanceExtensions[1] = VK_KHR_SURFACE_EXTENSION_NAME;
+		uint32_t numInstanceExtensions = 2;
 		
 #ifdef MCR_DEBUG
-		instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+		instanceExtensions[numInstanceExtensions++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
 #endif
 		
-		if (!InstanceExtensionsSupported(instanceExtensions))
+		//Checks that all required instance extensions are supported
+		for (uint32_t i = 0; i < numInstanceExtensions; i++)
 		{
-			throw std::runtime_error("Not all required instance extensions are supported.");
+			if (!instanceExtensionsList.IsExtensionSupported(instanceExtensions[i]))
+			{
+				std::ostringstream errorMessage;
+				errorMessage << "Required instance extension '" << instanceExtensions[i] << "' not supported.";
+				throw std::runtime_error(errorMessage.str());
+			}
 		}
 		
 		std::vector<const char*> validationLayers = GetSupportedValidationLayers();
@@ -268,7 +260,7 @@ namespace MCR
 		instanceCI.pApplicationInfo = &applicationInfo;
 		instanceCI.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		instanceCI.ppEnabledLayerNames = validationLayers.data();
-		instanceCI.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
+		instanceCI.enabledExtensionCount = numInstanceExtensions;
 		instanceCI.ppEnabledExtensionNames = instanceExtensions.data();
 		
 		CheckResult(vkCreateInstance(&instanceCI, nullptr, &vulkan.instance));
@@ -288,10 +280,7 @@ namespace MCR
 		vkCreateDebugReportCallbackEXT(vulkan.instance, &debugCreateInfo, nullptr, &messageCallback);
 #endif
 		
-		if (!SDL_Vulkan_CreateSurface(window, vulkan.instance, &vulkan.surface))
-		{
-			throw std::runtime_error(SDL_GetError());
-		}
+		vulkan.surface = CreateVulkanSurface(window, instanceExtensions[0]);
 		
 		vulkan.physicalDevice = FindPhysicalDevice(vulkan.surface, vulkan.queueFamilies);
 		if (vulkan.physicalDevice == VK_NULL_HANDLE)

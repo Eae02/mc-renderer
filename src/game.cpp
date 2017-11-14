@@ -17,7 +17,6 @@
 #include "profiling/profiling.h"
 #include "ui/profilingpane.h"
 
-#include <SDL2/SDL_vulkan.h>
 #include <cstdint>
 #include <chrono>
 
@@ -202,7 +201,7 @@ namespace MCR
 			
 			//Checks if the drawable size has changed.
 			int drawableWidth, drawableHeight;
-			SDL_Vulkan_GetDrawableSize(window, &drawableWidth, &drawableHeight);
+			SDL_GetWindowSize(window, &drawableWidth, &drawableHeight);
 			if (drawableWidth != currentDrawableWidth || drawableHeight != currentDrawableHeight)
 			{
 				vkDeviceWaitIdle(vulkan.device);

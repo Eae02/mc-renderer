@@ -11,7 +11,7 @@
 #include "rendering/shaders/shadermodules.h"
 #include "rendering/setlayouts.h"
 #include "ui/font.h"
-#include "vulkan/setlayoutsmanager.h"
+#include "vulkan/library.h"
 
 #undef main
 
@@ -29,15 +29,16 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
+	if (!MCR::LoadVulkanLibrary())
+	{
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Loading Vulkan", "Could not load vulkan library, make "
+			"sure you have a working vulkan driver installed.", nullptr);
+		return 2;
+	}
+	
 	MCR::Settings::QueryAvailableDisplayModes();
 	
 	MCR::Font::InitFreetype();
-	
-	if (SDL_Vulkan_LoadLibrary(nullptr) != 0)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Could not Load Vulkan Library", SDL_GetError(), nullptr);
-		return 1;
-	}
 	
 	SDL_DisplayMode currentDisplayMode;
 	SDL_GetCurrentDisplayMode(0, &currentDisplayMode);
@@ -45,7 +46,7 @@ int main(int argc, char** argv)
 	int windowHeight = static_cast<int>(currentDisplayMode.h * 0.8);
 	
 	SDL_Window* window = SDL_CreateWindow("Minecraft Renderer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-	                                      windowWidth, windowHeight, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+	                                      windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
 	if (window == nullptr)
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Creating Window", SDL_GetError(), nullptr);
