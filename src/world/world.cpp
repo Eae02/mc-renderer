@@ -3,6 +3,7 @@
 
 #include <zlib.h>
 #include <cstring>
+#include <sstream>
 #include <chrono>
 #include <algorithm>
 
@@ -74,7 +75,7 @@ namespace MCR
 	std::string World::GetRegionPath(int64_t x, int64_t z)
 	{
 		std::ostringstream nameStream;
-		nameStream << m_path.c_str() << "/" << x << "_" << z;
+		nameStream << m_path.string() << "/" << x << "_" << z;
 		return nameStream.str();
 	}
 	

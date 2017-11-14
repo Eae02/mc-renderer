@@ -33,10 +33,11 @@ namespace MCR
 		return 31 - __builtin_clz(minResolution);
 #elif defined(_MSC_VER)
 		unsigned long trailingZero;
-		_BitScanReverse(&trailingZero, value);
-		return 31 - trailingZero;
+		_BitScanReverse(&trailingZero, minResolution);
+		return trailingZero;
 #else
-#error "Unknown compiler"
+#
+		"Unknown compiler"
 #endif
 	}
 	
