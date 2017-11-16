@@ -6,7 +6,7 @@
 #endif
 
 const int numCascades = 3;
-layout(constant_id=0) const bool usePCF = true;
+const bool usePCF = true;
 
 layout(set=DLS_SET_INDEX, binding=0) uniform sampler2DArrayShadow shadowMap;
 

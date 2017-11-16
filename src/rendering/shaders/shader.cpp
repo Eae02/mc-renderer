@@ -7,6 +7,15 @@ namespace MCR
 {
 	Shader::Shader(RenderPassInfo renderPassInfo, const CreateInfo& createInfo)
 	{
+		bool hasSpecializations = !createInfo.specializations.empty();
+		const size_t numPermutations = hasSpecializations ? static_cast<size_t>(createInfo.specializations.size()) : 1;
+		m_pipelines.resize(static_cast<size_t>(numPermutations));
+		if (createInfo.hasWireframeVariant)
+		{
+			m_wireframePipelines.resize(static_cast<size_t>(numPermutations));
+		}
+		
+		//Allocates memory for descriptor set layouts.
 		void* dsLayoytsMem = alloca(createInfo.setLayoutNames.size() * sizeof(VkDescriptorSetLayout));
 		VkDescriptorSetLayout* dsLayouts = reinterpret_cast<VkDescriptorSetLayout*>(dsLayoytsMem);
 		std::transform(MAKE_RANGE(createInfo.setLayoutNames), dsLayouts, &GetDescriptorSetLayout);
@@ -25,22 +34,51 @@ namespace MCR
 		CheckResult(vkCreatePipelineLayout(vulkan.device, &pipelineLayoutCreateInfo, nullptr,
 		                                   m_pipelineLayout.GetCreateAddress()));
 		
-		VkPipelineShaderStageCreateInfo stageCreateInfos[3];
-		
-		InitShaderStageCreateInfo(stageCreateInfos[0], VK_SHADER_STAGE_VERTEX_BIT, GetShaderModule(createInfo.vsName));
-		
-		uint32_t numStageCreateInfos = 1;
-		
+		int stagesPerPermutation = 1;
 		if (!createInfo.gsName.empty())
-		{
-			InitShaderStageCreateInfo(stageCreateInfos[numStageCreateInfos++], VK_SHADER_STAGE_GEOMETRY_BIT,
-			                          GetShaderModule(createInfo.gsName));
-		}
-		
+			stagesPerPermutation++;
 		if (!createInfo.fsName.empty())
+			stagesPerPermutation++;
+		
+		uint32_t numPipelineStageCI = static_cast<uint32_t>(stagesPerPermutation * numPermutations);
+		void* stageCreateInfosMem = alloca(numPipelineStageCI * sizeof(VkPipelineShaderStageCreateInfo));
+		auto stageCreateInfos = reinterpret_cast<VkPipelineShaderStageCreateInfo*>(stageCreateInfosMem);
+		VkPipelineShaderStageCreateInfo* stageCreateInfosOut = stageCreateInfos;
+		
+		for (int p = 0; p < numPermutations; p++)
 		{
-			InitShaderStageCreateInfo(stageCreateInfos[numStageCreateInfos++], VK_SHADER_STAGE_FRAGMENT_BIT,
-			                          GetShaderModule(createInfo.fsName));
+			InitShaderStageCreateInfo(*stageCreateInfosOut, VK_SHADER_STAGE_VERTEX_BIT,
+			                          GetShaderModule(createInfo.vsName));
+			
+			if (hasSpecializations)
+			{
+				stageCreateInfosOut->pSpecializationInfo = createInfo.specializations[p].vsSpecInfo;
+			}
+			stageCreateInfosOut++;
+			
+			if (!createInfo.gsName.empty())
+			{
+				InitShaderStageCreateInfo(*stageCreateInfosOut, VK_SHADER_STAGE_GEOMETRY_BIT,
+				                          GetShaderModule(createInfo.gsName));
+				
+				if (hasSpecializations)
+				{
+					stageCreateInfosOut->pSpecializationInfo = createInfo.specializations[p].gsSpecInfo;
+				}
+				stageCreateInfosOut++;
+			}
+			
+			if (!createInfo.fsName.empty())
+			{
+				InitShaderStageCreateInfo(*stageCreateInfosOut, VK_SHADER_STAGE_FRAGMENT_BIT,
+				                          GetShaderModule(createInfo.fsName));
+				
+				if (hasSpecializations)
+				{
+					stageCreateInfosOut->pSpecializationInfo = createInfo.specializations[p].fsSpecInfo;
+				}
+				stageCreateInfosOut++;
+			}
 		}
 		
 		const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = 
@@ -141,35 +179,10 @@ namespace MCR
 			/* pDynamicStates    */ createInfo.dynamicState.data()
 		};
 		
-		std::array<VkGraphicsPipelineCreateInfo, 2> pipelineCreateInfos;
-		uint32_t numPipelines = 1;
-		
-		pipelineCreateInfos[0] =
+		const VkPipelineVertexInputStateCreateInfo* vertexInputState = createInfo.vertexInputState;
+		if (createInfo.vertexInputState == nullptr)
 		{
-			/* sType               */ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-			/* pNext               */ nullptr,
-			/* flags               */ 0,
-			/* stageCount          */ numStageCreateInfos,
-			/* pStages             */ stageCreateInfos,
-			/* pVertexInputState   */ createInfo.vertexInputState,
-			/* pInputAssemblyState */ &inputAssemblyState,
-			/* pTessellationState  */ nullptr,
-			/* pViewportState      */ &viewportState,
-			/* pRasterizationState */ &rasterizationState,
-			/* pMultisampleState   */ &multisampleState,
-			/* pDepthStencilState  */ &depthStencilState,
-			/* pColorBlendState    */ &colorBlendState,
-			/* pDynamicState       */ &dynamicState,
-			/* layout              */ *m_pipelineLayout,
-			/* renderPass          */ renderPassInfo.m_renderPass,
-			/* subpass             */ renderPassInfo.m_subpass,
-			/* basePipelineHandle  */ VK_NULL_HANDLE,
-			/* basePipelineIndex   */ -1
-		};
-		
-		if (pipelineCreateInfos[0].pVertexInputState == nullptr)
-		{
-			static const VkPipelineVertexInputStateCreateInfo defaultVertexInputState = 
+			static const VkPipelineVertexInputStateCreateInfo defaultVertexInputState =
 			{
 				/* sType                           */ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 				/* pNext                           */ nullptr,
@@ -180,39 +193,78 @@ namespace MCR
 				/* pVertexAttributeDescriptions    */ nullptr
 			};
 			
-			pipelineCreateInfos[0].pVertexInputState = &defaultVertexInputState;
+			vertexInputState = &defaultVertexInputState;
 		}
 		
-		if (createInfo.hasWireframeVariant)
+		size_t numPipelineCreateInfos = numPermutations * (createInfo.hasWireframeVariant ? 2 : 1);
+		void* pipelineCreateInfosMem = alloca(sizeof(VkGraphicsPipelineCreateInfo) * numPipelineCreateInfos);
+		auto pipelineCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo*>(pipelineCreateInfosMem);
+		
+		for (size_t i = 0; i < numPermutations; i++)
 		{
-			pipelineCreateInfos[0].flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+			pipelineCreateInfos[i] =
+			{
+				/* sType               */ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+				/* pNext               */ nullptr,
+				/* flags               */ 0,
+				/* stageCount          */ static_cast<uint32_t>(stagesPerPermutation),
+				/* pStages             */ &stageCreateInfos[i * stagesPerPermutation],
+				/* pVertexInputState   */ vertexInputState,
+				/* pInputAssemblyState */ &inputAssemblyState,
+				/* pTessellationState  */ nullptr,
+				/* pViewportState      */ &viewportState,
+				/* pRasterizationState */ &rasterizationState,
+				/* pMultisampleState   */ &multisampleState,
+				/* pDepthStencilState  */ &depthStencilState,
+				/* pColorBlendState    */ &colorBlendState,
+				/* pDynamicState       */ &dynamicState,
+				/* layout              */ *m_pipelineLayout,
+				/* renderPass          */ renderPassInfo.m_renderPass,
+				/* subpass             */ renderPassInfo.m_subpass,
+				/* basePipelineHandle  */ VK_NULL_HANDLE,
+				/* basePipelineIndex   */ i == 0 ? -1 : 0
+			};
 			
-			pipelineCreateInfos[numPipelines] = pipelineCreateInfos[0];
-			pipelineCreateInfos[numPipelines].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
-			pipelineCreateInfos[numPipelines].basePipelineIndex = 0;
-			pipelineCreateInfos[numPipelines].pRasterizationState = &rasterizationStateWireframe;
-			
-			numPipelines++;
+			if (createInfo.hasWireframeVariant)
+			{
+				pipelineCreateInfos[numPermutations + i] = pipelineCreateInfos[i];
+				pipelineCreateInfos[numPermutations + i].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+				pipelineCreateInfos[numPermutations + i].basePipelineIndex = 0;
+				pipelineCreateInfos[numPermutations + i].pRasterizationState = &rasterizationStateWireframe;
+			}
 		}
 		
-		VkPipeline pipelinesOut[] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
+		if (numPipelineCreateInfos > 1)
+		{
+			pipelineCreateInfos[0].flags |= VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+		}
 		
-		CheckResult(vkCreateGraphicsPipelines(vulkan.device, VK_NULL_HANDLE, numPipelines, pipelineCreateInfos.data(),
-		                                      nullptr, pipelinesOut));
 		
-		m_pipeline = pipelinesOut[0];
-		m_wireframePipeline = pipelinesOut[1];
+		VkPipeline* pipelinesOut = reinterpret_cast<VkPipeline*>(alloca(sizeof(VkPipeline) * numPipelineCreateInfos));
+		
+		CheckResult(vkCreateGraphicsPipelines(vulkan.device, VK_NULL_HANDLE,
+		                                      static_cast<uint32_t>(numPipelineCreateInfos),
+		                                      pipelineCreateInfos, nullptr, pipelinesOut));
+		
+		for (size_t i = 0; i < numPermutations; i++)
+		{
+			m_pipelines[i] = pipelinesOut[i];
+			if (createInfo.hasWireframeVariant)
+			{
+				m_wireframePipelines[i] = pipelinesOut[numPermutations + i];
+			}
+		}
 	}
 	
-	void Shader::Bind(CommandBuffer& cb, Shader::BindModes mode) const
+	void Shader::Bind(CommandBuffer& cb, Shader::BindModes mode, uint32_t permutation) const
 	{
-		if (mode == BindModes::Wireframe && !m_wireframePipeline.IsNull())
+		if (mode == BindModes::Wireframe && !m_wireframePipelines.empty())
 		{
-			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_wireframePipeline);
+			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_wireframePipelines[permutation]);
 		}
 		else
 		{
-			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pipeline);
+			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pipelines[permutation]);
 		}
 	}
 }

@@ -102,7 +102,8 @@ namespace MCR
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 1.75f,
 		/* attachmentBlendStates   */ { },
-		/* dynamicState            */ dynamicState
+		/* dynamicState            */ dynamicState,
+		/* specializations         */ { }
 	};
 	
 	CascadedShadowMapper::CascadedShadowMapper(const VkDescriptorBufferInfo& renderSettingsBufferInfo)

@@ -47,10 +47,7 @@ vec3 toWorldSpaceNormal(vec3 normalMapValue)
 	return normalize(nmNormal.xzy);
 }
 
-layout(push_constant) uniform PC
-{
-	bool underwater;
-};
+layout(constant_id=0) const bool underwater = false;
 
 void main()
 {
@@ -72,7 +69,7 @@ void main()
 	
 	vec3 dirToEye = normalize(renderSettings.cameraPos - position_in);
 	
-	float waterTravelDist = gl_FrontFacing ? (tDepth - wDepth) : wDepth;
+	float waterTravelDist = underwater ? wDepth : (tDepth - wDepth);
 	
 	float horizontalDepth = position_in.y - targetPos.y;
 	
@@ -90,7 +87,7 @@ void main()
 	
 	vec3 surfaceToTarget = normalize(targetPos - position_in);
 	
-	vec3 refraction = refract(-dirToEye, gl_FrontFacing ? normal : -normal, indexOfRefraction);
+	vec3 refraction = refract(-dirToEye, underwater ? -normal : normal, indexOfRefraction);
 	vec3 refractMoveVec = refraction * min(tDepth - wDepth, 5.0);
 	
 	vec3 refractPos = position_in + refractMoveVec;
@@ -117,13 +114,13 @@ void main()
 		
 		targetPos = reconstructWorldPos(refractedTDepth_H, refractTexcoord);
 		
-		if (gl_FrontFacing)
+		if (!underwater)
 		{
 			waterTravelDist = distance(position_in, targetPos);
 		}
 	}
 	
-	if (gl_FrontFacing && waterTravelDist < 20)
+	if (!underwater && waterTravelDist < 20)
 	{
 		float targetShadowFactor = getShadowFactor(targetPos);
 		if (targetShadowFactor > 0.01)
@@ -134,25 +131,28 @@ void main()
 	
 	refractColor = doColorExtinction(refractColor, waterTravelDist, horizontalDepth);
 	
-	vec3 color = refractColor;
-	if (gl_FrontFacing)
+	if (!underwater)
 	{
-		const float roughness = 0.15;
+		const float roughness = 0.2;
 		
 		vec3 fresnel = fresnelSchlick(max(dot(normal, dirToEye), 0.0), vec3(R0), roughness);
 		
-		color = mix(refractColor, reflectColor, fresnel);
-		
 		float surfaceShadowFactor = getShadowFactor(position_in);
-		vec3 radiance = renderSettings.sun.radiance * surfaceShadowFactor * 5;
 		
-		float NdotL = dot(normal, -renderSettings.sun.direction);
-		float NDF = distributionGGX(normal, normalize(dirToEye - renderSettings.sun.direction), roughness);
+		MaterialData materialData;
+		materialData.albedo = mix(refractColor, reflectColor, fresnel);
+		materialData.roughness = roughness;
+		materialData.metallic = 0;
+		materialData.normal = normal;
+		materialData.specularIntensity = 5.0;
+		vec3 R = calcDirLightReflectance(renderSettings.sun, dirToEye, fresnel, materialData) * surfaceShadowFactor;
 		
-		color += NDF * fresnel * radiance * NdotL;
+		R += getAmbientReflectance(materialData) * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 		
-		color += scatteringColor_in;
+		color_out = vec4(R + scatteringColor_in, 1.0);
 	}
-	
-	color_out = vec4(color, 1.0);
+	else
+	{
+		color_out = vec4(refractColor, 1.0);
+	}
 }

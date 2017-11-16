@@ -32,7 +32,8 @@ namespace MCR
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 0.0f,
 		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState
+		/* dynamicState            */ dynamicState,
+		/* specializations         */ { }
 	};
 	
 	GodRaysGenShader::GodRaysGenShader(Shader::RenderPassInfo renderPass,

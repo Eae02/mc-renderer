@@ -17,13 +17,6 @@ namespace MCR
 	
 	static const std::string_view setLayouts[] = { "Water", "ShadowSample" };
 	
-	static const VkPushConstantRange pushConstantRange =
-	{
-		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		0,
-		sizeof(uint32_t)
-	};
-	
 	static const VkStencilOpState stencilOpState = 
 	{
 		/* failOp      */ VK_STENCIL_OP_REPLACE,
@@ -43,7 +36,7 @@ namespace MCR
 		/* gsName                  */ "",
 		/* fsName                  */ "water.fs",
 		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
+		/* pushConstantRanges      */ { },
 		/* vertexInputState        */ &WaterMesh::s_vertexInputState,
 		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
@@ -61,7 +54,8 @@ namespace MCR
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 0.0f,
 		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState
+		/* dynamicState            */ dynamicState,
+		/* specializations         */ { }
 	};
 	
 	WaterShader::WaterShader(Shader::RenderPassInfo renderPassInfo,
@@ -99,10 +93,6 @@ namespace MCR
 		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet, shadowDescriptorSet };
 		
 		cb.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, GetLayout(), 0, descriptorSets, { });
-		
-		const uint32_t pushConstantData = underwater ? VK_TRUE : VK_FALSE;
-		cb.PushConstants(GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 
-		                 0, sizeof(uint32_t), &pushConstantData);
 	}
 	
 	void WaterShader::FramebufferChanged(const Framebuffer& framebuffer)

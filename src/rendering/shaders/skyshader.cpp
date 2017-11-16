@@ -34,7 +34,8 @@ namespace MCR
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 0.0f,
 		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::additive),
-		/* dynamicState            */ dynamicState
+		/* dynamicState            */ dynamicState,
+		/* specializations         */ { }
 	};
 	
 	SkyShader::SkyShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)

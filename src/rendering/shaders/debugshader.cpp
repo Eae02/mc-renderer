@@ -58,7 +58,8 @@ namespace MCR
 		/* depthBiasClamp          */ 0.0f,
 		/* depthBiasSlopeFactor    */ 0.0f,
 		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::alphaBlend),
-		/* dynamicState            */ dynamicState
+		/* dynamicState            */ dynamicState,
+		/* specializations         */ { }
 	};
 	
 	DebugShader::DebugShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)

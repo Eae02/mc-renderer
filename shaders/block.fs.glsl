@@ -34,6 +34,7 @@ void main()
 	materialData.albedo = texColor.rgb;
 	materialData.roughness = worldPosAndRoughness_in.w;
 	materialData.metallic = 0;
+	materialData.specularIntensity = 1;
 	
 	if (textureCoord_in.w < 0)
 	{
@@ -58,6 +59,5 @@ void main()
 		color_out.rgb *= shadowFactor;
 	}
 	
-	//Ambient approximation
-	color_out.rgb += vec3(0.04) * materialData.albedo * (renderSettings.sun.radiance + renderSettings.moon.radiance);
+	color_out.rgb += getAmbientReflectance(materialData) * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 }

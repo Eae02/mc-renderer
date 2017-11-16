@@ -24,10 +24,7 @@ layout(set=0, binding=3) uniform NMRotationMatricesUB
 	mat2 nmRotationMatrices[nmSamples];
 };
 
-layout(push_constant) uniform PC
-{
-	bool underwater;
-};
+layout(constant_id=0) const bool underwater = false;
 
 void main()
 {

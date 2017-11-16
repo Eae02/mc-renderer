@@ -5,12 +5,15 @@
 
 const float PI = 3.141;
 
+const vec3 ambientLight = vec3(0.04);
+
 struct MaterialData
 {
 	vec3 albedo;
 	vec3 normal;
 	float metallic;
 	float roughness;
+	float specularIntensity;
 };
 
 vec3 fresnelSchlick(float cosT, vec3 F0, float roughness)
@@ -78,12 +81,17 @@ vec3 calcDirectReflectance(vec3 toLight, vec3 toEyeN, vec3 fresnel, MaterialData
 	
 	vec3 kD = (vec3(1.0) - fresnel) * (1.0 - data.metallic);
 	
-	return (kD * data.albedo / PI + brdf) * radiance * NdotL;
+	return (kD * data.albedo / PI + brdf * data.specularIntensity) * radiance * NdotL;
 }
 
 vec3 calcDirLightReflectance(DirLight light, vec3 toEye, vec3 fresnel, MaterialData data)
 {
 	return calcDirectReflectance(-light.direction, toEye, fresnel, data, light.radiance);
+}
+
+vec3 getAmbientReflectance(MaterialData data)
+{
+	return ambientLight * data.albedo;
 }
 
 #endif

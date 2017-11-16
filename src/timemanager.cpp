@@ -3,6 +3,7 @@
 
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/color_space.hpp>
 
 namespace MCR
 {
@@ -38,7 +39,8 @@ namespace MCR
 		float sunIntensity = std::max(-m_sun.m_direction.y, 0.0f);
 		
 		m_sun.m_direction = rotationMatrix[2];
-		m_sun.m_radiance = glm::vec3(10) * std::min(sunIntensity * 2.5f, 1.0f);
+		m_sun.m_radiance = glm::convertLinearToSRGB(glm::vec3(0.94f, 0.65f, 0.32f)) *
+			glm::vec3(10) * std::min(sunIntensity * 2.5f, 1.0f);
 		
 		m_moon.m_radiance = glm::vec3(0.9f, 0.9f, 1.0f) * 0.5f * (1.0f - sunIntensity);
 		m_moon.m_direction = -glm::normalize(glm::vec3(0.2f, 1.5f, 0.8f));

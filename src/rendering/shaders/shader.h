@@ -2,6 +2,8 @@
 
 #include "../../vulkan/vk.h"
 
+#include <vector>
+
 namespace MCR
 {
 	class Shader
@@ -11,6 +13,13 @@ namespace MCR
 		{
 			VkStencilOpState front;
 			VkStencilOpState back;
+		};
+		
+		struct Specialization
+		{
+			const VkSpecializationInfo* vsSpecInfo;
+			const VkSpecializationInfo* gsSpecInfo;
+			const VkSpecializationInfo* fsSpecInfo;
 		};
 		
 		struct CreateInfo
@@ -38,6 +47,7 @@ namespace MCR
 			float                                                depthBiasSlopeFactor;
 			gsl::span<const VkPipelineColorBlendAttachmentState> attachmentBlendStates;
 			gsl::span<const VkDynamicState>                      dynamicState;
+			gsl::span<const Specialization>                      specializations;
 		};
 		
 		struct RenderPassInfo
@@ -52,7 +62,7 @@ namespace MCR
 			Wireframe
 		};
 		
-		void Bind(CommandBuffer& cb, BindModes mode = BindModes::Default) const;
+		void Bind(CommandBuffer& cb, BindModes mode = BindModes::Default, uint32_t permutation = 0) const;
 		
 		inline VkPipelineLayout GetLayout() const
 		{
@@ -63,7 +73,7 @@ namespace MCR
 		
 	private:
 		VkHandle<VkPipelineLayout> m_pipelineLayout;
-		VkHandle<VkPipeline> m_pipeline;
-		VkHandle<VkPipeline> m_wireframePipeline;
+		std::vector<VkHandle<VkPipeline>> m_pipelines;
+		std::vector<VkHandle<VkPipeline>> m_wireframePipelines;
 	};
 }
