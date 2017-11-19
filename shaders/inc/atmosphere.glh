@@ -1,7 +1,7 @@
 #ifndef ATMOSPHERE_H
 #define ATMOSPHERE_H
 
-const float rayleighBrightness = 0.3;
+const float rayleighBrightness = 0.35;
 const float rayleighStrength = 5000;
 const float rayleighCollectionPower = 1.0005;
 const float rayleighCollectionScale = 0.002;
@@ -16,7 +16,7 @@ const float spotBrightness = 50;
 const float scatterStrength = 1000;
 
 const float atmosphereRadius = 100000;
-const float surfaceLevelPercentage = 0.997;
+const float surfaceLevelPercentage = 0.998;
 const float occlusionSmoothness = 0.01;
 const float blockDepthScale = 0.05;
 
@@ -96,7 +96,7 @@ vec3 getScatteringColor(float eyeDepth, vec3 eyeVector)
 		float sunSampleDepth = getAtmosphericTravelDistance(position, -renderSettings.sun.direction);
 		float moonSampleDepth = getAtmosphericTravelDistance(position, -renderSettings.moon.direction);
 		
-		vec3 influx = calcAbsorbtion(sunSampleDepth, renderSettings.sun.radiance, scatterStrength) * occlusion;
+		vec3 influx = calcAbsorbtion(sunSampleDepth, vec3(10), scatterStrength) * occlusion;
 		
 		influx += calcAbsorbtion(moonSampleDepth, renderSettings.moon.radiance, scatterStrength);
 		
