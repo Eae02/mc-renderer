@@ -30,6 +30,37 @@ namespace MCR
 	
 	static const Shader::StencilState stencilState = { stencilOpState, stencilOpState };
 	
+	static const VkSpecializationMapEntry specializationMapEntries[] =
+	{
+		{ 0, 0, sizeof(uint32_t) }
+	};
+	
+	static const uint32_t aboveWaterSpecData[] = { 0 };
+	
+	static const VkSpecializationInfo aboveWaterSpecInfo =
+	{
+		static_cast<uint32_t>(ArrayLength(specializationMapEntries)),
+		specializationMapEntries,
+		sizeof(aboveWaterSpecData),
+		aboveWaterSpecData
+	};
+	
+	static const uint32_t underwaterSpecData[] = { 1 };
+	
+	static const VkSpecializationInfo belowWaterSpecInfo =
+	{
+		static_cast<uint32_t>(ArrayLength(specializationMapEntries)),
+		specializationMapEntries,
+		sizeof(underwaterSpecData),
+		underwaterSpecData
+	};
+	
+	static const Shader::Specialization specializations[] =
+	{
+		{ &aboveWaterSpecInfo, nullptr, &aboveWaterSpecInfo },
+		{ &belowWaterSpecInfo, nullptr, &belowWaterSpecInfo }
+	};
+	
 	const Shader::CreateInfo WaterShader::s_createInfo =
 	{
 		/* vsName                  */ "water.vs",
@@ -55,7 +86,7 @@ namespace MCR
 		/* depthBiasSlopeFactor    */ 0.0f,
 		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
 		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
+		/* specializations         */ specializations
 	};
 	
 	WaterShader::WaterShader(Shader::RenderPassInfo renderPassInfo,
@@ -88,7 +119,7 @@ namespace MCR
 	
 	void WaterShader::Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, bool underwater) const
 	{
-		Shader::Bind(cb);
+		Shader::Bind(cb, BindModes::Default, underwater ? 1 : 0);
 		
 		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet, shadowDescriptorSet };
 		
