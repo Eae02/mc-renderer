@@ -304,7 +304,7 @@ namespace MCR
 			/* signalSemaphoreCount */ 0,
 			/* pSignalSemaphores    */ nullptr
 		};
-		vulkan.queues[QUEUE_FAMILY_TRANSFER]->Submit(1, &submit, *fence);
+		vulkan.queues[QUEUE_FAMILY_GRAPHICS]->Submit(1, &submit, *fence);
 		
 		WaitForFence(*fence, UINT64_MAX);
 		

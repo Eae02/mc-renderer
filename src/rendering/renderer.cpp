@@ -336,7 +336,7 @@ namespace MCR
 		m_waterPostShader.FramebufferChanged(framebuffer);
 	}
 	
-	static constexpr bool enableCausticsCache = true;
+	static constexpr bool enableCausticsCache = false;
 	
 	static fs::path GetCausticsCachePath()
 	{
