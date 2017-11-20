@@ -29,6 +29,11 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
+	if (!fs::exists(MCR::GetAppDataPath()))
+	{
+		fs::create_directories(MCR::GetAppDataPath());
+	}
+	
 	if (!MCR::LoadVulkanLibrary())
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error Loading Vulkan", "Could not load vulkan library, make "

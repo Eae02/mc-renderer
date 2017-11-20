@@ -80,6 +80,12 @@ namespace MCR
 		
 		Settings settings;
 		
+		fs::path settingsPath = GetAppDataPath() / "settings.json";
+		if (fs::exists(settingsPath))
+		{
+			settings.Load(settingsPath);
+		}
+		
 		int cursorX, cursorY;
 		SDL_GetMouseState(&cursorX, &cursorY);
 		
@@ -310,6 +316,10 @@ namespace MCR
 			
 			lastFrameTime = std::chrono::high_resolution_clock::now() - frameBeginTime;
 		}
+		
+		settings.Save(settingsPath);
+		
+		renderer.SaveCausticsTexture();
 		
 		worldManager->SaveAll();
 		worldManager->WaitIdle();

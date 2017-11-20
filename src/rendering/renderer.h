@@ -34,6 +34,8 @@ namespace MCR
 		
 		void Render(const RenderParams& params);
 		
+		void SaveCausticsTexture() const;
+		
 		inline VkCommandBuffer GetCommandBuffer() const
 		{
 			return m_commandBuffers[frameQueueIndex].GetVkCB();

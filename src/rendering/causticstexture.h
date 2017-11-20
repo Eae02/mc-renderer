@@ -11,6 +11,10 @@ namespace MCR
 		
 		void Render(CommandBuffer& commandBuffer);
 		
+		bool TryLoad(const fs::path& path, class LoadContext& loadContext);
+		
+		void Save(const fs::path& path) const;
+		
 		inline VkImageView GetImageView() const
 		{
 			return *m_imageView;

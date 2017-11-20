@@ -3,6 +3,8 @@
 #include <SDL2/SDL.h>
 #include <vector>
 
+#include "filesystem.h"
+
 namespace MCR
 {
 	enum class QualityLevels
@@ -19,6 +21,9 @@ namespace MCR
 		Settings();
 		
 		static void QueryAvailableDisplayModes();
+		
+		void Load(const fs::path& path);
+		void Save(const fs::path& path) const;
 		
 		inline void SetShadowQuality(QualityLevels quality)
 		{

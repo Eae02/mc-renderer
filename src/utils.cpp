@@ -36,6 +36,24 @@ namespace MCR
 		return std::cout;
 	}
 	
+	const fs::path& GetAppDataPath()
+	{
+		static fs::path appDataPath;
+		
+		if (appDataPath.empty())
+		{
+#if defined(__linux__)
+			appDataPath = fs::u8path(getenv("HOME")) / ".local/share/EaeMCR";
+#elif defined(_WIN32)
+			LPWSTR wszPath = NULL;
+			SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &wszPath);
+			return fs::path(wszPath) / "EaeMCR";
+#endif
+		}
+		
+		return appDataPath;
+	}
+	
 	const fs::path& GetResourcePath()
 	{
 		static fs::path resourcePath;

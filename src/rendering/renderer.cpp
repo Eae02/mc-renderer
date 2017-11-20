@@ -336,10 +336,30 @@ namespace MCR
 		m_waterPostShader.FramebufferChanged(framebuffer);
 	}
 	
+	static constexpr bool enableCausticsCache = true;
+	
+	static fs::path GetCausticsCachePath()
+	{
+		return GetAppDataPath() / "caustics_cache";
+	}
+	
 	void Renderer::Initialize(LoadContext& loadContext)
 	{
-		m_causticsTexture.Render(loadContext.GetCB());
+		if (!enableCausticsCache || !m_causticsTexture.TryLoad(GetCausticsCachePath(), loadContext))
+		{
+			m_causticsTexture.Render(loadContext.GetCB());
+		}
 		
 		m_waterShader.Initialize(loadContext);
+	}
+	
+	void Renderer::SaveCausticsTexture() const
+	{
+		const fs::path causticsCachePath = GetCausticsCachePath();
+		
+		if (enableCausticsCache && !fs::exists(causticsCachePath))
+		{
+			m_causticsTexture.Save(causticsCachePath);
+		}
 	}
 }

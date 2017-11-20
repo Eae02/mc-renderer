@@ -134,9 +134,8 @@ namespace MCR
 		
 		ChunkBufferAllocator() = default;
 		
-		//Chunks usually use ~4000 indices and 3000 vertices.
-		static constexpr uint64_t IndicesPerPage = 8 * 1024 * 1024;
-		static constexpr uint64_t VerticesPerPage = 6 * 1024 * 1024;
+		static constexpr uint64_t IndicesPerPage = 16 * 1024 * 1024;
+		static constexpr uint64_t VerticesPerPage = 12 * 1024 * 1024;
 		
 		std::mutex m_mutex;
 		

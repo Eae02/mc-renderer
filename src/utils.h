@@ -85,6 +85,8 @@ namespace MCR
 	
 	const fs::path& GetResourcePath();
 	
+	const fs::path& GetAppDataPath();
+	
 	template <typename DataType, typename StreamType>
 	inline DataType BinRead(StreamType& stream)
 	{
