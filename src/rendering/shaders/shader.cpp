@@ -2,9 +2,12 @@
 #include "shadermodules.h"
 #include "../../vulkan/setlayoutsmanager.h"
 #include <array>
+#include <fstream>
 
 namespace MCR
 {
+	VkPipelineCache Shader::s_pipelineCache = VK_NULL_HANDLE;
+	
 	Shader::Shader(RenderPassInfo renderPassInfo, const CreateInfo& createInfo)
 	{
 		bool hasSpecializations = !createInfo.specializations.empty();
@@ -45,7 +48,7 @@ namespace MCR
 		auto stageCreateInfos = reinterpret_cast<VkPipelineShaderStageCreateInfo*>(stageCreateInfosMem);
 		VkPipelineShaderStageCreateInfo* stageCreateInfosOut = stageCreateInfos;
 		
-		for (int p = 0; p < numPermutations; p++)
+		for (size_t p = 0; p < numPermutations; p++)
 		{
 			InitShaderStageCreateInfo(*stageCreateInfosOut, VK_SHADER_STAGE_VERTEX_BIT,
 			                          GetShaderModule(createInfo.vsName));
@@ -242,7 +245,7 @@ namespace MCR
 		
 		VkPipeline* pipelinesOut = reinterpret_cast<VkPipeline*>(alloca(sizeof(VkPipeline) * numPipelineCreateInfos));
 		
-		CheckResult(vkCreateGraphicsPipelines(vulkan.device, VK_NULL_HANDLE,
+		CheckResult(vkCreateGraphicsPipelines(vulkan.device, s_pipelineCache,
 		                                      static_cast<uint32_t>(numPipelineCreateInfos),
 		                                      pipelineCreateInfos, nullptr, pipelinesOut));
 		
@@ -265,6 +268,56 @@ namespace MCR
 		else
 		{
 			cb.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_pipelines[permutation]);
+		}
+	}
+	
+	void Shader::InitializeCache(const fs::path& cachePath)
+	{
+		std::ifstream cacheStream(cachePath, std::ios::binary);
+		std::vector<char> cacheData;
+		
+		if (cacheStream)
+		{
+			char readBuffer[512];
+			
+			do
+			{
+				cacheStream.read(readBuffer, sizeof(readBuffer));
+				
+				cacheData.insert(cacheData.end(), readBuffer, readBuffer + cacheStream.gcount());
+			} while (!cacheStream.eof());
+		}
+		
+		const VkPipelineCacheCreateInfo cacheCreateInfo =
+		{
+			/* sType           */ VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+			/* pNext           */ nullptr,
+			/* flags           */ 0,
+			/* initialDataSize */ cacheData.size(),
+			/* pInitialData    */ cacheData.data()
+		};
+		
+		CheckResult(vkCreatePipelineCache(vulkan.device, &cacheCreateInfo, nullptr, &s_pipelineCache));
+	}
+	
+	void Shader::SaveCache(const fs::path& cachePath)
+	{
+		size_t cacheDataSize;
+		CheckResult(vkGetPipelineCacheData(vulkan.device, s_pipelineCache, &cacheDataSize, nullptr));
+		
+		std::vector<char> cacheData(cacheDataSize);
+		CheckResult(vkGetPipelineCacheData(vulkan.device, s_pipelineCache, &cacheDataSize, cacheData.data()));
+		
+		std::ofstream cacheStream(cachePath, std::ios::binary);
+		cacheStream.write(cacheData.data(), cacheData.size());
+	}
+	
+	void Shader::DestroyCache()
+	{
+		if (s_pipelineCache)
+		{
+			vkDestroyPipelineCache(vulkan.device, s_pipelineCache, nullptr);
+			s_pipelineCache = VK_NULL_HANDLE;
 		}
 	}
 }

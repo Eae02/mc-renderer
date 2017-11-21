@@ -2,6 +2,7 @@
 #include "shaders/shadermodules.h"
 #include "../vulkan/instance.h"
 #include "../loadcontext.h"
+#include "shaders/shader.h"
 
 #include <fstream>
 #include <zlib.h>
@@ -125,7 +126,7 @@ namespace MCR
 		pipelineCreateInfo.layout = pipelineLayout;
 		pipelineCreateInfo.basePipelineIndex = -1;
 		
-		CheckResult(vkCreateComputePipelines(vulkan.device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
+		CheckResult(vkCreateComputePipelines(vulkan.device, Shader::GetCache(), 1, &pipelineCreateInfo, nullptr,
 		                                     s_genPipeline.GetCreateAddress()));
 	}
 	

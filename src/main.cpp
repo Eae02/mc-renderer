@@ -10,6 +10,7 @@
 #include "vulkan/instance.h"
 #include "rendering/shaders/shadermodules.h"
 #include "rendering/setlayouts.h"
+#include "rendering/shaders/shader.h"
 #include "ui/font.h"
 #include "vulkan/library.h"
 
@@ -75,6 +76,9 @@ int main(int argc, char** argv)
 	{
 #endif
 	
+	const fs::path pipelineCachePath = MCR::GetAppDataPath() / "pipeline_cache";
+	MCR::Shader::InitializeCache(pipelineCachePath);
+	
 	MCR::CreateSamplers();
 	MCR::LoadShaderModules();
 	MCR::RegisterSetLayouts();
@@ -84,6 +88,9 @@ int main(int argc, char** argv)
 	MCR::DestroyShaderModules();
 	MCR::DestroyDescriptorSetLayouts();
 	MCR::DestroySamplers();
+	
+	MCR::Shader::SaveCache(pipelineCachePath);
+	MCR::Shader::DestroyCache();
 	
 	MCR::DestroyVulkan();
 	

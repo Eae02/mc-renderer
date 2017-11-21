@@ -99,6 +99,11 @@ namespace MCR
 			m_worldManager = worldManager;
 		}
 		
+		inline void SetShadowQualityLevel(QualityLevels qualityLevel)
+		{
+			m_shadowMapper.SetQualityLevel(qualityLevel);
+		}
+		
 		void FramebufferChanged(const Framebuffer& framebuffer);
 		
 	private:

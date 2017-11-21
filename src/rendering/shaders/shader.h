@@ -71,7 +71,18 @@ namespace MCR
 		
 		Shader(RenderPassInfo renderPassInfo, const CreateInfo& createInfo);
 		
+		static void InitializeCache(const fs::path& cachePath);
+		static void SaveCache(const fs::path& cachePath);
+		static void DestroyCache();
+		
+		inline static VkPipelineCache GetCache()
+		{
+			return s_pipelineCache;
+		}
+		
 	private:
+		static VkPipelineCache s_pipelineCache;
+		
 		VkHandle<VkPipelineLayout> m_pipelineLayout;
 		std::vector<VkHandle<VkPipeline>> m_pipelines;
 		std::vector<VkHandle<VkPipeline>> m_wireframePipelines;

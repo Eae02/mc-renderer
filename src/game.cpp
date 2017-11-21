@@ -110,6 +110,7 @@ namespace MCR
 		
 		Renderer renderer;
 		renderer.Initialize(*loadContext);
+		renderer.SetShadowQualityLevel(settings.GetShadowQuality());
 		
 		loadContext->End();
 		loadContext.reset();
