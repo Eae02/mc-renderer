@@ -35,6 +35,11 @@ namespace MCR
 			return m_shadowQuality;
 		}
 		
+		inline bool EnableVSync() const
+		{
+			return m_enableVSync;
+		}
+		
 		inline bool IsFullScreen() const
 		{
 			return m_fullScreen;
@@ -53,6 +58,8 @@ namespace MCR
 	private:
 		static std::vector<SDL_DisplayMode> s_availableDisplayModes;
 		static int s_defaultDisplayModeIndex;
+		
+		bool m_enableVSync;
 		
 		bool m_fullScreen;
 		int m_fullScreenDisplayMode;

@@ -38,7 +38,7 @@ namespace MCR
 	}
 	
 	Settings::Settings()
-		: m_fullScreen(false), m_fullScreenDisplayMode(s_defaultDisplayModeIndex),
+		: m_enableVSync(true), m_fullScreen(false), m_fullScreenDisplayMode(s_defaultDisplayModeIndex),
 		  m_renderDistance(10), m_shadowQuality(QualityLevels::Medium)
 	{
 		
@@ -72,6 +72,7 @@ namespace MCR
 			{ "ResY", s_availableDisplayModes[m_fullScreenDisplayMode].h },
 			{ "RefreshRate", s_availableDisplayModes[m_fullScreenDisplayMode].refresh_rate },
 			{ "FullScreen", m_fullScreen },
+			{ "VSync", m_enableVSync },
 			{ "RenderDistance", m_renderDistance },
 			{ "ShadowQuality", QualityLevelToString(m_shadowQuality) }
 		};
@@ -125,6 +126,12 @@ namespace MCR
 		if (fullScreenIt != json.end())
 		{
 			m_fullScreen = *fullScreenIt;
+		}
+		
+		auto vSyncIt = json.find("VSync");
+		if (vSyncIt != json.end())
+		{
+			m_enableVSync = *vSyncIt;
 		}
 		
 		auto renderDistanceIt = json.find("RenderDistance");

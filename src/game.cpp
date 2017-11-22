@@ -51,8 +51,6 @@ namespace MCR
 #endif
 	};
 	
-	const bool enableVSync = false;
-	
 	void RunGameLoop(SDL_Window* window)
 	{
 		bool relativeMouseMode = false;
@@ -213,7 +211,7 @@ namespace MCR
 			{
 				vkDeviceWaitIdle(vulkan.device);
 				
-				SwapChain::Create(enableVSync);
+				SwapChain::Create(settings.EnableVSync());
 				
 				Framebuffer::RenderPasses renderPasses;
 				renderer.GetRenderPasses(renderPasses);
@@ -253,10 +251,6 @@ namespace MCR
 #ifdef MCR_DEBUG
 				profilingData = frame.m_profiler.GetData(lastFrameTime);
 				currentFrameProfiler->NewFrame();
-				
-				//auto postProcessorTimestamps = postProcessor.GetElapsedTime();
-				//currentFrameProfiler->AddTimerResult("Godrays", TimerTypes::GPU, postProcessorTimestamps.m_godRays);
-				//currentFrameProfiler->AddTimerResult("Sky", TimerTypes::GPU, postProcessorTimestamps.m_sky);
 #endif
 			}
 			else
