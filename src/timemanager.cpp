@@ -16,16 +16,6 @@ namespace MCR
 	
 	void TimeManager::Update(float dt, const InputState& inputState)
 	{
-		if (inputState.IsKeyPressed(Keys::UpArrow))
-		{
-			m_time = std::fmod(m_time + dt * 0.2f, 2.0f);
-		}
-		
-		if (inputState.IsKeyPressed(Keys::DownArrow))
-		{
-			m_time = std::fmod(m_time - dt * 0.2f, 2.0f);
-		}
-		
 		m_time = m_time - std::floor(m_time / 2.0f) * 2.0f;
 		
 		const float yaw = glm::radians(30.0f);

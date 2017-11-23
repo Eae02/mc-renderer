@@ -81,6 +81,16 @@ namespace MCR
 			m_shouldCaptureShadowVolume = true;
 		}
 		
+		inline void ClearVisibilityGraph()
+		{
+			m_visibilityGraph.reset();
+		}
+		
+		inline void ClearShadowVolume()
+		{
+			m_shadowVolume.reset();
+		}
+		
 		inline void GetRenderPasses(Framebuffer::RenderPasses& renderPasses) const
 		{
 			renderPasses.m_renderer = *m_renderPass;

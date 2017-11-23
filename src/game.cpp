@@ -4,6 +4,7 @@
 #include "vulkan/vkutils.h"
 #include "inputstate.h"
 #include "timemanager.h"
+#include "devmenumanager.h"
 #include "world/worldmanager.h"
 #include "ui/font.h"
 #include "ui/uigraphicscontext.h"
@@ -127,6 +128,8 @@ namespace MCR
 		worldManager->SetRenderDistance(settings.GetRenderDistance());
 		renderer.SetWorldManager(worldManager.get());
 		
+		InitDevMenu(renderer);
+		
 		const fs::path worldPath = MCR::GetResourcePath() / "world";
 		if (!fs::exists(worldPath))
 		{
@@ -160,41 +163,14 @@ namespace MCR
 				case SDL_MOUSEBUTTONDOWN:
 					inputState.MouseButtonEvent(event.button.button, event.button.state == SDL_PRESSED);
 					break;
-				case SDL_KEYUP:
-					if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
-					{
-						shouldQuit = true;
-						break;
-					}
-					[[fallthrough]];
+				
 				case SDL_KEYDOWN:
+					DevMenuKeyPressEvent(event.key);
+					
+					[[fallthrough]];
+				case SDL_KEYUP:
 					if (event.key.repeat)
 						break;
-					
-					if (event.key.state == SDL_PRESSED)
-					{
-						if (event.key.keysym.scancode == SDL_SCANCODE_F5)
-						{
-							renderer.CaptureShadowVolume();
-						}
-						else if (event.key.keysym.scancode == SDL_SCANCODE_F6)
-						{
-							renderer.SetEnableOcclusionCulling(!renderer.IsOcclusionCullingEnabled());
-						}
-						else if (event.key.keysym.scancode == SDL_SCANCODE_F7)
-						{
-							renderer.SetWireframe(!renderer.Wireframe());
-						}
-						else if (event.key.keysym.scancode == SDL_SCANCODE_F8)
-						{
-							renderer.SetFrustumFrozen(!renderer.IsFrustumFrozen());
-						}
-						else if (event.key.keysym.scancode == SDL_SCANCODE_F10)
-						{
-							relativeMouseMode = !relativeMouseMode;
-							SDL_SetRelativeMouseMode(relativeMouseMode ? SDL_TRUE : SDL_FALSE);
-						}
-					}
 					
 					inputState.KeyEvent(event.key.keysym.scancode, event.key.state == SDL_PRESSED);
 					break;
@@ -268,6 +244,8 @@ namespace MCR
 			
 #ifdef MCR_DEBUG
 			profilingPane.FrameEnd(profilingData, inputState, uiDrawList);
+			
+			RenderDevMenu(uiDrawList, { drawableWidth, drawableHeight });
 #endif
 			
 			{
@@ -331,6 +309,8 @@ namespace MCR
 		
 		CausticsTexture::DestroyPipelines();
 		WaterMesh::DestroyBuffers();
+		
+		DestroyDevMenu();
 		
 		ClearVulkanDestroyList();
 	}
