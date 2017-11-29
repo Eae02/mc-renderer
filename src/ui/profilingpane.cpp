@@ -19,69 +19,32 @@ namespace MCR
 	}
 	
 	const float width = 300;
+	const float titleHeight = 24;
 	
 	void ProfilingPane::FrameEnd(ProfilingData profilingData, const InputState& inputState,
 	                             UIDrawList& drawList)
 	{
-		const glm::vec4 backgroundColor(0.1f, 0.1f, 0.1f, 0.75f);
-		
-		const float titleHeight = 24;
-		const glm::vec4 titleBackgroundColor(0.8f, 0.45f, 0.3f, 1.0f);
-		
-		glm::vec2 titleRectMax = m_position + glm::vec2(width, titleHeight);
-		
-		//Draws the title
-		drawList.AddRectangle(m_position, titleRectMax, titleBackgroundColor);
-		
-		drawList.AddText(Font::GetStandardDev(), "Profiling", m_position + glm::vec2(5, titleHeight / 2),
-		                 glm::vec4(1.0f), TextPosX::Right, TextPosY::Center);
-		
-		m_contentsList.Reset();
-		
-		glm::vec2 pos = m_position + glm::vec2(0, titleHeight);
-		
-		std::ostringstream topTextStream;
-		topTextStream << "Frame Time: " << profilingData.GetFrameTime().count() << "ms\n";
-		topTextStream << "FPS: " << (1000.0f / profilingData.GetFrameTime().count()) << "Hz";
-		const std::string topText = topTextStream.str();
-		
-		pos.y += m_contentsList.AddText(Font::GetStandardDev(), topText, pos + glm::vec2(5.0f), glm::vec4(1.0f),
-		                                TextPosX::Right, TextPosY::Below).y + 10.0f;
-		
-		RenderPane(pos, "Current Frame (CPU)", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
+		if (m_visible)
 		{
-			RenderPane_CurrentFrame(devControls, profilingData, TimerTypes::CPU);
-		});
-		
-		RenderPane(pos, "Current Frame (GPU)", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
-		{
-			RenderPane_CurrentFrame(devControls, profilingData, TimerTypes::GPU);
-		});
-		
-		RenderPane(pos, "Graphs", inputState, m_graphsPaneOpen, [&] (DevControls& devControls)
-		{
-			RenderPane_Graphs(devControls);
-		});
-		
-		drawList.AddRectangle(m_position + glm::vec2(0, titleHeight), pos + glm::vec2(width, 0), backgroundColor);
-		
-		drawList.AddList(m_contentsList);
-		
-		if (!m_isMoving && RectangleContains(m_position, titleRectMax, inputState.GetCursorPos()) &&
-		    inputState.IsButtonPressed(MouseButtons::Left) && !inputState.WasButtonPressed(MouseButtons::Left))
-		{
-			m_isMoving = true;
-		}
-		
-		if (m_isMoving)
-		{
-			if (inputState.IsButtonPressed(MouseButtons::Left))
+			Render(profilingData, inputState, drawList);
+			
+			if (!m_isMoving && RectangleContains(m_position, m_position + glm::vec2(width, titleHeight),
+			                                     inputState.GetCursorPos()) &&
+			    inputState.IsButtonPressed(MouseButtons::Left) && !inputState.WasButtonPressed(MouseButtons::Left))
 			{
-				m_position += inputState.GetCursorDelta();
+				m_isMoving = true;
 			}
-			else
+			
+			if (m_isMoving)
 			{
-				m_isMoving = false;
+				if (inputState.IsButtonPressed(MouseButtons::Left))
+				{
+					m_position += inputState.GetCursorDelta();
+				}
+				else
+				{
+					m_isMoving = false;
+				}
 			}
 		}
 		
@@ -145,6 +108,52 @@ namespace MCR
 			
 			stream << "\n";
 		});
+	}
+	
+	void ProfilingPane::Render(const ProfilingData& profilingData, const InputState& inputState, UIDrawList& drawList)
+	{
+		const glm::vec4 backgroundColor(0.1f, 0.1f, 0.1f, 0.75f);
+		
+		const glm::vec4 titleBackgroundColor(0.8f, 0.45f, 0.3f, 1.0f);
+		
+		glm::vec2 titleRectMax = m_position + glm::vec2(width, titleHeight);
+		
+		//Draws the title
+		drawList.AddRectangle(m_position, titleRectMax, titleBackgroundColor);
+		
+		drawList.AddText(Font::GetStandardDev(), "Profiling", m_position + glm::vec2(5, titleHeight / 2),
+		                 glm::vec4(1.0f), TextPosX::Right, TextPosY::Center);
+		
+		m_contentsList.Reset();
+		
+		glm::vec2 pos = m_position + glm::vec2(0, titleHeight);
+		
+		std::ostringstream topTextStream;
+		topTextStream << "Frame Time: " << profilingData.GetFrameTime().count() << "ms\n";
+		topTextStream << "FPS: " << (1000.0f / profilingData.GetFrameTime().count()) << "Hz";
+		const std::string topText = topTextStream.str();
+		
+		pos.y += m_contentsList.AddText(Font::GetStandardDev(), topText, pos + glm::vec2(5.0f), glm::vec4(1.0f),
+		                                TextPosX::Right, TextPosY::Below).y + 10.0f;
+		
+		RenderPane(pos, "Current Frame (CPU)", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
+		{
+			RenderPane_CurrentFrame(devControls, profilingData, TimerTypes::CPU);
+		});
+		
+		RenderPane(pos, "Current Frame (GPU)", inputState, m_currentFramePaneOpen, [&] (DevControls& devControls)
+		{
+			RenderPane_CurrentFrame(devControls, profilingData, TimerTypes::GPU);
+		});
+		
+		RenderPane(pos, "Graphs", inputState, m_graphsPaneOpen, [&] (DevControls& devControls)
+		{
+			RenderPane_Graphs(devControls);
+		});
+		
+		drawList.AddRectangle(m_position + glm::vec2(0, titleHeight), pos + glm::vec2(width, 0), backgroundColor);
+		
+		drawList.AddList(m_contentsList);
 	}
 	
 	void ProfilingPane::RenderPaneHeader(UIDrawList& drawList, const InputState& inputState, glm::vec2& pos,

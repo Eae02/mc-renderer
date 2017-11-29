@@ -3,9 +3,10 @@
 #include <glm/glm.hpp>
 #include <chrono>
 
-#include "../profiling/profilingdata.h"
 #include "uidrawlist.h"
 #include "devcontrols.h"
+#include "../inputstate.h"
+#include "../profiling/profilingdata.h"
 
 namespace MCR
 {
@@ -18,8 +19,20 @@ namespace MCR
 		void FrameEnd(ProfilingData profilingData, const class InputState& inputState,
 		              UIDrawList& drawList);
 		
-	private:
+		inline bool IsVisible() const
+		{
+			return m_visible;
+		}
+		
+		inline void SetVisible(bool visible)
+		{
+			m_visible = visible;
+		}
+		
 		void DumpToCSV();
+		
+	private:
+		void Render(const ProfilingData& profilingData, const InputState& inputState, UIDrawList& drawList);
 		
 		template <typename CallbackTp>
 		inline void IterateRecordedFrames(CallbackTp callback) const
@@ -50,9 +63,11 @@ namespace MCR
 			}
 		}
 		
-		void RenderPaneHeader(UIDrawList& drawList, const MCR::InputState& inputState, glm::vec2& pos, std::string_view name, bool& open);
+		void RenderPaneHeader(UIDrawList& drawList, const InputState& inputState, glm::vec2& pos,
+		                      std::string_view name, bool& open);
 		
-		void RenderPane_CurrentFrame(class DevControls& devControls, const ProfilingData& profilingData, TimerTypes timerType);
+		void RenderPane_CurrentFrame(class DevControls& devControls, const ProfilingData& profilingData,
+		                             TimerTypes timerType);
 		void RenderPane_Graphs(class DevControls& devControls);
 		
 		static constexpr size_t NumFramesToKeep = 200;
@@ -71,6 +86,7 @@ namespace MCR
 		
 		UIDrawList m_contentsList;
 		
+		bool m_visible = false;
 		bool m_isMoving = false;
 	};
 #endif

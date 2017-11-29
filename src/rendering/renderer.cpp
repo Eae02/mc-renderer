@@ -301,7 +301,8 @@ namespace MCR
 			float waterPlaneY = 0;
 			bool underwater = m_worldManager->IsCameraUnderWater(waterPlaneY);
 			
-			m_waterShader.Bind(cb, m_shadowMapper.GetDescriptorSet(), underwater);
+			m_waterShader.Bind(cb, m_shadowMapper.GetDescriptorSet(), underwater,
+			                   m_wireframeWater ? Shader::BindModes::Wireframe : Shader::BindModes::Default);
 			
 			m_chunkRenderList.RenderWater(cb);
 			

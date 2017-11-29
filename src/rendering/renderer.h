@@ -61,6 +61,16 @@ namespace MCR
 			return m_wireframe;
 		}
 		
+		inline void SetWireframeWater(bool wireframeWater)
+		{
+			m_wireframeWater = wireframeWater;
+		}
+		
+		inline bool WireframeWater() const
+		{
+			return m_wireframeWater;
+		}
+		
 		inline void SetEnableOcclusionCulling(bool enableOcclusionCulling)
 		{
 			m_enableOcclusionCulling = enableOcclusionCulling;
@@ -158,6 +168,7 @@ namespace MCR
 		bool m_isFrustumFrozen = false;
 		Frustum m_frustum;
 		
+		bool m_wireframeWater = false;
 		bool m_wireframe = false;
 		
 		glm::mat4 m_projectionMatrix;

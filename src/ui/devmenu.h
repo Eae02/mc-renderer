@@ -24,7 +24,7 @@ namespace MCR
 		
 		void Render(class UIDrawList& drawList, const glm::vec2& position) const;
 		
-		void KeyPressEvent(const SDL_KeyboardEvent& keyEvent);
+		bool KeyPressEvent(const SDL_KeyboardEvent& keyEvent);
 		
 		template <typename T>
 		inline void AddValue(std::string_view name, GetValueCallback<T> get, SetValueCallback<T> set)

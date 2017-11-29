@@ -117,9 +117,10 @@ namespace MCR
 		UpdateDescriptorSets(bufferDSWrites);
 	}
 	
-	void WaterShader::Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, bool underwater) const
+	void WaterShader::Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet,
+	                       bool underwater, BindModes bindMode) const
 	{
-		Shader::Bind(cb, BindModes::Default, underwater ? 1 : 0);
+		Shader::Bind(cb, bindMode, underwater ? 1 : 0);
 		
 		const VkDescriptorSet descriptorSets[] = { *m_descriptorSet, shadowDescriptorSet };
 		

@@ -37,7 +37,8 @@ namespace MCR
 		float y = position.y;
 		for (size_t i = 0; i < m_entries.size(); i++)
 		{
-			if (m_selectedEntry == static_cast<long>(i))
+			bool selected = m_selectedEntry == static_cast<long>(i);
+			if (selected)
 			{
 				drawList.AddRectangle(glm::vec2(position.x, y), glm::vec2(position.x + width, y + itemHeight),
 				                      glm::vec4(1, 1, 1, 0.2f));
@@ -59,6 +60,25 @@ namespace MCR
 			else if (const ValueEntry<float>* valueEntryF = std::get_if<ValueEntry<float>>(&m_entries[i].second))
 			{
 				valueText = EntryValueToString(valueEntryF->m_getValue());
+			}
+			else if (const std::unique_ptr<DevMenu>* subMenuPtr =
+			         std::get_if<std::unique_ptr<DevMenu>>(&m_entries[i].second))
+			{
+				float triangleMaxX = position.x + width - padding;
+				float triangleSize = 6;
+				glm::vec2 trianglePositions[] = 
+				{
+					{ triangleMaxX - triangleSize, centerY + triangleSize },
+					{ triangleMaxX, centerY },
+					{ triangleMaxX - triangleSize, centerY - triangleSize }
+				};
+				
+				drawList.AddTriangle(trianglePositions, glm::vec4(TextColor, 1));
+				
+				if (selected)
+				{
+					(**subMenuPtr).Render(drawList, glm::vec2(position.x + width, y));
+				}
 			}
 			
 			if (!valueText.empty())
@@ -89,34 +109,92 @@ namespace MCR
 		return width;
 	}
 	
-	void DevMenu::KeyPressEvent(const SDL_KeyboardEvent& keyEvent)
+	bool DevMenu::KeyPressEvent(const SDL_KeyboardEvent& keyEvent)
 	{
+		EntryVariant* selectedVariantPtr = &m_entries[m_selectedEntry].second;
+		
+		DevMenu* selectedEntrySubMenu = [&] () -> DevMenu*
+		{
+			if (auto subMenuPtr = std::get_if<std::unique_ptr<DevMenu>>(selectedVariantPtr))
+				return subMenuPtr->get();
+			return nullptr;
+		}();
+		
+		if (m_subMenuHasFocus)
+		{
+			if (selectedEntrySubMenu->KeyPressEvent(keyEvent))
+			{
+				return true;
+			}
+			
+			if (keyEvent.keysym.scancode == SDL_SCANCODE_LEFT)
+			{
+				m_subMenuHasFocus = false;
+				selectedEntrySubMenu->Deactivate();
+				return true;
+			}
+			
+			return false;
+		}
+		
 		switch (keyEvent.keysym.scancode)
 		{
 		case SDL_SCANCODE_UP:
 			if (m_selectedEntry > 0)
 			{
 				m_selectedEntry--;
+				return true;
 			}
 			break;
 		case SDL_SCANCODE_DOWN:
 			if (m_selectedEntry < static_cast<long>(m_entries.size()) - 1)
 			{
 				m_selectedEntry++;
+				return true;
+			}
+			break;
+		case SDL_SCANCODE_LEFT:
+			if (const ValueEntry<float>* valueEntryF = std::get_if<ValueEntry<float>>(selectedVariantPtr))
+			{
+				valueEntryF->m_setValue(valueEntryF->m_getValue() - 0.1f);
+				return true;
+			}
+			break;
+		case SDL_SCANCODE_RIGHT:
+			if (const ValueEntry<float>* valueEntryF = std::get_if<ValueEntry<float>>(selectedVariantPtr))
+			{
+				valueEntryF->m_setValue(valueEntryF->m_getValue() + 0.1f);
+				return true;
+			}
+			if (selectedEntrySubMenu != nullptr)
+			{
+				m_subMenuHasFocus = true;
+				selectedEntrySubMenu->Activate();
+				return true;
 			}
 			break;
 		case SDL_SCANCODE_SPACE:
 		case SDL_SCANCODE_RETURN:
-			if (const ValueEntry<bool>* valueEntryB = std::get_if<ValueEntry<bool>>(&m_entries[m_selectedEntry].second))
+			if (const ValueEntry<bool>* valueEntryB = std::get_if<ValueEntry<bool>>(selectedVariantPtr))
 			{
 				valueEntryB->m_setValue(!valueEntryB->m_getValue());
+				return true;
 			}
-			else if (const ActionCallback* actionEntry = std::get_if<ActionCallback>(&m_entries[m_selectedEntry].second))
+			if (const ActionCallback* actionEntry = std::get_if<ActionCallback>(selectedVariantPtr))
 			{
 				(*actionEntry)();
+				return true;
+			}
+			if (selectedEntrySubMenu != nullptr)
+			{
+				m_subMenuHasFocus = true;
+				selectedEntrySubMenu->Activate();
+				return true;
 			}
 			break;
 		default: break;
 		}
+		
+		return false;
 	}
 }

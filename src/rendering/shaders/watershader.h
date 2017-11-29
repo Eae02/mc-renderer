@@ -13,7 +13,7 @@ namespace MCR
 		
 		void Initialize(class LoadContext& loadContext);
 		
-		void Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, bool underwater) const;
+		void Bind(CommandBuffer& cb, VkDescriptorSet shadowDescriptorSet, bool underwater, BindModes bindMode) const;
 		
 		void FramebufferChanged(const class Framebuffer& framebuffer);
 		
