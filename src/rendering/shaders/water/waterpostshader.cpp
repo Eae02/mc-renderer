@@ -1,7 +1,7 @@
 #include "waterpostshader.h"
-#include "../blendstates.h"
-#include "../causticstexture.h"
-#include "../framebuffer.h"
+#include "../../blendstates.h"
+#include "../../causticstexture.h"
+#include "../../framebuffer.h"
 
 namespace MCR
 {
@@ -24,33 +24,16 @@ namespace MCR
 	
 	static const Shader::StencilState stencilState = { stencilOpState, stencilOpState };
 	
-	const Shader::CreateInfo WaterPostShader::s_createInfo =
-	{
-		/* vsName                  */ "post.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "water-post.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
-		/* vertexInputState        */ nullptr,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ false,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ false,
-		/* enableDepthWrite        */ true,
-		/* stencilState            */ &stencilState,
-		/* hasWireframeVariant     */ false,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo WaterPostShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("post.vs")
+		.SetFragmentShaderName("water-post.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetPushConstantRanges(SingleElementSpan(pushConstantRange))
+		.SetEnableDepthTest(false)
+		.SetEnableDepthWrite(true)
+		.SetStencilState(&stencilState)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::noBlending))
+		.SetDynamicState(dynamicState);
 	
 	WaterPostShader::WaterPostShader(Shader::RenderPassInfo renderPassInfo,
 	                                 const VkDescriptorBufferInfo& renderSettingsBufferInfo)

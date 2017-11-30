@@ -10,33 +10,13 @@ namespace MCR
 	
 	static const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) };
 	
-	const Shader::CreateInfo SkyShader::s_createInfo = 
-	{
-		/* vsName                  */ "sky.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "sky.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
-		/* vertexInputState        */ nullptr,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ false,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ false,
-		/* enableDepthWrite        */ false,
-		/* stencilState            */ nullptr,
-		/* hasWireframeVariant     */ false,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::additive),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo SkyShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("sky.vs")
+		.SetFragmentShaderName("sky.fs")
+		.SetPushConstantRanges(SingleElementSpan(pushConstantRange))
+		.SetDSLayoutNames(setLayouts)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::additive))
+		.SetDynamicState(dynamicState);
 	
 	SkyShader::SkyShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : Shader(renderPassInfo, s_createInfo), m_descriptorSet("Sky")

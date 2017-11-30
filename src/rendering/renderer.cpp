@@ -80,7 +80,7 @@ namespace MCR
 		
 		attachments[1].format = vulkan.depthStencilFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -284,7 +284,7 @@ namespace MCR
 			uint32_t waterRenderGPUTimer = BeginGPUTimer(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, "Water Render");
 			
 			VkClearValue waterClearValues[2] = { };
-			waterClearValues[1].depthStencil.stencil = 0;
+			waterClearValues[1].depthStencil = { 1.0f, 0 };
 			const VkRenderPassBeginInfo waterRenderPassBeginInfo =
 			{
 				/* sType           */ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,

@@ -34,6 +34,7 @@ namespace MCR
 			uint64_t storageBufferOffsetAlignment;
 			float timestampMillisecondPeriod;
 			bool hasMultiDrawIndirect;
+			bool hasTessellation;
 			uint32_t maxComputeWorkGroupInvocations;
 			uint32_t maxComputeWorkGroupSize[3];
 		} limits;

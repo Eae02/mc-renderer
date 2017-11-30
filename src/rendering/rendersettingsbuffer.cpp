@@ -74,6 +74,10 @@ namespace MCR
 	{
 		m_data[frameQueueIndex].m_viewProj = viewProj.m_viewProj;
 		m_data[frameQueueIndex].m_invViewProj = viewProj.m_invViewProj;
+		m_data[frameQueueIndex].m_view = viewProj.m_view;
+		m_data[frameQueueIndex].m_invView = viewProj.m_invView;
+		m_data[frameQueueIndex].m_proj = viewProj.m_proj;
+		m_data[frameQueueIndex].m_invProj = viewProj.m_invProj;
 		m_data[frameQueueIndex].m_cameraPos = cameraPosition;
 		m_data[frameQueueIndex].m_time = time;
 		m_data[frameQueueIndex].m_sun = timeManager.GetSunDescription();

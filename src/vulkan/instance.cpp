@@ -335,6 +335,7 @@ namespace MCR
 		enabledFeatures.geometryShader = VK_TRUE;
 		enabledFeatures.shaderStorageImageExtendedFormats = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
+		enabledFeatures.tessellationShader = availFeatures.tessellationShader;
 		
 		if (physicalDeviceProperties.vendorID == 32902)
 		{
@@ -342,6 +343,7 @@ namespace MCR
 		}
 		
 		vulkan.limits.hasMultiDrawIndirect = enabledFeatures.multiDrawIndirect == VK_TRUE;
+		vulkan.limits.hasTessellation = enabledFeatures.tessellationShader == VK_TRUE;
 		
 		// ** Selects a depth format **
 		

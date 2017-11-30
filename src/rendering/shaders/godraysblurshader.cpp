@@ -10,33 +10,13 @@ namespace MCR
 	
 	static const VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) };
 	
-	const Shader::CreateInfo GodRaysBlurShader::s_createInfo = 
-	{
-		/* vsName                  */ "godrays.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "godrays-hblur.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
-		/* vertexInputState        */ nullptr,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ false,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ false,
-		/* enableDepthWrite        */ false,
-		/* stencilState            */ nullptr,
-		/* hasWireframeVariant     */ false,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo GodRaysBlurShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("godrays.vs")
+		.SetFragmentShaderName("godrays-hblur.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetPushConstantRanges(SingleElementSpan(pushConstantRange))
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::noBlending))
+		.SetDynamicState(dynamicState);
 	
 	GodRaysBlurShader::GodRaysBlurShader(Shader::RenderPassInfo renderPass)
 	    : Shader(renderPass, s_createInfo), m_descriptorSet("GodRaysBlur")

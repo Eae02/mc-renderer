@@ -1,17 +1,20 @@
 #include "watershader.h"
-#include "../regions/watermesh.h"
-#include "../blendstates.h"
-#include "../framebuffer.h"
-#include "../../loadcontext.h"
-#include "../causticstexture.h"
+#include "../../regions/watermesh.h"
+#include "../../blendstates.h"
+#include "../../framebuffer.h"
+#include "../../../loadcontext.h"
+#include "../../causticstexture.h"
 
 #include <stb_image.h>
+#include <random>
 #include <glm/gtc/constants.hpp>
 
 namespace MCR
 {
 	constexpr size_t NORMAL_MAP_SAMPLES = 3;
-	constexpr size_t NM_ROTATIONS_BUFFER_SIZE = sizeof(float) * 8 * NORMAL_MAP_SAMPLES;
+	constexpr size_t NM_ROTATIONS_SIZE = sizeof(float) * 8 * NORMAL_MAP_SAMPLES;
+	constexpr size_t WAVES_SIZE = WaterShader::WaveCount * sizeof(WaterShader::Wave);
+	constexpr size_t DATA_BUFFER_SIZE = NM_ROTATIONS_SIZE + WAVES_SIZE;
 	
 	static const VkDynamicState dynamicState[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	
@@ -32,10 +35,11 @@ namespace MCR
 	
 	static const VkSpecializationMapEntry specializationMapEntries[] =
 	{
-		{ 0, 0, sizeof(uint32_t) }
+		{ 0, 0, sizeof(uint32_t) },
+		{ 1, sizeof(uint32_t), sizeof(uint32_t) }
 	};
 	
-	static const uint32_t aboveWaterSpecData[] = { 0 };
+	static const uint32_t aboveWaterSpecData[] = { 0, WaterShader::WaveCount };
 	
 	static const VkSpecializationInfo aboveWaterSpecInfo =
 	{
@@ -45,7 +49,7 @@ namespace MCR
 		aboveWaterSpecData
 	};
 	
-	static const uint32_t underwaterSpecData[] = { 1 };
+	static const uint32_t underwaterSpecData[] = { 1, WaterShader::WaveCount };
 	
 	static const VkSpecializationInfo belowWaterSpecInfo =
 	{
@@ -57,51 +61,53 @@ namespace MCR
 	
 	static const Shader::Specialization specializations[] =
 	{
-		{ &aboveWaterSpecInfo, nullptr, &aboveWaterSpecInfo },
-		{ &belowWaterSpecInfo, nullptr, &belowWaterSpecInfo }
+		{
+			/* vs  */ &aboveWaterSpecInfo,
+			/* tcs */ nullptr,
+			/* tes */ nullptr,
+			/* gs  */ nullptr,
+			/* fs  */ &aboveWaterSpecInfo
+		},
+		{
+			/* vs  */ &belowWaterSpecInfo,
+			/* tcs */ nullptr,
+			/* tes */ nullptr,
+			/* gs  */ nullptr,
+			/* fs  */ &belowWaterSpecInfo
+		}
 	};
 	
-	const Shader::CreateInfo WaterShader::s_createInfo =
-	{
-		/* vsName                  */ "water.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "water.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ { },
-		/* vertexInputState        */ &WaterMesh::s_vertexInputState,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ true,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ false,
-		/* enableDepthWrite        */ true,
-		/* stencilState            */ &stencilState,
-		/* hasWireframeVariant     */ true,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ specializations
-	};
+	const Shader::CreateInfo WaterShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("water-tess.vs")
+		.SetTessControlShaderName("water.tcs")
+		.SetTessEvaluationShaderName("water.tes")
+		.SetFragmentShaderName("water.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetVertexInputState(&WaterMesh::s_vertexInputState)
+		.SetTopology(VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)
+		.SetPatchControlPoints(3)
+		.SetEnableDepthClamp(true)
+		.SetEnableDepthTest(true)
+		.SetEnableDepthWrite(true)
+		.SetStencilState(&stencilState)
+		.SetHasWireframeVariant(true)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::noBlending))
+		.SetDynamicState(dynamicState)
+		.SetSpecializations(specializations);
 	
 	WaterShader::WaterShader(Shader::RenderPassInfo renderPassInfo,
 	                         const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : Shader(renderPassInfo, s_createInfo), m_descriptorSet("Water")
 	{
-		// ** Creates the normal map transforms buffer **
+		// ** Creates the data uniform buffer **
 		const VmaAllocationCreateInfo deviceMemoryAllocationCI = { 0, VMA_MEMORY_USAGE_GPU_ONLY };
 		
-		VkBufferCreateInfo deviceBufferCreateInfo;
-		InitBufferCreateInfo(deviceBufferCreateInfo, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
-		                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT, NM_ROTATIONS_BUFFER_SIZE);
+		VkBufferCreateInfo dataBufferCreateInfo;
+		InitBufferCreateInfo(dataBufferCreateInfo, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+		                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, DATA_BUFFER_SIZE);
 		
-		CheckResult(vmaCreateBuffer(vulkan.allocator, &deviceBufferCreateInfo, &deviceMemoryAllocationCI,
-		                            m_normalMapTransformsBuffer.GetCreateAddress(),
+		CheckResult(vmaCreateBuffer(vulkan.allocator, &dataBufferCreateInfo, &deviceMemoryAllocationCI,
+		                            m_dataUniformBuffer.GetCreateAddress(),
 		                            m_normalMapTransformsAllocation.GetCreateAddress(), nullptr));
 		
 		// ** Writes buffers to the descriptor set **
@@ -110,9 +116,9 @@ namespace MCR
 		m_descriptorSet.InitWriteDescriptorSet(bufferDSWrites[0], 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		                                       renderSettingsBufferInfo);
 		
-		VkDescriptorBufferInfo normalMapTransformInfo = { *m_normalMapTransformsBuffer, 0, NM_ROTATIONS_BUFFER_SIZE };
+		VkDescriptorBufferInfo dataBufferInfo = { *m_dataUniformBuffer, 0, DATA_BUFFER_SIZE };
 		m_descriptorSet.InitWriteDescriptorSet(bufferDSWrites[1], 3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		                                       normalMapTransformInfo);
+		                                       dataBufferInfo);
 		
 		UpdateDescriptorSets(bufferDSWrites);
 	}
@@ -193,7 +199,7 @@ namespace MCR
 		UpdateDescriptorSets(SingleElementSpan(normalMapDSWrite));
 		
 		// ** Creates the staging buffer **
-		const VkDeviceSize stagingBufferSize = NM_ROTATIONS_BUFFER_SIZE + waterNormalsBytes;
+		const VkDeviceSize stagingBufferSize = DATA_BUFFER_SIZE + waterNormalsBytes;
 		VmaAllocation stagingAllocation;
 		VkBuffer stagingBuffer;
 		void* stagingBufferMemory;
@@ -213,8 +219,35 @@ namespace MCR
 			normalMapRotationsMemory[i * 8 + 5] = cosRot;
 		}
 		
+		// ** Computes wave parameters **
+		std::mt19937 wavesRand;
+		std::uniform_real_distribution<float> wavelengthDist(1.0f, 16.0f);
+		
+		Wave* waves = reinterpret_cast<Wave*>(reinterpret_cast<char*>(stagingBufferMemory) + NM_ROTATIONS_SIZE);
+		float totalAmplitude = 0;
+		for (size_t i = 0; i < WaveCount; i++)
+		{
+			float iProgress = static_cast<float>(i) / static_cast<float>(WaveCount - 1);
+			const float theta = iProgress * glm::two_pi<float>();
+			
+			float wavelength = wavelengthDist(wavesRand);
+			
+			waves[i].m_direction = glm::vec2(std::cos(theta), std::sin(theta));
+			waves[i].m_amplitude = wavelength;
+			waves[i].m_freq = glm::two_pi<float>() / wavelength;
+			waves[i].m_speed = 1.5f * waves[i].m_freq;
+			
+			totalAmplitude += waves[i].m_amplitude;
+		}
+		
+		float amplitudeScale = 0.4f / totalAmplitude;
+		for (size_t i = 0; i < WaveCount; i++)
+		{
+			waves[i].m_amplitude *= amplitudeScale;
+		}
+		
 		// ** Copies normal map image data to the staging buffer **
-		memcpy(reinterpret_cast<char*>(stagingBufferMemory) + NM_ROTATIONS_BUFFER_SIZE,
+		memcpy(reinterpret_cast<char*>(stagingBufferMemory) + DATA_BUFFER_SIZE,
 		       waterNormalsData, waterNormalsBytes);
 		
 		// ** Transitions the normal map to TRANSFER_DST_OPTIMAL **
@@ -229,7 +262,7 @@ namespace MCR
 		// ** Uploads normal map image data **
 		const VkBufferImageCopy normalMapCopyRegion =
 		{
-			/* bufferOffset      */ NM_ROTATIONS_BUFFER_SIZE,
+			/* bufferOffset      */ DATA_BUFFER_SIZE,
 			/* bufferRowLength   */ 0,
 			/* bufferImageHeight */ 0,
 			/* imageSubresource  */ { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
@@ -248,11 +281,11 @@ namespace MCR
 		loadContext.GetCB().PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
 		                                    { }, { }, SingleElementSpan(postNormalMapCopyBarrier));
 		
-		// ** Uploads normal map transforms **
-		const VkBufferCopy copyRegion = { 0, 0, NM_ROTATIONS_BUFFER_SIZE };
-		loadContext.GetCB().CopyBuffer(stagingBuffer, *m_normalMapTransformsBuffer, copyRegion);
+		// ** Uploads data buffer contents **
+		const VkBufferCopy copyRegion = { 0, 0, DATA_BUFFER_SIZE };
+		loadContext.GetCB().CopyBuffer(stagingBuffer, *m_dataUniformBuffer, copyRegion);
 		
-		const VkBufferMemoryBarrier normalMapTransformsBarrier =
+		const VkBufferMemoryBarrier dataUniformBufferBarrier =
 		{
 			/* sType               */ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			/* pNext               */ nullptr,
@@ -260,13 +293,13 @@ namespace MCR
 			/* dstAccessMask       */ VK_ACCESS_UNIFORM_READ_BIT,
 			/* srcQueueFamilyIndex */ VK_QUEUE_FAMILY_IGNORED,
 			/* dstQueueFamilyIndex */ VK_QUEUE_FAMILY_IGNORED,
-			/* buffer              */ *m_normalMapTransformsBuffer,
+			/* buffer              */ *m_dataUniformBuffer,
 			/* offset              */ 0,
 			/* size                */ VK_WHOLE_SIZE
 		};
 		
 		loadContext.GetCB().PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0,
-		                                    { }, SingleElementSpan(normalMapTransformsBarrier), { });
+		                                    { }, SingleElementSpan(dataUniformBufferBarrier), { });
 		
 		loadContext.TakeResource(VkHandle<VmaAllocation>(stagingAllocation));
 		loadContext.TakeResource(VkHandle<VkBuffer>(stagingBuffer));
@@ -285,5 +318,18 @@ namespace MCR
 		m_descriptorSet.InitWriteDescriptorSet(dsWrite, 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageInfo);
 		
 		UpdateDescriptorSets(SingleElementSpan(dsWrite));
+	}
+	
+	float WaterShader::GetWaterHeightOffset(glm::vec2 position, float t) const
+	{
+		float height = 0;
+		
+		for (const Wave& wave : m_waves)
+		{
+			const float theta = t * wave.m_speed + glm::dot(position, wave.m_direction) * wave.m_freq;
+			height += std::sin(theta) * wave.m_amplitude;
+		}
+		
+		return height;
 	}
 }

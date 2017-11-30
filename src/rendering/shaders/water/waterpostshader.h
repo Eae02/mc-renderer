@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shader.h"
+#include "../shader.h"
 
 namespace MCR
 {

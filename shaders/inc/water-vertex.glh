@@ -1,0 +1,44 @@
+#ifndef WATER_VERTEX_H
+#define WATER_VERTEX_H
+
+layout(constant_id=1) const int waveCount = 8;
+
+const int nmSamples = 3;
+
+struct Wave
+{
+	vec2 direction;
+	float freq;
+	float amplitude;
+	float speed;
+};
+
+layout(set=0, binding=3) uniform DataUB
+{
+	mat2 nmRotationMatrices[nmSamples];
+	Wave waves[waveCount];
+};
+
+void calcWaves(inout vec3 worldPos, out mat3 tbnMatrix, float depth)
+{
+	float waveAmplitudeFactor = clamp(depth * 0.2, 1.0, 3.0);
+	
+	float h = 0.0;
+	for (int i = 0; i < waveCount; i++)
+	{
+		float amplitude = waves[i].amplitude * waveAmplitudeFactor;
+		float theta = renderSettings.time * waves[i].speed + dot(worldPos.xz, waves[i].direction) * waves[i].freq;
+		worldPos.y += sin(theta) * amplitude;
+		h += waves[i].freq * waves[i].direction.x * amplitude * cos(theta);
+	}
+	
+	tbnMatrix = mat3(normalize(vec3(0, h, 1)), normalize(vec3(1, h, 0)), normalize(vec3(-h, 1, -h)));
+}
+
+vec2 calcNMSample(int i, vec3 worldPos)
+{
+	const float scales[nmSamples] = float[] (16, 30, 12);
+	return (nmRotationMatrices[i] * worldPos.xz + vec2(0, renderSettings.time)) / scales[i];
+}
+
+#endif

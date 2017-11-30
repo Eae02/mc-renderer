@@ -8,33 +8,12 @@ namespace MCR
 	
 	static const std::string_view setLayouts[] = { "PostProcess" };
 	
-	const Shader::CreateInfo PostProcessShader::s_createInfo =
-	{
-		/* vsName                  */ "post.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "post.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ { },
-		/* vertexInputState        */ nullptr,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ false,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ false,
-		/* enableDepthWrite        */ false,
-		/* stencilState            */ nullptr,
-		/* hasWireframeVariant     */ false,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo PostProcessShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("post.vs")
+		.SetFragmentShaderName("post.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::noBlending))
+		.SetDynamicState(dynamicState);
 	
 	PostProcessShader::PostProcessShader(RenderPassInfo renderPassInfo)
 	    : Shader(renderPassInfo, s_createInfo), m_descriptorSet("PostProcess")

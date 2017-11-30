@@ -17,7 +17,7 @@ namespace MCR
 		{ 3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Vertex, m_texCoord) }
 	};
 	
-	const VkPipelineVertexInputStateCreateInfo blockVertexInputState = 
+	const VkPipelineVertexInputStateCreateInfo vertexInputState = 
 	{
 		/* sType                           */ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		/* pNext                           */ nullptr,

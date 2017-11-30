@@ -16,7 +16,7 @@ namespace MCR
 	
 	static const VkVertexInputAttributeDescription vertexAttribute = { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 };
 	
-	static const VkPipelineVertexInputStateCreateInfo blockVertexInputState = 
+	static const VkPipelineVertexInputStateCreateInfo vertexInputState = 
 	{
 		/* sType                           */ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		/* pNext                           */ nullptr,
@@ -34,33 +34,18 @@ namespace MCR
 		/* size       */ sizeof(float) * 4
 	};
 	
-	const Shader::CreateInfo DebugShader::s_createInfo = 
-	{
-		/* vsName                  */ "debug.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "debug.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ SingleElementSpan(pushConstantRange),
-		/* vertexInputState        */ &blockVertexInputState,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ true,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ true,
-		/* enableDepthWrite        */ false,
-		/* stencilState            */ nullptr,
-		/* hasWireframeVariant     */ true,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::alphaBlend),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo DebugShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("debug.vs")
+		.SetFragmentShaderName("debug.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetPushConstantRanges(SingleElementSpan(pushConstantRange))
+		.SetVertexInputState(&vertexInputState)
+		.SetEnableDepthClamp(true)
+		.SetEnableDepthTest(true)
+		.SetEnableDepthWrite(false)
+		.SetHasWireframeVariant(true)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::alphaBlend))
+		.SetDynamicState(dynamicState);
 	
 	DebugShader::DebugShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : Shader(renderPassInfo, s_createInfo), m_globalDescriptorSet("DebugShader_Global")

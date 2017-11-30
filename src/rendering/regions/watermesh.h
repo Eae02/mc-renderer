@@ -2,6 +2,8 @@
 
 #include <gsl/gsl>
 #include <glm/glm.hpp>
+
+#include "watervertex.h"
 #include "../../vulkan/vk.h"
 #include "../../vulkan/bufferpoolset.h"
 
@@ -41,9 +43,7 @@ namespace MCR
 			return *this;
 		}
 		
-		void Upload(CommandBuffer& cb, gsl::span<const glm::vec3> vertices, gsl::span<const uint16_t> indices);
-		
-		void Draw(CommandBuffer& cb);
+		void Upload(CommandBuffer& cb, gsl::span<const WaterVertex> vertices, gsl::span<const uint16_t> indices);
 		
 		inline VkBuffer GetVertexBuffer() const
 		{
@@ -81,7 +81,7 @@ namespace MCR
 		
 		static const VkPipelineVertexInputStateCreateInfo s_vertexInputState;
 		
-		static constexpr float WaterHeight = 0.75f;
+		static constexpr float WaterHeight = 0.6f;
 		
 	private:
 		void ReleaseVertices();

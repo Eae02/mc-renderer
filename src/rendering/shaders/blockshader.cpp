@@ -11,33 +11,18 @@ namespace MCR
 	
 	static const std::string_view setLayouts[] = { "BlockShader_Global", "ShadowSample" };
 	
-	const Shader::CreateInfo BlockShader::s_createInfo = 
-	{
-		/* vsName                  */ "block.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "block.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ { },
-		/* vertexInputState        */ &blockVertexInputState,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ true,
-		/* cullMode                */ VK_CULL_MODE_BACK_BIT,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ true,
-		/* enableDepthWrite        */ true,
-		/* stencilState            */ nullptr,
-		/* hasWireframeVariant     */ true,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo BlockShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("block.vs")
+		.SetFragmentShaderName("block.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetVertexInputState(&vertexInputState)
+		.SetEnableDepthClamp(true)
+		.SetCullMode(VK_CULL_MODE_BACK_BIT)
+		.SetEnableDepthTest(true)
+		.SetEnableDepthWrite(true)
+		.SetHasWireframeVariant(true)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::noBlending))
+		.SetDynamicState(dynamicState);
 	
 	BlockShader::BlockShader(RenderPassInfo renderPassInfo, const VkDescriptorBufferInfo& renderSettingsBufferInfo)
 	    : Shader(renderPassInfo, s_createInfo), m_globalDescriptorSet("BlockShader_Global")

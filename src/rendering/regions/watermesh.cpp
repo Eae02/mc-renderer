@@ -8,13 +8,13 @@ namespace MCR
 	static const VkVertexInputBindingDescription waterVertexInputBinding =
 	{
 		/* binding   */ 0,
-		/* stride    */ sizeof(float) * 3,
+		/* stride    */ sizeof(float) * 4,
 		/* inputRate */ VK_VERTEX_INPUT_RATE_VERTEX
 	};
 	
 	const VkVertexInputAttributeDescription waterVertexAttributes[] =
 	{
-		{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 }
+		{ 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0 }
 	};
 	
 	const VkPipelineVertexInputStateCreateInfo WaterMesh::s_vertexInputState = 
@@ -30,7 +30,6 @@ namespace MCR
 	
 	const uint32_t VerticesPerPage = 4096 * 4096;
 	const VkBufferUsageFlags VertexUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	const size_t VertexSize = sizeof(float) * 3;
 	
 	//Most vertices will belong to 4 triangles, so allocate space for 4 times as many indices as vertices.
 	const uint32_t IndicesPerPage = VerticesPerPage * 4;
@@ -49,7 +48,7 @@ namespace MCR
 	
 	void WaterMesh::CreateBuffers()
 	{
-		vertexPoolSet = std::make_unique<BufferPoolSet>(VertexSize, VerticesPerPage, VertexUsage);
+		vertexPoolSet = std::make_unique<BufferPoolSet>(sizeof(WaterVertex), VerticesPerPage, VertexUsage);
 		indexPoolSet = std::make_unique<BufferPoolSet>(sizeof(uint16_t), IndicesPerPage, IndexUsage);
 	}
 	
@@ -74,7 +73,7 @@ namespace MCR
 		}
 	}
 	
-	void WaterMesh::Upload(CommandBuffer& cb, gsl::span<const glm::vec3> vertices, gsl::span<const uint16_t> indices)
+	void WaterMesh::Upload(CommandBuffer& cb, gsl::span<const WaterVertex> vertices, gsl::span<const uint16_t> indices)
 	{
 		const uint64_t numVertices = static_cast<size_t>(vertices.size());
 		if (numVertices > m_verticesAllocation.m_elementCount)
@@ -92,7 +91,7 @@ namespace MCR
 		
 		m_numIndices = static_cast<uint32_t>(indices.size());
 		
-		VkDeviceSize verticesDstOffset = VertexSize * m_verticesAllocation.m_firstElement;
+		VkDeviceSize verticesDstOffset = sizeof(WaterVertex) * m_verticesAllocation.m_firstElement;
 		VkDeviceSize indicesDstOffset = sizeof(uint16_t) * m_indicesAllocation.m_firstElement;
 		
 		cb.UpdateBuffer(m_verticesAllocation.m_buffer, verticesDstOffset,
@@ -132,11 +131,6 @@ namespace MCR
 		};
 		
 		cb.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, { }, barriers, { });
-	}
-	
-	void WaterMesh::Draw(CommandBuffer& cb)
-	{
-		
 	}
 	
 	void WaterMesh::ReleaseVertices()

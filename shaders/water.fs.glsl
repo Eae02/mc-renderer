@@ -20,7 +20,8 @@ layout(set=0, binding=0) uniform RenderSettingsUB
 layout(location=0) noperspective in vec2 screenCoord_in;
 layout(location=1) in vec3 position_in;
 layout(location=2) in vec3 scatteringColor_in;
-layout(location=3) in vec2 normalMapSamples_in[nmSamples];
+layout(location=3) in mat3 tbnMatrix_in;
+layout(location=6) in vec2 normalMapSamples_in[nmSamples];
 
 layout(location=0) out vec4 color_out;
 
@@ -57,12 +58,13 @@ void main()
 	
 	vec3 targetPos = reconstructWorldPos(hDepth, screenCoord_in);
 	
-	vec3 normal = vec3(0, 0, 0);
+	vec3 normalTS = vec3(0, 0, 0);
 	for (int i = 0; i < nmSamples; i++)
 	{
-		normal += toWorldSpaceNormal(texture(normalMap, normalMapSamples_in[i]).xyz);
+		normalTS += (texture(normalMap, normalMapSamples_in[i]).xyz * (255.0 / 128.0)) - vec3(1.0);
 	}
-	normal = normalize(normal);
+	normalTS.xy *= nmStrength;
+	vec3 normal = normalize(tbnMatrix_in * normalTS);
 	
 	float tDepth = distance(targetPos, renderSettings.cameraPos);
 	float wDepth = distance(position_in, renderSettings.cameraPos);

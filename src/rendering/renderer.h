@@ -11,8 +11,8 @@
 #include "chunkvisibilitycalculator.h"
 #include "shadows/cascadedshadowmapper.h"
 #include "shadows/shadowvolumemesh.h"
-#include "shaders/watershader.h"
-#include "shaders/waterpostshader.h"
+#include "shaders/water/watershader.h"
+#include "shaders/water/waterpostshader.h"
 #include "causticstexture.h"
 
 namespace MCR

@@ -26,6 +26,10 @@ namespace MCR
 		{
 			glm::mat4 m_viewProj;
 			glm::mat4 m_invViewProj;
+			glm::mat4 m_view;
+			glm::mat4 m_invView;
+			glm::mat4 m_proj;
+			glm::mat4 m_invProj;
 			glm::vec3 m_cameraPos;
 			float m_time;
 			DirLight m_sun;

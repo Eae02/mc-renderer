@@ -38,6 +38,10 @@ namespace MCR
 		                                   m_pipelineLayout.GetCreateAddress()));
 		
 		int stagesPerPermutation = 1;
+		if (!createInfo.tcsName.empty())
+			stagesPerPermutation++;
+		if (!createInfo.tesName.empty())
+			stagesPerPermutation++;
 		if (!createInfo.gsName.empty())
 			stagesPerPermutation++;
 		if (!createInfo.fsName.empty())
@@ -59,29 +63,28 @@ namespace MCR
 			}
 			stageCreateInfosOut++;
 			
-			if (!createInfo.gsName.empty())
+			auto MaybeInitStage = [&] (std::string_view name, VkShaderStageFlagBits stage, const VkSpecializationInfo* specInfo)
 			{
-				InitShaderStageCreateInfo(*stageCreateInfosOut, VK_SHADER_STAGE_GEOMETRY_BIT,
-				                          GetShaderModule(createInfo.gsName));
-				
-				if (hasSpecializations)
+				if (!name.empty())
 				{
-					stageCreateInfosOut->pSpecializationInfo = createInfo.specializations[p].gsSpecInfo;
+					InitShaderStageCreateInfo(*stageCreateInfosOut, stage, GetShaderModule(name));
+					
+					if (hasSpecializations)
+					{
+						stageCreateInfosOut->pSpecializationInfo = specInfo;
+					}
+					stageCreateInfosOut++;
 				}
-				stageCreateInfosOut++;
-			}
+			};
 			
-			if (!createInfo.fsName.empty())
-			{
-				InitShaderStageCreateInfo(*stageCreateInfosOut, VK_SHADER_STAGE_FRAGMENT_BIT,
-				                          GetShaderModule(createInfo.fsName));
-				
-				if (hasSpecializations)
-				{
-					stageCreateInfosOut->pSpecializationInfo = createInfo.specializations[p].fsSpecInfo;
-				}
-				stageCreateInfosOut++;
-			}
+			MaybeInitStage(createInfo.tcsName, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+			               hasSpecializations ? createInfo.specializations[p].tcsSpecInfo : nullptr);
+			MaybeInitStage(createInfo.tesName, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+			               hasSpecializations ? createInfo.specializations[p].tesSpecInfo : nullptr);
+			MaybeInitStage(createInfo.gsName, VK_SHADER_STAGE_GEOMETRY_BIT,
+			               hasSpecializations ? createInfo.specializations[p].gsSpecInfo : nullptr);
+			MaybeInitStage(createInfo.fsName, VK_SHADER_STAGE_FRAGMENT_BIT,
+			               hasSpecializations ? createInfo.specializations[p].fsSpecInfo : nullptr);
 		}
 		
 		const VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = 
@@ -182,6 +185,14 @@ namespace MCR
 			/* pDynamicStates    */ createInfo.dynamicState.data()
 		};
 		
+		const VkPipelineTessellationStateCreateInfo tessellationState = 
+		{
+			VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+			nullptr,
+			0,
+			createInfo.patchControlPoints
+		};
+		
 		const VkPipelineVertexInputStateCreateInfo* vertexInputState = createInfo.vertexInputState;
 		if (createInfo.vertexInputState == nullptr)
 		{
@@ -214,7 +225,7 @@ namespace MCR
 				/* pStages             */ &stageCreateInfos[i * stagesPerPermutation],
 				/* pVertexInputState   */ vertexInputState,
 				/* pInputAssemblyState */ &inputAssemblyState,
-				/* pTessellationState  */ nullptr,
+				/* pTessellationState  */ createInfo.patchControlPoints != 0 ? &tessellationState : nullptr,
 				/* pViewportState      */ &viewportState,
 				/* pRasterizationState */ &rasterizationState,
 				/* pMultisampleState   */ &multisampleState,

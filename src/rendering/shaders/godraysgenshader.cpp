@@ -8,33 +8,12 @@ namespace MCR
 	
 	static const std::string_view setLayouts[] = { "GodRaysGen" };
 	
-	const Shader::CreateInfo GodRaysGenShader::s_createInfo = 
-	{
-		/* vsName                  */ "godrays.vs",
-		/* gsName                  */ "",
-		/* fsName                  */ "godrays-gen.fs",
-		/* setLayoutNames          */ setLayouts,
-		/* pushConstantRanges      */ { },
-		/* vertexInputState        */ nullptr,
-		/* topology                */ VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		/* viewport                */ { 0, 0, 1, 1, 0, 1 },
-		/* scissor                 */ { 0, 0, 1, 1 },
-		/* enableDepthClamp        */ false,
-		/* cullMode                */ VK_CULL_MODE_NONE,
-		/* frontFace               */ VK_FRONT_FACE_CLOCKWISE,
-		/* enableDepthTest         */ false,
-		/* enableDepthWrite        */ false,
-		/* stencilState            */ nullptr,
-		/* hasWireframeVariant     */ false,
-		/* depthCompareOp          */ VK_COMPARE_OP_LESS,
-		/* enableDepthBias         */ false,
-		/* depthBiasConstantFactor */ 0.0f,
-		/* depthBiasClamp          */ 0.0f,
-		/* depthBiasSlopeFactor    */ 0.0f,
-		/* attachmentBlendStates   */ SingleElementSpan(BlendStates::noBlending),
-		/* dynamicState            */ dynamicState,
-		/* specializations         */ { }
-	};
+	const Shader::CreateInfo GodRaysGenShader::s_createInfo = CreateInfo()
+		.SetVertexShaderName("godrays.vs")
+		.SetFragmentShaderName("godrays-gen.fs")
+		.SetDSLayoutNames(setLayouts)
+		.SetAttachmentBlendStates(SingleElementSpan(BlendStates::noBlending))
+		.SetDynamicState(dynamicState);
 	
 	GodRaysGenShader::GodRaysGenShader(Shader::RenderPassInfo renderPass,
 	                                   const VkDescriptorBufferInfo& renderSettingsBufferInfo)

@@ -19,6 +19,6 @@ namespace MCR
 	};
 #pragma pack(pop)
 	
-	extern const VkPipelineVertexInputStateCreateInfo blockVertexInputState;
+	extern const VkPipelineVertexInputStateCreateInfo vertexInputState;
 	extern const VkPipelineVertexInputStateCreateInfo blockVertexShadowInputState;
 }
