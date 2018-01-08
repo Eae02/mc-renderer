@@ -1,4 +1,5 @@
 CMakeLists.txt.user
+CMakeSettings.json
 bin
 .build
 .idea
