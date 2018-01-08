@@ -30,7 +30,7 @@ find_package(LibZip REQUIRED)
 find_path(VULKAN_INCLUDE_DIR vulkan/vulkan.h PATHS ${HEADER_SEARCH_PATH} "$ENV{VK_SDK_PATH}/Include")
 
 if (${MSVC})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4250 /wd4251 /wd4307 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /std:c++latest")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4250 /wd4251 /wd4307 /wd4244 /wd4267 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /std:c++latest")
 endif()
 
 add_executable(mcrenderer ${SOURCE_FILES})

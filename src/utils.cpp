@@ -45,9 +45,10 @@ namespace MCR
 #if defined(__linux__)
 			appDataPath = fs::u8path(getenv("HOME")) / ".local/share/EaeMCR";
 #elif defined(_WIN32)
-			LPWSTR wszPath = NULL;
-			SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &wszPath);
-			return fs::path(wszPath) / "EaeMCR";
+			LPWSTR appDataDirPath = nullptr;
+			SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &appDataDirPath);
+			appDataPath = fs::path(appDataDirPath) / "EaeMCR";
+			CoTaskMemFree(appDataDirPath);
 #endif
 		}
 		

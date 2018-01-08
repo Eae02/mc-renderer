@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 
 #include <string_view>
 #include <chrono>

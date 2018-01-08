@@ -9,7 +9,7 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 namespace MCR
 {
 	ProfilingPane::ProfilingPane()

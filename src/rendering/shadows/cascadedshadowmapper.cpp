@@ -80,6 +80,7 @@ namespace MCR
 	
 	static const Shader::CreateInfo shaderCreateInfo = Shader::CreateInfo()
 		.SetVertexShaderName("block-shadow.vs")
+		.SetGeometryShaderName("block-shadow.gs")
 		.SetFragmentShaderName("block-shadow.fs")
 		.SetDSLayoutNames(setLayouts)
 		.SetVertexInputState(&vertexInputState)

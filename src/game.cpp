@@ -27,9 +27,7 @@ namespace MCR
 	
 	TimeManager timeManager;
 	
-#ifdef MCR_DEBUG
 	ProfilingPane profilingPane;
-#endif
 	
 	void UpdateGame(float dt, const InputState& inputState)
 	{
@@ -46,10 +44,7 @@ namespace MCR
 		bool m_hasSubmittedOnce;
 		VkHandle<VkFence> m_fence;
 		VkHandle<VkSemaphore> m_signalSemaphore;
-		
-#ifdef MCR_DEBUG
 		FrameProfiler m_profiler;
-#endif
 	};
 	
 	void RunGameLoop(SDL_Window* window)
@@ -209,7 +204,7 @@ namespace MCR
 			
 			FrameQueueEntry& frame = frames[frameQueueIndex];
 			
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 			currentFrameProfiler = &frame.m_profiler;
 			ProfilingData profilingData;
 #endif
@@ -224,7 +219,7 @@ namespace MCR
 					vkResetFences(vulkan.device, 1, &*frame.m_fence);
 				}
 				
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 				profilingData = frame.m_profiler.GetData(lastFrameTime);
 				currentFrameProfiler->NewFrame();
 #endif
@@ -242,7 +237,7 @@ namespace MCR
 				renderer.Render({ timeF, &timeManager });
 			}
 			
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 			profilingPane.FrameEnd(profilingData, inputState, uiDrawList);
 			
 			RenderDevMenu(uiDrawList, { drawableWidth, drawableHeight });

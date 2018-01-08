@@ -1,6 +1,6 @@
 #include "frameprofiler.h"
 
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 
 namespace MCR
 {

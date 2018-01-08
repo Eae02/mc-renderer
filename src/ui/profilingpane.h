@@ -10,7 +10,7 @@
 
 namespace MCR
 {
-#ifdef MCR_DEBUG
+#ifndef NO_PROF
 	class ProfilingPane
 	{
 	public:
