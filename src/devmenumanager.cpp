@@ -1,6 +1,7 @@
 #include "devmenumanager.h"
 #include "ui/devmenubar.h"
 #include "ui/profilingpane.h"
+#include "timemanager.h"
 
 #include <memory>
 
@@ -8,7 +9,9 @@ namespace MCR
 {
 	static std::unique_ptr<DevMenuBar> devMenuBar;
 	
-	void InitDevMenu(Renderer& renderer, ProfilingPane& profilingPane)
+	static float g_timeScale = 100;
+	
+	void InitDevMenu(Renderer& renderer, ProfilingPane& profilingPane, TimeManager& timeManager)
 	{
 		devMenuBar = std::make_unique<DevMenuBar>();
 		
@@ -38,6 +41,12 @@ namespace MCR
 		profilingMenu.AddAction("Save Profiling Data", [&] { profilingPane.DumpToCSV(); });
 		
 		devMenuBar->AddMenu("Profiling", std::make_unique<DevMenu>(std::move(profilingMenu)));
+		
+		DevMenu timeMenu;
+		timeMenu.AddValue<float>("Timescale", [&] { return g_timeScale; },
+		                         [&] (float timeScale) { timeManager.SetTimeScale(g_timeScale = timeScale); });
+		
+		devMenuBar->AddMenu("Time", std::make_unique<DevMenu>(std::move(timeMenu)));
 	}
 	
 	void DestroyDevMenu()

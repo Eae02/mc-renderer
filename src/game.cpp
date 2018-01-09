@@ -123,7 +123,7 @@ namespace MCR
 		worldManager->SetRenderDistance(settings.GetRenderDistance());
 		renderer.SetWorldManager(worldManager.get());
 		
-		InitDevMenu(renderer, profilingPane);
+		InitDevMenu(renderer, profilingPane, timeManager);
 		
 		const fs::path worldPath = MCR::GetResourcePath() / "world";
 		if (!fs::exists(worldPath))

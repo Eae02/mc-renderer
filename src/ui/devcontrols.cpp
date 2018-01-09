@@ -55,6 +55,4 @@ namespace MCR
 		m_requiredSize.x = std::max(m_requiredSize.x, controlSize.x + Style::framePadding * 2);
 		m_requiredSize.y += controlSize.y + Style::itemPadding;
 	}
-	
-	
 }

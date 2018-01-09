@@ -7,7 +7,7 @@
 
 namespace MCR
 {
-	void InitDevMenu(Renderer& renderer, class ProfilingPane& profilingPane);
+	void InitDevMenu(Renderer& renderer, class ProfilingPane& profilingPane, class TimeManager& timeManager);
 	void DestroyDevMenu();
 	
 	void RenderDevMenu(UIDrawList& drawList, glm::ivec2 screenSize);
