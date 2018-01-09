@@ -83,7 +83,7 @@ namespace MCR
 		.SetGeometryShaderName("block-shadow.gs")
 		.SetFragmentShaderName("block-shadow.fs")
 		.SetDSLayoutNames(setLayouts)
-		.SetVertexInputState(&vertexInputState)
+		.SetVertexInputState(&blockVertexShadowInputState)
 		.SetCullMode(VK_CULL_MODE_FRONT_BIT)
 		.SetEnableDepthTest(true)
 		.SetEnableDepthWrite(true)
