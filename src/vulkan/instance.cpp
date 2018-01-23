@@ -74,7 +74,8 @@ namespace MCR
 		
 		return features.fullDrawIndexUint32 == VK_TRUE && features.samplerAnisotropy == VK_TRUE &&
 		       features.drawIndirectFirstInstance == VK_TRUE && features.depthClamp == VK_TRUE &&
-		       features.geometryShader == VK_TRUE && features.shaderStorageImageExtendedFormats == VK_TRUE;
+		       features.geometryShader == VK_TRUE && features.shaderStorageImageExtendedFormats == VK_TRUE &&
+		       features.shaderCullDistance == VK_TRUE;
 	}
 	
 	inline bool GetQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface, uint32_t* queueFamiliesOut)
@@ -334,6 +335,7 @@ namespace MCR
 		enabledFeatures.fillModeNonSolid = VK_TRUE;
 		enabledFeatures.geometryShader = VK_TRUE;
 		enabledFeatures.shaderStorageImageExtendedFormats = VK_TRUE;
+		enabledFeatures.shaderCullDistance = VK_TRUE;
 		enabledFeatures.multiDrawIndirect = availFeatures.multiDrawIndirect;
 		enabledFeatures.tessellationShader = availFeatures.tessellationShader;
 		

@@ -14,6 +14,7 @@
 #include "shaders/water/watershader.h"
 #include "shaders/water/waterpostshader.h"
 #include "causticstexture.h"
+#include "starrenderer.h"
 
 namespace MCR
 {

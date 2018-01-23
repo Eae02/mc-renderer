@@ -98,7 +98,7 @@ vec3 getScatteringColor(float eyeDepth, vec3 eyeVector)
 		
 		vec3 influx = calcAbsorbtion(sunSampleDepth, vec3(10), scatterStrength) * occlusion;
 		
-		influx += calcAbsorbtion(moonSampleDepth, renderSettings.moon.radiance, scatterStrength);
+		influx += calcAbsorbtion(moonSampleDepth, renderSettings.moon.radiance * 0.1, scatterStrength);
 		
 		rayleighLight += calcAbsorbtion(sampleDistance, absorbtionProfile * influx, rayleighStrength);
 		mieLight += calcAbsorbtion(sampleDistance, influx, mieStrength);

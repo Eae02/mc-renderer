@@ -4,6 +4,7 @@
 #include "shaders/skyshader.h"
 #include "shaders/godraysgenshader.h"
 #include "shaders/godraysblurshader.h"
+#include "starrenderer.h"
 
 namespace MCR
 {
@@ -14,7 +15,8 @@ namespace MCR
 		
 		void FramebufferChanged(const class Framebuffer& framebuffer);
 		
-		void Render(CommandBuffer& commandBuffer, const class Framebuffer& framebuffer);
+		void Render(CommandBuffer& commandBuffer, const class Framebuffer& framebuffer,
+		            const class TimeManager& timeManager);
 		
 		inline VkRenderPass GetGodRaysRenderPass() const
 		{
@@ -26,6 +28,11 @@ namespace MCR
 			return *m_skyRenderPass;
 		}
 		
+		inline void Initialize(class LoadContext& loadContext)
+		{
+			m_starRenderer.Initialize(loadContext);
+		}
+		
 		static constexpr uint32_t GodRaysDownscale = 2;
 		
 	private:
@@ -35,5 +42,7 @@ namespace MCR
 		GodRaysGenShader m_godRaysGenShader;
 		GodRaysBlurShader m_godRaysBlurShader;
 		SkyShader m_skyShader;
+		
+		StarRenderer m_starRenderer;
 	};
 }

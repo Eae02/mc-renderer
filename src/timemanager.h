@@ -15,6 +15,16 @@ namespace MCR
 		
 		void SetTimeScale(float timeScale);
 		
+		inline float GetTime() const
+		{
+			return m_time;
+		}
+		
+		inline float GetAccumulatedTime() const
+		{
+			return m_accumulatedTime;
+		}
+		
 		inline const glm::vec3& GetShadowDirection() const
 		{
 			return m_shadowDirection;
@@ -30,7 +40,10 @@ namespace MCR
 			return m_moon;
 		}
 		
+		float GetStarIntensityScale() const;
+		
 	private:
+		float m_accumulatedTime = 0;
 		float m_time = 0;
 		float m_timeScale = 0;
 		

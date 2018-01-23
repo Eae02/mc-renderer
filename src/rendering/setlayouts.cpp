@@ -126,6 +126,14 @@ namespace MCR
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers }
 	};
 	
+	static DSLayoutBinding Star[] =
+	{
+		//Render settings buffer
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },
+		//Depth image
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, framebufferSamplers },
+	};
+	
 	static DSLayoutBinding UI_Sampler[] = 
 	{
 		//Sampler
@@ -159,5 +167,6 @@ namespace MCR
 		RegisterDescriptorSetLayout("UI_Image", UI_Image);
 		RegisterDescriptorSetLayout("PostProcess", PostProcess);
 		RegisterDescriptorSetLayout("CausticsGen", CausticsGen);
+		RegisterDescriptorSetLayout("Star", Star);
 	}
 }

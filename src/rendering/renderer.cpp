@@ -277,7 +277,7 @@ namespace MCR
 			
 			// ** Sky rendering **
 			
-			m_skyRenderer.Render(cb, *m_framebuffer);
+			m_skyRenderer.Render(cb, *m_framebuffer, *params.m_timeManager);
 			
 			// ** Water rendering **
 			
@@ -352,6 +352,7 @@ namespace MCR
 		}
 		
 		m_waterShader.Initialize(loadContext);
+		m_skyRenderer.Initialize(loadContext);
 	}
 	
 	void Renderer::SaveCausticsTexture() const

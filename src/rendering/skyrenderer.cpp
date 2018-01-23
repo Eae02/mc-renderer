@@ -110,7 +110,8 @@ namespace MCR
 	    : m_godRaysRenderPass(CreateGodRaysRenderPass()), m_skyRenderPass(CreateSkyRenderPass()),
 	      m_godRaysGenShader({ *m_godRaysRenderPass, 0 }, renderSettingsBufferInfo),
 	      m_godRaysBlurShader({ *m_godRaysRenderPass, 0 }),
-	      m_skyShader({ *m_skyRenderPass, 0 }, renderSettingsBufferInfo)
+	      m_skyShader({ *m_skyRenderPass, 0 }, renderSettingsBufferInfo),
+	      m_starRenderer({ *m_skyRenderPass, 0 }, renderSettingsBufferInfo)
 	{
 		
 	}
@@ -120,9 +121,11 @@ namespace MCR
 		m_skyShader.FramebufferChanged(framebuffer);
 		m_godRaysGenShader.FramebufferChanged(framebuffer);
 		m_godRaysBlurShader.FramebufferChanged(framebuffer);
+		m_starRenderer.FramebufferChanged(framebuffer);
 	}
 	
-	void SkyRenderer::Render(CommandBuffer& commandBuffer, const Framebuffer& framebuffer)
+	void SkyRenderer::Render(CommandBuffer& commandBuffer, const Framebuffer& framebuffer,
+	                         const class TimeManager& timeManager)
 	{
 		VkRect2D renderArea;
 		VkViewport viewport;
@@ -219,6 +222,8 @@ namespace MCR
 		commandBuffer.SetScissor(0, SingleElementSpan(renderArea));
 		
 		commandBuffer.Draw(3, 1, 0, 0);
+		
+		m_starRenderer.Render(commandBuffer, timeManager);
 		
 		commandBuffer.EndRenderPass();
 		

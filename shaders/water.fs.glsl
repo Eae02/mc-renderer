@@ -148,6 +148,7 @@ void main()
 		materialData.normal = normal;
 		materialData.specularIntensity = 5.0;
 		vec3 R = calcDirLightReflectance(renderSettings.sun, dirToEye, fresnel, materialData) * surfaceShadowFactor;
+		R += calcDirLightReflectance(renderSettings.moon, dirToEye, fresnel, materialData) * surfaceShadowFactor;
 		
 		R += getAmbientReflectance(materialData) * (renderSettings.sun.radiance + renderSettings.moon.radiance);
 		
