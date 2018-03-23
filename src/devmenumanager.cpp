@@ -45,6 +45,8 @@ namespace MCR
 		DevMenu timeMenu;
 		timeMenu.AddValue<float>("Timescale", [&] { return g_timeScale; },
 		                         [&] (float timeScale) { timeManager.SetTimeScale(g_timeScale = timeScale); });
+		timeMenu.AddValue<bool>("Freeze Time", [&] { return timeManager.IsTimeFrozen(); },
+		                         [&] (bool freezeTime) { timeManager.SetFreezeTime(freezeTime); });
 		
 		devMenuBar->AddMenu("Time", std::make_unique<DevMenu>(std::move(timeMenu)));
 	}

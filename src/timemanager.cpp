@@ -9,13 +9,16 @@ namespace MCR
 {
 	TimeManager::TimeManager()
 	{
-		SetTimeScale(60 * 60 * 0.2f);
+		SetTimeScale(60 * 60 * 0.1f);
 		
-		m_accumulatedTime = 1.5f; //0.2f;
+		m_accumulatedTime = 0.2f;
 	}
 	
 	void TimeManager::Update(float dt, const InputState& inputState)
 	{
+		if (m_freezeTime)
+			return;
+		
 		m_accumulatedTime += dt * m_timeScale;
 		
 		//Sets m_time to the accumulated time modulo 2

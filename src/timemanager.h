@@ -40,12 +40,24 @@ namespace MCR
 			return m_moon;
 		}
 		
+		inline void SetFreezeTime(bool freezeTime)
+		{
+			m_freezeTime = freezeTime;
+		}
+		
+		inline bool IsTimeFrozen() const
+		{
+			return m_freezeTime;
+		}
+		
 		float GetStarIntensityScale() const;
 		
 	private:
 		float m_accumulatedTime = 0;
 		float m_time = 0;
 		float m_timeScale = 0;
+		
+		bool m_freezeTime = false;
 		
 		glm::vec3 m_shadowDirection;
 		

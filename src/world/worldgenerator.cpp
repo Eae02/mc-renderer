@@ -191,6 +191,12 @@ namespace MCR
 			BlockIDs::IronOre,
 			BlockIDs::GoldOre,
 			BlockIDs::DiamondOre,
+			BlockIDs::BlueFlower,
+			BlockIDs::RedFlower,
+			BlockIDs::YellowFlower,
+			BlockIDs::OrangeFlower,
+			BlockIDs::WhiteFlower,
+			BlockIDs::Fern
 		};
 		
 		while (worm.m_distLeft > 0)
