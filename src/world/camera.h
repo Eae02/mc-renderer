@@ -18,17 +18,17 @@ namespace MCR
 		
 		inline glm::vec3 GetForward() const
 		{
-			return m_rotationMatrix[2];
+			return glm::vec3(m_rotationMatrix[2]);
 		}
 		
 		inline glm::vec3 GetLeft() const
 		{
-			return m_rotationMatrix[0];
+			return glm::vec3(m_rotationMatrix[0]);
 		}
 		
 		inline glm::vec3 GetUp() const
 		{
-			return m_rotationMatrix[1];
+			return glm::vec3(m_rotationMatrix[1]);
 		}
 		
 		inline const glm::mat4& GetViewMatrix() const

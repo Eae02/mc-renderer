@@ -312,7 +312,7 @@ namespace MCR
 	{
 		const glm::vec3 lightDirLeft = glm::cross(worldManager.GetCamera().GetForward(), lightDirection);
 		const glm::mat3 rotationMatrix(lightDirLeft, glm::cross(lightDirLeft, lightDirection), lightDirection);
-		const glm::mat4 rotationMatrixInv = glm::transpose(rotationMatrix);
+		const glm::mat4 rotationMatrixInv(glm::transpose(rotationMatrix));
 		
 		CalcFrustumSlices(viewProjection, m_endDistance);
 		

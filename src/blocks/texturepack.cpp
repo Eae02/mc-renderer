@@ -1,6 +1,7 @@
 #include "texturepack.h"
 
 #include <stb_image.h>
+#include <stb_image_resize.h>
 
 namespace MCR
 {
@@ -16,12 +17,9 @@ namespace MCR
 	}
 	
 	TexturePack::TexturePack(const fs::path& path)
-	    : m_archive(OpenArchive(path))
-	{
-		
-	}
+	    : m_archive(OpenArchive(path)) { }
 	
-	TexturePack::Texture TexturePack::LoadTexture(const std::string& path) const
+	TexturePack::Texture TexturePack::LoadTexture(const std::string& path, int reqWidth, int reqHeight) const
 	{
 		int64_t fileIndex = zip_name_locate(m_archive.get(), path.c_str(), 0);
 		if (fileIndex == -1)
@@ -40,6 +38,15 @@ namespace MCR
 		stbi_uc* imageData = stbi_load_from_memory(data.data(), data.size(), &width, &height, nullptr, 4);
 		if (imageData == nullptr)
 			return { };
+		
+		if (reqWidth != -1 && reqHeight != -1 && (width != reqWidth || height != reqHeight))
+		{
+			stbi_uc* resizedData = static_cast<stbi_uc*>(std::malloc(reqWidth * reqHeight * 4));
+			stbir_resize_uint8(imageData, width, height, 0, resizedData, reqWidth, reqHeight, 0, 4);
+			
+			std::free(imageData);
+			return { resizedData, reqWidth, reqHeight };
+		}
 		
 		return { imageData, width, height };
 	}

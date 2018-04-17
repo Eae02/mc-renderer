@@ -5,7 +5,9 @@
 #include <fstream>
 #include <sstream>
 #include <stb_image.h>
+#include <stb_image_resize.h>
 #include <zip.h>
+#include <iostream>
 
 namespace MCR
 {
@@ -22,14 +24,14 @@ namespace MCR
 		BlocksTextureManager texturesManager;
 		texturesManager.m_textures.reserve(GetBlockTexturesList().size());
 		
-		uint32_t resolution = 0;
+		const int resolution = 128;
 		
 		for (const BlockTextureDesc& textureDesc : GetBlockTexturesList())
 		{
 			//Loads the albedo texture
 			std::ostringstream albedoPathStream;
 			albedoPathStream << "assets/minecraft/textures/blocks/" << textureDesc.m_name << ".png";
-			TexturePack::Texture albedoTexture = texturePack.LoadTexture(albedoPathStream.str());
+			TexturePack::Texture albedoTexture = texturePack.LoadTexture(albedoPathStream.str(), resolution, resolution);
 			
 			if (albedoTexture.GetData() == nullptr)
 			{
@@ -46,19 +48,7 @@ namespace MCR
 			//Loads the normal map texture
 			std::ostringstream normalPathStream;
 			normalPathStream << "assets/minecraft/textures/blocks/" << textureDesc.m_name << "_n.png";
-			TexturePack::Texture normalTexture = texturePack.LoadTexture(normalPathStream.str());
-			
-			if (resolution == 0)
-			{
-				resolution = albedoTexture.GetWidth();
-			}
-			
-			//Checks the resoltuion of the textures
-			if (albedoTexture.GetWidth() != albedoTexture.GetHeight() ||
-			    albedoTexture.GetWidth() != static_cast<int>(resolution))
-			{
-				throw std::runtime_error("Inconsistent texture resolution");
-			}
+			TexturePack::Texture normalTexture = texturePack.LoadTexture(normalPathStream.str(), resolution, resolution);
 			
 			//Adds a texture entry
 			texturesManager.m_textures.emplace_back();
@@ -72,12 +62,6 @@ namespace MCR
 			//Assigns the normal map
 			if (normalTexture.GetData() != nullptr)
 			{
-				if (normalTexture.GetWidth() != normalTexture.GetHeight() ||
-				    normalTexture.GetWidth() != static_cast<int>(resolution))
-				{
-					throw std::runtime_error("Inconsistent texture resolution");
-				}
-				
 				texture.m_normalTextureIndex = textures.size();
 				textures.push_back(std::move(normalTexture));
 			}

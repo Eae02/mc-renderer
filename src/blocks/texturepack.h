@@ -47,7 +47,7 @@ namespace MCR
 		
 		explicit TexturePack(const fs::path& path);
 		
-		Texture LoadTexture(const std::string& path) const;
+		Texture LoadTexture(const std::string& path, int width, int height) const;
 		
 	private:
 		struct ZipDeleter
