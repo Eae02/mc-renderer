@@ -344,7 +344,7 @@ namespace MCR
 			enabledFeatures.multiDrawIndirect = VK_FALSE;
 		}
 		
-		vulkan.limits.hasMultiDrawIndirect = enabledFeatures.multiDrawIndirect == VK_TRUE;
+		vulkan.limits.hasMultiDrawIndirect = false;//enabledFeatures.multiDrawIndirect == VK_TRUE;
 		vulkan.limits.hasTessellation = enabledFeatures.tessellationShader == VK_TRUE;
 		
 		// ** Selects a depth format **

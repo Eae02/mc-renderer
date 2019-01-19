@@ -8,7 +8,7 @@ namespace MCR
 	ChunkUploader::HostBuffer::HostBuffer(uint64_t size) : m_size(size), m_fence(CreateVkFence())
 	{
 		VmaAllocationCreateInfo allocationCI = { };
-		allocationCI.flags = VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT;
+		allocationCI.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		allocationCI.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 		
 		VmaAllocationInfo allocationInfo;

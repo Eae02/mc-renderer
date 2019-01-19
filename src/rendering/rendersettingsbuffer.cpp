@@ -23,7 +23,7 @@ namespace MCR
 		// ** Creates the host buffer **
 		const VmaAllocationCreateInfo hostMemoryAllocationCI = 
 		{
-			VMA_ALLOCATION_CREATE_PERSISTENT_MAP_BIT,
+			VMA_ALLOCATION_CREATE_MAPPED_BIT,
 			VMA_MEMORY_USAGE_CPU_ONLY
 		};
 		

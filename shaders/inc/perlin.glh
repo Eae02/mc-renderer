@@ -78,7 +78,8 @@ float perlinOctRidge(vec3 pos, int octaves, float gain, float lacunarity)
 	float value = 0.0;
 	float amplitude = 0.5;
 	
-	for (int i = 0; i < octaves; i++) {
+	for (int i = 0; i < octaves; i++)
+	{
 		value += amplitude * abs(perlin(pos));
 		pos *= gain;
 		amplitude *= lacunarity;
